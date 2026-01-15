@@ -21,10 +21,7 @@ public class SoundEmitter : MonoBehaviour
 
     foreach (SoundListener listener in listeners)
     {
-        if (listener.CanHearSound(soundEvent))
-        {
-            Debug.Log(listener.name + " heard the sound!");
-        }
+        listener.ProcessSound(soundEvent);
     }
       
     }
