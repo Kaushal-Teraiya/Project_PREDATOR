@@ -4,6 +4,10 @@ public class SoundListener : MonoBehaviour
 {
     public float hearingMultiplier = 1f;
     public float memoryDuration = 5f;
+    public float InvestigateSpeed = 2f;
+    public float investigateStopDistance = 0.3f;
+    public float rotationSpeed = 360f; // degrees per second
+
 
     private enum State
     {
@@ -46,8 +50,21 @@ public class SoundListener : MonoBehaviour
 
         if (currentState == State.Investigate)
         {
-            // TEMP behavior (will improve later)
-            transform.position = lastHeardPosition;
+            transform.position = Vector3.MoveTowards(transform.position, lastHeardPosition, InvestigateSpeed * Time.deltaTime);
+            float distance = Vector3.Distance(transform.position, lastHeardPosition);
+            Vector3 direction = lastHeardPosition - transform.position;
+            direction.y = 0f;
+
+            if (direction.sqrMagnitude > 0.001f)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(direction);
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            }
+            if (distance <= investigateStopDistance)
+            {
+                hasHeardSound = false;
+                SetState(State.Idle);
+            }
         }
     }
 
@@ -58,7 +75,7 @@ public class SoundListener : MonoBehaviour
 
         if (distance <= effectiveRadius)
         {
-            lastHeardPosition = soundEvent.position;
+            lastHeardPosition = new Vector3(soundEvent.position.x, transform.position.y, soundEvent.position.z);
             lastHeardTime = Time.time;
             hasHeardSound = true;
             currentState = State.Investigate;
