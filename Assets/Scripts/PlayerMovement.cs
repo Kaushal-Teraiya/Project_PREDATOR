@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -5,7 +6,7 @@ public class PlayerMovement : MonoBehaviour
 {
     public CharacterController player;
   
-    private float playerSpeed = 5f;
+    [SerializeField]private float playerSpeed = 5f;
     private Vector3 playerVelocity;
     private float jumpHeight = 1.5f;
     private float gravityValue = -9.8f;
@@ -25,7 +26,7 @@ public class PlayerMovement : MonoBehaviour
                 playerVelocity.y = -2f;
         }
         Vector2 input = moveAction.action.ReadValue<Vector2>();
-        Vector3 move = new Vector3(input.x , 0 , input.y);
+        Vector3 move = transform.right * input.x + transform.forward * input.y;
         move = Vector3.ClampMagnitude(move, 1f);
 
         if (isGrounded && jumpAction.action.WasPressedThisFrame())
@@ -37,6 +38,12 @@ public class PlayerMovement : MonoBehaviour
 
         Vector3 finalMove = move * playerSpeed + Vector3.up * playerVelocity.y;
         player.Move(finalMove * Time.deltaTime);
+
+        bool isMoving = move.magnitude>0.1f;
+        if (isMoving)
+        {
+            GetComponent<SoundEmitter>().EmitSound(5f);
+        }
     }
 
 }
