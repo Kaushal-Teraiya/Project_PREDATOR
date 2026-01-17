@@ -24,6 +24,7 @@ public class EnemyBrain : MonoBehaviour
     void Update()
     {
         currentState?.Tick();
+        CheckStateChange();
     }
 
     private void SwitchState(IEnemyState newState)
@@ -32,5 +33,21 @@ public class EnemyBrain : MonoBehaviour
         currentState = newState;
         currentState?.OnEnter();
 
+    }
+
+    private void CheckStateChange()
+    {
+        if (currentState == idleState && soundSensor.HasValidSound())
+        {
+           SwitchState(investigateState);
+        }
+        if (currentState == investigateState && investigateState.hasReachedDestination)
+        {
+           SwitchState(searchState);
+        }
+        if (currentState == searchState && searchState.isSearchComplete)
+        {
+           SwitchState(idleState);
+        }
     }
 }
