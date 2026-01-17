@@ -561,6 +561,9 @@ MonoBehaviour:
   lastHeardPosition: {x: 0, y: 0, z: 0}
   lastHeardTime: 0
   hasHeardSound: 0
+  isSearching: 0
+  searchDuration: 5
+  searchStartTime: 0
 --- !u!4 &1237495239
 Transform:
   m_ObjectHideFlags: 0

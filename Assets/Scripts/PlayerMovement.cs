@@ -5,6 +5,7 @@ using UnityEngine.InputSystem;
 public class PlayerMovement : MonoBehaviour
 {
     public CharacterController player;
+    SoundEmitter emitter;
   
     [SerializeField]private float playerSpeed = 5f;
     private Vector3 playerVelocity;
@@ -15,6 +16,10 @@ public class PlayerMovement : MonoBehaviour
     public InputActionReference moveAction;
     public InputActionReference jumpAction;
 
+    void Start()
+    {
+        emitter = GetComponent<SoundEmitter>();
+    }
 
     void Update()
     {
@@ -42,7 +47,7 @@ public class PlayerMovement : MonoBehaviour
         bool isMoving = move.magnitude>0.1f;
         if (isMoving)
         {
-            GetComponent<SoundEmitter>().EmitSound(5f);
+            GetComponent<SoundEmitter>().EmitSound(emitter.walkRadius);
         }
     }
 
