@@ -1,13 +1,14 @@
 
-public class InvestigateState : IEnemyState
+
+public class SearchState : IEnemyState
 {
     private EnemyBrain brain;
-    public InvestigateState(EnemyBrain brain)
+    public SearchState(EnemyBrain brain)
     {
         this.brain = brain;
     }
     public void OnEnter() { }
     public void Tick() { }
-    public void Exit() { }
+    public void OnExit() { }
 }
 
