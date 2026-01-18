@@ -5,9 +5,12 @@ using UnityEngine.InputSystem;
 public class PlayerMovement : MonoBehaviour
 {
     public CharacterController player;
-    SoundEmitter emitter;
-  
-    [SerializeField]private float playerSpeed = 5f;
+    private SoundEmitter emitter;
+
+    [SerializeField] private float playerWalkSpeed = 5f;
+    [SerializeField] private float playerRunSpeed = 10f;
+    private float playerSpeed;
+    private float soundEmissionRadius;
     private Vector3 playerVelocity;
     private float jumpHeight = 1.5f;
     private float gravityValue = -9.8f;
@@ -15,6 +18,7 @@ public class PlayerMovement : MonoBehaviour
 
     public InputActionReference moveAction;
     public InputActionReference jumpAction;
+    public InputActionReference runAction;
 
     void Start()
     {
@@ -27,7 +31,7 @@ public class PlayerMovement : MonoBehaviour
 
         if (isGrounded)
         {
-            if(playerVelocity.y < -2f)
+            if (playerVelocity.y < -2f)
                 playerVelocity.y = -2f;
         }
         Vector2 input = moveAction.action.ReadValue<Vector2>();
@@ -41,13 +45,24 @@ public class PlayerMovement : MonoBehaviour
 
         playerVelocity.y += gravityValue * Time.deltaTime;
 
+        if (runAction.action.IsPressed())
+        {
+            playerSpeed = playerRunSpeed;
+            soundEmissionRadius = emitter.runRadius;
+        }
+        else
+        {
+            playerSpeed = playerWalkSpeed;
+            soundEmissionRadius = 0f;
+        }
         Vector3 finalMove = move * playerSpeed + Vector3.up * playerVelocity.y;
         player.Move(finalMove * Time.deltaTime);
 
-        bool isMoving = move.magnitude>0.1f;
+        bool isMoving = move.magnitude > 0.1f;
+
         if (isMoving)
         {
-            GetComponent<SoundEmitter>().EmitSound(emitter.walkRadius);
+            emitter.EmitSound(soundEmissionRadius);
         }
     }
 

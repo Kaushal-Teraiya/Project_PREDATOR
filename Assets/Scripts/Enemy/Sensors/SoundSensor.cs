@@ -8,13 +8,15 @@ public class SoundSensor : MonoBehaviour
 
     [Header("Sound Memory (Read Only)")]
     public Vector3 LastHeardPosition { get; private set; }
+    public float LastHeardRadius { get; private set; }
     public float LastHeardTime { get; private set; }
     public bool HasHeardSound { get; private set; }
 
     public void ProcessSound(SoundEvent soundEvent)
     {
         float distance = Vector3.Distance(transform.position, soundEvent.position);
-        float effectiveRadius = soundEvent.radius * hearingMultiplier;
+        LastHeardRadius = soundEvent.radius;
+        float effectiveRadius = LastHeardRadius * hearingMultiplier;
 
         if (distance > effectiveRadius)
             return;

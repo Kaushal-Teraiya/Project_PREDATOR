@@ -1,15 +1,42 @@
 
+using UnityEngine;
+
 public class InvestigateState : IEnemyState
 {
     private EnemyBrain brain;
     public bool hasReachedDestination { get; private set; }
+    private Vector3 areaCenter;
+    private float areaRadius;
+
+    public void SetAreaCenter_AreaRadius(Vector3 _areaCenter, float _areaRadius)
+    {
+        areaCenter = _areaCenter;
+        areaRadius = _areaRadius;
+    }
+
     public InvestigateState(EnemyBrain brain)
     {
         this.brain = brain;
     }
 
-    public void OnEnter() { }
-    public void Tick() { }
-    public void OnExit() { }
+    public void OnEnter()
+    {
+        hasReachedDestination = false;
+    }
+
+    public void Tick()
+    {
+        var Enemy = brain.enemyMovement;
+        Enemy.MoveTo(areaCenter);
+        float distance = Vector3.Distance(Enemy.transform.position, areaCenter);
+        if (distance <= areaRadius)
+        {
+            hasReachedDestination = true;
+        }
+    }
+    public void OnExit()
+    {
+        brain.enemyMovement.Stop();
+    }
 }
 
