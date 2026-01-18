@@ -566,7 +566,7 @@ Transform:
   m_GameObject: {fileID: 1237495237}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 12.06, y: 0, z: -3.23272}
+  m_LocalPosition: {x: 6.73, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -585,7 +585,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df99b992b152d384598f6a9dea951e97, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyMovement
-  stopDistance: 1.2
+  enemySpeed: 2
 --- !u!114 &1237495241
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -599,6 +599,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyBrain
   investigationThreshold: 8
+  InvestigateAreaRadius: 5
 --- !u!114 &1470000638
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -815,7 +816,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   player: {fileID: 1584050598}
-  playerWalkSpeed: 5
+  playerWalkSpeed: 20
   playerRunSpeed: 10
   moveAction: {fileID: 1703210592}
   jumpAction: {fileID: 1470000638}
@@ -876,7 +877,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: d3b457ac6b3fa0a4f916cad4a1ea4d40, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.18
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: d3b457ac6b3fa0a4f916cad4a1ea4d40, type: 3}
       propertyPath: m_LocalPosition.z

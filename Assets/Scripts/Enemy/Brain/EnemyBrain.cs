@@ -1,3 +1,4 @@
+using UnityEditor.ShaderGraph.Internal;
 using UnityEngine;
 
 public class EnemyBrain : MonoBehaviour
@@ -9,10 +10,13 @@ public class EnemyBrain : MonoBehaviour
     private IdleState idleState;
     private InvestigateState investigateState;
     private SearchState searchState;
-    [SerializeField] private float investigationThreshold = 8f;
     private Vector3 currentInvestigationCenter;
     private float currentInvestigationRadius;
-    [SerializeField]private float InvestigateAreaRadius;
+    private GameObject player;
+    [SerializeField] private float InvestigateAreaRadius;
+    [SerializeField] private float proximityRadius;
+    [SerializeField] private float investigationThreshold = 8f;
+
 
     void Awake()
     {
@@ -25,6 +29,7 @@ public class EnemyBrain : MonoBehaviour
         searchState = new SearchState(this);
         investigateState = new InvestigateState(this);
         SwitchState(idleState);
+        player = GameObject.FindGameObjectWithTag("Player");
     }
 
     void Update()
@@ -51,13 +56,20 @@ public class EnemyBrain : MonoBehaviour
 
     private void CheckStateChange()
     {
+
+        float proximityCheck = Vector3.Distance(player.transform.position, transform.position);
+        if (proximityCheck < proximityRadius)
+        {
+            Debug.Log("player is right in front of me");
+            return; //just for now so it doesnt start executing other states
+        }
         if (currentState == idleState && soundSensor.HasValidSound() && soundSensor.LastHeardRadius >= investigationThreshold)
         {
             SetInvestigateState();
             SwitchState(investigateState);
         }
 
-        if (currentState == investigateState && soundSensor.HasValidSound() && soundSensor.LastHeardRadius >= investigationThreshold)
+        if (currentState == investigateState || currentState == searchState && soundSensor.HasValidSound() && soundSensor.LastHeardRadius >= investigationThreshold)
         {
             float distance = Vector3.Distance(soundSensor.LastHeardPosition, currentInvestigationCenter);
             if (distance > currentInvestigationRadius)
@@ -77,4 +89,39 @@ public class EnemyBrain : MonoBehaviour
             SwitchState(idleState);
         }
     }
+
+
+    void OnDrawGizmos()
+    {
+        if (currentInvestigationRadius <= 0f)
+            return;
+
+        Gizmos.color = Color.red;
+
+        DrawCircle(
+            currentInvestigationCenter,
+            currentInvestigationRadius,
+            40
+        );
+    }
+
+    void DrawCircle(Vector3 center, float radius, int segments)
+    {
+        float angleStep = 360f / segments;
+        Vector3 prevPoint = center + Vector3.forward * radius;
+
+        for (int i = 1; i <= segments; i++)
+        {
+            float angle = angleStep * i;
+            Vector3 nextPoint = center + new Vector3(
+                Mathf.Sin(angle * Mathf.Deg2Rad) * radius,
+                0f,
+                Mathf.Cos(angle * Mathf.Deg2Rad) * radius
+            );
+
+            Gizmos.DrawLine(prevPoint, nextPoint);
+            prevPoint = nextPoint;
+        }
+    }
+
 }
