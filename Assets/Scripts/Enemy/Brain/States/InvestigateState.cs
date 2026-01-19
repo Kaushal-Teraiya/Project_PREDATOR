@@ -28,6 +28,8 @@ public class InvestigateState : IEnemyState
     {
         var Enemy = brain.enemyMovement;
         Enemy.MoveTo(areaCenter);
+        Vector3 direction = areaCenter - Enemy.transform.position;
+        Enemy.RotateTowards(direction);
         float distance = Vector3.Distance(Enemy.transform.position, areaCenter);
         if (distance <= areaRadius)
         {
