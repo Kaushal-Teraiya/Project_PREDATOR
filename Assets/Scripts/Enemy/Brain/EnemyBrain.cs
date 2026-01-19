@@ -22,6 +22,8 @@ public class EnemyBrain : MonoBehaviour
     private List<SearchPoint> availableSearchPoints = new List<SearchPoint>();
     private List<SearchPoint> selectedSearchPoints = new List<SearchPoint>();
     public int currentSearchIndex { get; private set; }
+    [SerializeField] private LayerMask searchPointLayer;
+    [SerializeField] private float SearchPointFactorPercent = 0.5f;
     public bool IsSearchComplete
     {
         get
@@ -68,19 +70,43 @@ public class EnemyBrain : MonoBehaviour
 
     public void InitializeSearch()
     {
-        selectedSearchPoints.Clear();
-        availableSearchPoints = GetComponents<SearchPoint>().ToList();
+
+        CollectNearbySearchPoints();
         ShuffleSearchPoints();
-        var pickN = availableSearchPoints.Count * 0.4;
+
+        var pickN = availableSearchPoints.Count * SearchPointFactorPercent;
         int rounUp = (int)Mathf.Ceil((float)pickN);
         int finalN = Mathf.Clamp(rounUp, 2, 8);
         finalN = (int)MathF.Min(finalN, availableSearchPoints.Count);
+
         for (int i = 0; i < finalN; i++)
         {
             selectedSearchPoints.Add(availableSearchPoints[i]);
         }
 
         currentSearchIndex = 0;
+
+    }
+
+    private void CollectNearbySearchPoints()
+    {
+        selectedSearchPoints.Clear();
+        availableSearchPoints.Clear();
+        Collider[] points = Physics.OverlapSphere(currentInvestigationCenter, currentInvestigationRadius, searchPointLayer);
+        foreach (var point in points)
+        {
+            if (point != null)
+            {
+                var searchPoint = point.gameObject.GetComponent<SearchPoint>();
+                if (searchPoint == null)
+                {
+                    Debug.Log("null search point");
+                    continue;
+
+                }
+                availableSearchPoints.Add(searchPoint);
+            }
+        }
 
     }
 
@@ -100,10 +126,6 @@ public class EnemyBrain : MonoBehaviour
     {
         currentSearchIndex++;
     }
-
-
-
-
 
     private void ShuffleSearchPoints()
     {
@@ -133,7 +155,7 @@ public class EnemyBrain : MonoBehaviour
             SwitchState(investigateState);
         }
 
-        if ((currentState == investigateState || currentState == searchState )&& soundSensor.HasValidSound() && soundSensor.LastHeardRadius >= investigationThreshold)
+        if ((currentState == investigateState || currentState == searchState) && soundSensor.HasValidSound() && soundSensor.LastHeardRadius >= investigationThreshold)
         {
             float distance = Vector3.Distance(soundSensor.LastHeardPosition, currentInvestigationCenter);
             if (distance > currentInvestigationRadius)
@@ -160,7 +182,8 @@ public class EnemyBrain : MonoBehaviour
         if (currentInvestigationRadius <= 0f)
             return;
 
-        Gizmos.color = Color.red;
+        Gizmos.color = Color.orange;
+        
 
         DrawCircle(
             currentInvestigationCenter,

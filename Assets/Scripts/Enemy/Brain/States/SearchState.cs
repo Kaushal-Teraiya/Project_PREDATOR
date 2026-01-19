@@ -21,6 +21,7 @@ public class SearchState : IEnemyState
     public void OnEnter()
     {
         currentPhase = SearchPhase.Moving;
+        Debug.Log("searching starts");
         brain.InitializeSearch();
     }
     public void Tick()
@@ -70,6 +71,9 @@ public class SearchState : IEnemyState
             }
         }
     }
-    public void OnExit() { }
+    public void OnExit()
+    {
+        Debug.Log("exited searching");
+    }
 }
 

@@ -22,6 +22,7 @@ public class InvestigateState : IEnemyState
     public void OnEnter()
     {
         hasReachedDestination = false;
+        Debug.Log("investigation starts");
     }
 
     public void Tick()
@@ -38,6 +39,7 @@ public class InvestigateState : IEnemyState
     }
     public void OnExit()
     {
+        Debug.Log("investigation exits");
         brain.enemyMovement.Stop();
     }
 }
