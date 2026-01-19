@@ -1,5 +1,6 @@
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class EnemyMovement : MonoBehaviour
 {
@@ -8,9 +9,22 @@ public class EnemyMovement : MonoBehaviour
     [SerializeField] private float enemySpeed = 10f;
     [SerializeField] private float rotationSpeed = 360f;
     [SerializeField] private float rotationThreshold = 2f;
+    [SerializeField] private float separationWeight = 0.5f;
+    private ProximitySensor proximitySensor;
+
+    void Awake()
+    {
+        proximitySensor = GetComponentInChildren<ProximitySensor>();
+    }
     public void MoveTo(Vector3 destination)
     {
-        transform.position = Vector3.MoveTowards(transform.position, destination, enemySpeed * Time.deltaTime);
+        Vector3 Direction = destination - transform.position;
+        Direction = new Vector3(Direction.x, 0f, Direction.z);
+        Vector3 normalizedDirection = Direction.normalized;
+        Vector3 separationDirection = proximitySensor.GetSeparationDirection();
+        Vector3 finalDir = normalizedDirection + separationDirection * separationWeight;
+        Vector3  finalDirection = finalDir.normalized;
+        transform.position = Vector3.MoveTowards(transform.position, transform.position + finalDirection, enemySpeed * Time.deltaTime);
     }
 
     public bool RotateTowards(Vector3 worldDirection)

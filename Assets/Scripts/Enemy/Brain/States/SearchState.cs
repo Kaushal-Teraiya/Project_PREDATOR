@@ -6,6 +6,7 @@ public class SearchState : IEnemyState
     private float searchDuration;
     private float scanDuration = 5f;
     private float scanStartTime;
+    //private Vector3 personalOffset;
     private enum SearchPhase
     {
         Moving,
@@ -22,6 +23,9 @@ public class SearchState : IEnemyState
     {
         currentPhase = SearchPhase.Moving;
         Debug.Log("searching starts");
+        float radius = 5f;
+        Vector2 rnd = Random.insideUnitCircle * radius;
+      //  personalOffset = new Vector3(rnd.x, 0f, rnd.y);
         brain.InitializeSearch();
     }
     public void Tick()
