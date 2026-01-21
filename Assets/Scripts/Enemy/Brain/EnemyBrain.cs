@@ -24,6 +24,9 @@ public class EnemyBrain : MonoBehaviour
     public int currentSearchIndex { get; private set; }
     [SerializeField] private LayerMask searchPointLayer;
     [SerializeField] private float SearchPointFactorPercent = 0.5f;
+    private SearchPoint lastReleasedPoint;
+
+    private float lastReleaseTime;
     public bool IsSearchComplete
     {
         get
@@ -176,6 +179,22 @@ public class EnemyBrain : MonoBehaviour
         }
     }
 
+    public void NotifySearchPointReleased(SearchPoint point)
+    {
+        lastReleasedPoint = point;
+        lastReleaseTime = Time.time;
+    }
+
+    public bool CanClaim(SearchPoint point)
+    {
+        if (point == lastReleasedPoint && Time.time - lastReleaseTime < 0.3f)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
 
     void OnDrawGizmos()
     {
@@ -183,7 +202,7 @@ public class EnemyBrain : MonoBehaviour
             return;
 
         Gizmos.color = Color.orange;
-        
+
 
         DrawCircle(
             currentInvestigationCenter,

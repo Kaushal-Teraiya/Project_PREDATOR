@@ -1,74 +1,155 @@
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.SocialPlatforms;
 
 public class SearchState : IEnemyState
 {
     private EnemyBrain brain;
     private float searchDuration;
-    private float scanDuration = 5f;
-    private float observeDuration = 5f;
+    private float scanDuration = 10f;
+    private float observeDuration = 3f;
     private float observeStartTime;
     private float scanStartTime;
-    private float searchRadius = 3f;
+    private Vector3 LookAt;
+    private bool allowMove;
+    private bool allowRotate;
+
+
+
     //private Vector3 personalOffset;
     private enum SearchPhase
     {
         Moving,
         Scanning,
+        Spreading,
         Observing
     }
 
     private SearchPhase currentPhase;
     private SearchPoint currentTarget;
+    private Vector3 targetPosition;
     public SearchState(EnemyBrain brain)
     {
         this.brain = brain;
+
     }
     public void OnEnter()
     {
-        currentPhase = SearchPhase.Moving;
-        Debug.Log("searching starts");
-        float radius = 5f;
-        Vector2 rnd = Random.insideUnitCircle * radius;
-        //  personalOffset = new Vector3(rnd.x, 0f, rnd.y);
+        currentTarget = null;
+        targetPosition = Vector3.positiveInfinity;
         brain.InitializeSearch();
-    }
-    public void Tick()
-    {
-        if (currentPhase == SearchPhase.Moving)
+        if (currentTarget == null)
         {
-            var Enemy = brain.enemyMovement;
-            if (currentTarget == null)
-            {
-                currentTarget = brain.GetCurrentSearchPoint();
-            }
-
+            currentTarget = brain.GetCurrentSearchPoint();
             if (currentTarget == null)
             {
                 return;
             }
-            var direction = currentTarget.transform.position - Enemy.transform.position;
+            LogPhase($"Moving to SearchPoint: {currentTarget.name}");
+            targetPosition = currentTarget.transform.position;
+        }
+        SetLookAt(targetPosition);
+        currentPhase = SearchPhase.Moving;
+    }
+    public void Tick()
+    {
+        allowMove = allowRotate = false;
+        if (currentPhase == SearchPhase.Moving)
+        {
+            allowMove = allowRotate = true;
+            if (currentTarget == null)
+            {
+                currentTarget = brain.GetCurrentSearchPoint();
+                if (currentTarget == null)
+                {
+                    return;
+                }
+            }
 
-
-            Enemy.MoveTo(currentTarget.transform.position);
-            Enemy.RotateTowards(direction);
-
-            float distance = Vector3.Distance(currentTarget.transform.position, Enemy.transform.position);
+            float distance = Vector3.Distance(brain.transform.position, targetPosition);
             // float threshold = 0.2f;
 
-            if (distance <= searchRadius)// if enmies are in the search point radius
+            if (distance <= currentTarget.arrivalRadius)// if enmies are in the search point radius
             {
 
                 if (currentTarget.TryClaim(brain)) // only the claimer executes animation
                 {
-                    Enemy.Stop();
+                    LogPhase($"CLAIMED {currentTarget.name} → Scanning");
+                    brain.enemyMovement.Stop();
                     //snap to achor play animation and other stuff
                     currentPhase = SearchPhase.Scanning;
                     scanStartTime = Time.time;
+                    targetPosition = currentTarget.transform.position;
+                    SetLookAt(targetPosition);
+                    return;
                 }
                 else
                 {
-                    currentPhase = SearchPhase.Observing;
-                    observeStartTime = Time.time;
+                    if (!currentTarget.IsOccupied && currentTarget.IsCenterBlockedFor(brain))
+                    {
+                        // Do nothing this frame, retry claim next Tick
+                        return;
+                    }
+
+                    LogPhase($"FAILED claim → Spreading around {currentTarget.name}");
+                    float minRadius = currentTarget.searchPointRadius * 0.6f;
+                    float maxRadius = currentTarget.searchPointRadius * 0.9f;
+                    float minSpacing = 1.2f;
+                    int maxAttempts = 6;
+
+                    float baseAngle = GetObserverAngle();
+                    Vector3 chosenPos = brain.transform.position;
+
+                    for (int i = 0; i < maxAttempts; i++)
+                    {
+                        float angleOffset = i * 35f * Mathf.Deg2Rad;
+                        float angle = baseAngle + angleOffset;
+
+                        float radius = Random.Range(minRadius, maxRadius);
+
+                        Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
+                        Vector3 candidate = currentTarget.transform.position + offset;
+                        if (!IsPositionBlocked(candidate, minSpacing))
+                        {
+                            chosenPos = candidate;
+                            break;
+                        }
+                    }
+                    targetPosition = chosenPos;
+                    SetLookAt(targetPosition);
+                    currentPhase = SearchPhase.Spreading;
+
+                }
+
+            }
+        }
+
+
+        if (currentPhase == SearchPhase.Spreading)
+        {
+            allowMove = allowRotate = true;
+            var direction = targetPosition - brain.transform.position;
+
+            float settleRadius = 0.3f;
+            if (direction.sqrMagnitude <= settleRadius * settleRadius)
+            {
+                LogPhase($"Reached offset → Observing {currentTarget.name}");
+
+                brain.enemyMovement.Stop();
+                currentPhase = SearchPhase.Observing;
+                observeStartTime = Time.time;
+                bool isCurious = Random.value < 1f;
+                if (isCurious)
+                {
+                    SetLookAt(currentTarget.transform.position);
+                }
+                else
+                {
+                    float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
+                    var randomDir = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+                    float lookDistance = 3f;
+                    SetLookAt(brain.transform.position + randomDir * lookDistance);
+
                 }
 
 
@@ -77,49 +158,113 @@ public class SearchState : IEnemyState
 
         if (currentPhase == SearchPhase.Scanning)
         {
-            if (Time.time - scanStartTime < scanDuration)
+            allowMove = allowRotate = false;
+
+            //scan
+            if (Time.time - scanStartTime >= scanDuration)
             {
-                //scan
-                Debug.Log("Scanning the location");
-            }
-            else
-            {
+                LogPhase($"Scan complete → Releasing {currentTarget.name}");
                 currentTarget.Release(brain);
+                brain.NotifySearchPointReleased(currentTarget);
                 currentTarget = null;
-                currentPhase = SearchPhase.Moving;
                 brain.IncrementSearchIndex();
+                currentPhase = SearchPhase.Moving;
+
+                currentTarget = brain.GetCurrentSearchPoint();
+                if (currentTarget == null)
+                {
+                    return;
+                }
+                LogPhase($"Moving to SearchPoint: {currentTarget.name}");
+                targetPosition = currentTarget.transform.position;
+                SetLookAt(targetPosition);
+                return;
             }
         }
 
         if (currentPhase == SearchPhase.Observing)
         {
-            var Enemy = brain.enemyMovement;
+            allowMove = false;
+            allowRotate = true;
+
             if (currentTarget == null)
             {
                 return;
             }
 
-            bool observeExpired = (Time.time - observeStartTime) >= observeDuration;
-            if (observeExpired || !currentTarget.IsOccupied)
-            {
-                currentTarget = null;
-                currentPhase = SearchPhase.Moving;
-                brain.IncrementSearchIndex();
-            }
-            else
-            {
-                Debug.Log("observing");
-                Enemy.Stop();
-                var direction = currentTarget.transform.position - Enemy.transform.position;
-                Enemy.RotateTowards(direction);
-                //other animations and events
-            }
+            bool observeTimeElapsed = (Time.time - observeStartTime) >= observeDuration;
 
+
+            if (observeTimeElapsed)
+            {
+                //Remaining.........
+                bool isStillInterested = Random.value < 0.5f; //if its interested and scan is complete and observe time is not elapsed then move towards the same search point else lose interest
+                if (!isStillInterested)
+                {
+                    LogPhase($"Observation complete → Moving to next point");
+                    currentTarget = null;
+                    brain.IncrementSearchIndex();
+                    currentTarget = brain.GetCurrentSearchPoint();
+                    if (currentTarget == null)
+                        return;
+
+                    targetPosition = currentTarget.transform.position;
+                    SetLookAt(targetPosition);
+                    currentPhase = SearchPhase.Moving;
+                    return;
+                }
+               
+
+            }
         }
+
+        if (allowMove)
+        {
+            brain.enemyMovement.MoveTo(targetPosition);
+        }
+        if (allowRotate)
+        {
+            brain.enemyMovement.RotateTowards(LookAt - brain.transform.position);
+        }
+
+
     }
     public void OnExit()
     {
-        Debug.Log("exited searching");
+        LogPhase("EXIT SearchState");
     }
+
+    void LogPhase(string message)
+    {
+        Debug.Log($"[Search][{brain.name}] {message}");
+    }
+
+    float GetObserverAngle()
+    {
+        int hash = Mathf.Abs(brain.GetInstanceID());
+        return (hash % 360) * Mathf.Deg2Rad;
+    }
+
+    private void SetLookAt(Vector3 _LookAt)
+    {
+        LookAt = _LookAt;
+    }
+
+    bool IsPositionBlocked(Vector3 position, float radius)
+    {
+        Collider[] hits = Physics.OverlapSphere(position, radius);
+        foreach (var hit in hits)
+        {
+            if (hit.CompareTag("Enemy"))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+
+
 }
 

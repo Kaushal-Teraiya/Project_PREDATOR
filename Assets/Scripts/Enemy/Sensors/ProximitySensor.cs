@@ -12,10 +12,6 @@ public class ProximitySensor : MonoBehaviour
     }
     void OnTriggerEnter(Collider other)
     {
-
-        Debug.Log("Trigger entered by: " + other.name);
-
-
         var fella = other.gameObject.GetComponentInParent<EnemyMovement>();
 
         if (fella != null && fella != myself)
@@ -40,7 +36,6 @@ public class ProximitySensor : MonoBehaviour
     {
         if (otherZombies.Count == 0)
         {
-            Debug.Log("empty hashSet");
             return Vector3.zero;
         }
 

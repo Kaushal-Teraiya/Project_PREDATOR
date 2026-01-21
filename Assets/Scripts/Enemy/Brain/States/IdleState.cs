@@ -8,12 +8,12 @@ public class IdleState : IEnemyState
     }
     public void OnEnter()
     {
-        Debug.Log("idle starts");
+     
     }
     public void Tick() { }
     public void OnExit()
     {
-        Debug.Log("idle exits");
+        
     }
 }
 

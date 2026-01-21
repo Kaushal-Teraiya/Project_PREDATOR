@@ -31,7 +31,7 @@ public class SoundSensor : MonoBehaviour
         LastHeardTime = Time.time;
         HasHeardSound = true;
 
-        Debug.Log($"{name} heard sound at {LastHeardPosition}");
+      //  Debug.Log($"{name} heard sound at {LastHeardPosition}");
     }
 
     public bool HasValidSound()
