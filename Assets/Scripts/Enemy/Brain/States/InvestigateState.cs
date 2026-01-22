@@ -43,4 +43,3 @@ public class InvestigateState : IEnemyState
         brain.enemyMovement.Stop();
     }
 }
-

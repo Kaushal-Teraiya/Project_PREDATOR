@@ -6,13 +6,14 @@ public class SearchState : IEnemyState
 {
     private EnemyBrain brain;
     private float searchDuration;
-    private float scanDuration = 10f;
-    private float observeDuration = 3f;
+    private float scanDuration = 3f;
+    private float observeDuration = 5f;
     private float observeStartTime;
     private float scanStartTime;
     private Vector3 LookAt;
     private bool allowMove;
     private bool allowRotate;
+    private bool willRetryIfFreed;
 
 
 
@@ -138,7 +139,7 @@ public class SearchState : IEnemyState
                 brain.enemyMovement.Stop();
                 currentPhase = SearchPhase.Observing;
                 observeStartTime = Time.time;
-                bool isCurious = Random.value < 1f;
+                bool isCurious = Random.value < 0.5f;
                 if (isCurious)
                 {
                     SetLookAt(currentTarget.transform.position);
@@ -151,6 +152,8 @@ public class SearchState : IEnemyState
                     SetLookAt(brain.transform.position + randomDir * lookDistance);
 
                 }
+
+                willRetryIfFreed = Random.value < 0.1f;
 
 
             }
@@ -188,35 +191,42 @@ public class SearchState : IEnemyState
             allowRotate = true;
 
             if (currentTarget == null)
-            {
                 return;
-            }
 
             bool observeTimeElapsed = (Time.time - observeStartTime) >= observeDuration;
+            bool pointIsFree = !currentTarget.IsOccupied;
 
-
-            if (observeTimeElapsed)
+            //Early freed point
+            if (pointIsFree && !observeTimeElapsed)
             {
-                //Remaining.........
-                bool isStillInterested = Random.value < 0.5f; //if its interested and scan is complete and observe time is not elapsed then move towards the same search point else lose interest
-                if (!isStillInterested)
+                if (willRetryIfFreed)
                 {
-                    LogPhase($"Observation complete → Moving to next point");
-                    currentTarget = null;
-                    brain.IncrementSearchIndex();
-                    currentTarget = brain.GetCurrentSearchPoint();
-                    if (currentTarget == null)
-                        return;
-
+                    // immediately try to reclaim
                     targetPosition = currentTarget.transform.position;
                     SetLookAt(targetPosition);
                     currentPhase = SearchPhase.Moving;
                     return;
                 }
-               
+            }
 
+            //normal lose interest
+            if (observeTimeElapsed)
+            {
+                LogPhase($"Observation complete → Moving to next point");
+
+                currentTarget = null;
+                brain.IncrementSearchIndex();
+                currentTarget = brain.GetCurrentSearchPoint();
+                if (currentTarget == null)
+                    return;
+
+                targetPosition = currentTarget.transform.position;
+                SetLookAt(targetPosition);
+                currentPhase = SearchPhase.Moving;
+                return;
             }
         }
+
 
         if (allowMove)
         {
@@ -267,4 +277,3 @@ public class SearchState : IEnemyState
 
 
 }
-

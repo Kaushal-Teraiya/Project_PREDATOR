@@ -5,6 +5,7 @@ public class ProximitySensor : MonoBehaviour
 {
     private HashSet<EnemyMovement> otherZombies = new HashSet<EnemyMovement>();
     private EnemyMovement myself;
+
     //private Transform myself;
     void Awake()
     {
@@ -30,6 +31,18 @@ public class ProximitySensor : MonoBehaviour
             otherZombies.Remove(fella);
         }
 
+    }
+
+    public bool HasNearbyEnemy()
+    {
+        if (otherZombies != null)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 
     public Vector3 GetSeparationDirection()
