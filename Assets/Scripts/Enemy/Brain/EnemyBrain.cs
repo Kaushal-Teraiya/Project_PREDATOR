@@ -85,6 +85,11 @@ public class EnemyBrain : MonoBehaviour
             selectedSearchPoints.Add(availableSearchPoints[i]);
         }
 
+        foreach (var searchPoint in selectedSearchPoints)
+        {
+            searchPoint.GenerateSlots();
+        }
+
         currentSearchIndex = 0;
 
     }

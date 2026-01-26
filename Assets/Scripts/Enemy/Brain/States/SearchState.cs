@@ -1,3 +1,4 @@
+using System.Xml;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SocialPlatforms;
@@ -14,6 +15,7 @@ public class SearchState : IEnemyState
     private bool allowMove;
     private bool allowRotate;
     private bool willRetryIfFreed;
+    private int observerSlotIndex = -1;
 
 
 
@@ -92,33 +94,47 @@ public class SearchState : IEnemyState
                         return;
                     }
 
-                    LogPhase($"FAILED claim → Spreading around {currentTarget.name}");
-                    float minRadius = currentTarget.searchPointRadius * 0.6f;
-                    float maxRadius = currentTarget.searchPointRadius * 0.9f;
-                    float minSpacing = 1.2f;
-                    int maxAttempts = 6;
-
-                    float baseAngle = GetObserverAngle();
-                    Vector3 chosenPos = brain.transform.position;
-
-                    for (int i = 0; i < maxAttempts; i++)
+                    int slotIndex = currentTarget.TryClaimObserverSlot();
+                    if (slotIndex == -1)
                     {
-                        float angleOffset = i * 35f * Mathf.Deg2Rad;
-                        float angle = baseAngle + angleOffset;
-
-                        float radius = Random.Range(minRadius, maxRadius);
-
-                        Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
-                        Vector3 candidate = currentTarget.transform.position + offset;
-                        if (!IsPositionBlocked(candidate, minSpacing))
-                        {
-                            chosenPos = candidate;
-                            break;
-                        }
+                        currentTarget = null;
+                        brain.IncrementSearchIndex();
+                        currentPhase = SearchPhase.Moving;
+                        return;
                     }
-                    targetPosition = chosenPos;
+
+                    targetPosition = currentTarget.GetObserverPosition(slotIndex);
+                    observerSlotIndex = slotIndex;
                     SetLookAt(targetPosition);
                     currentPhase = SearchPhase.Spreading;
+
+                    // LogPhase($"FAILED claim → Spreading around {currentTarget.name}");
+                    // float minRadius = currentTarget.searchPointRadius * 0.6f;
+                    // float maxRadius = currentTarget.searchPointRadius * 0.9f;
+                    // float minSpacing = 1.2f;
+                    // int maxAttempts = 6;
+
+                    // float baseAngle = GetObserverAngle();
+                    // Vector3 chosenPos = brain.transform.position;
+
+                    // for (int i = 0; i < maxAttempts; i++)
+                    // {
+                    //     float angleOffset = i * 35f * Mathf.Deg2Rad;
+                    //     float angle = baseAngle + angleOffset;
+
+                    //     float radius = Random.Range(minRadius, maxRadius);
+
+                    //     Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
+                    //     Vector3 candidate = currentTarget.transform.position + offset;
+                    //     if (!IsPositionBlocked(candidate, minSpacing))
+                    //     {
+                    //         chosenPos = candidate;
+                    //         break;
+                    //     }
+                    // }
+                    // targetPosition = chosenPos;
+                    // SetLookAt(targetPosition);
+                    // currentPhase = SearchPhase.Spreading;
 
                 }
 
@@ -197,23 +213,25 @@ public class SearchState : IEnemyState
             bool pointIsFree = !currentTarget.IsOccupied;
 
             //Early freed point
-            if (pointIsFree && !observeTimeElapsed)
+            if (pointIsFree && !observeTimeElapsed && willRetryIfFreed)
             {
-                if (willRetryIfFreed)
-                {
-                    // immediately try to reclaim
-                    targetPosition = currentTarget.transform.position;
-                    SetLookAt(targetPosition);
-                    currentPhase = SearchPhase.Moving;
-                    return;
-                }
+
+                // immediately try to reclaim
+                targetPosition = currentTarget.transform.position;
+                SetLookAt(targetPosition);
+                currentTarget.ReleaseObserverSlot(observerSlotIndex);
+                observerSlotIndex = -1;
+                currentPhase = SearchPhase.Moving;
+                return;
+
             }
 
             //normal lose interest
             if (observeTimeElapsed)
             {
                 LogPhase($"Observation complete → Moving to next point");
-
+                currentTarget.ReleaseObserverSlot(observerSlotIndex);
+                observerSlotIndex = -1;
                 currentTarget = null;
                 brain.IncrementSearchIndex();
                 currentTarget = brain.GetCurrentSearchPoint();
@@ -242,6 +260,11 @@ public class SearchState : IEnemyState
     public void OnExit()
     {
         LogPhase("EXIT SearchState");
+        if (currentTarget != null && observerSlotIndex != -1)
+        {
+            currentTarget.ReleaseObserverSlot(observerSlotIndex);
+            observerSlotIndex = -1;
+        }
     }
 
     void LogPhase(string message)
@@ -249,29 +272,29 @@ public class SearchState : IEnemyState
         Debug.Log($"[Search][{brain.name}] {message}");
     }
 
-    float GetObserverAngle()
-    {
-        int hash = Mathf.Abs(brain.GetInstanceID());
-        return (hash % 360) * Mathf.Deg2Rad;
-    }
+    // float GetObserverAngle()
+    // {
+    //     int hash = Mathf.Abs(brain.GetInstanceID());
+    //     return (hash % 360) * Mathf.Deg2Rad;
+    // }
 
     private void SetLookAt(Vector3 _LookAt)
     {
         LookAt = _LookAt;
     }
 
-    bool IsPositionBlocked(Vector3 position, float radius)
-    {
-        Collider[] hits = Physics.OverlapSphere(position, radius);
-        foreach (var hit in hits)
-        {
-            if (hit.CompareTag("Enemy"))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
+    // bool IsPositionBlocked(Vector3 position, float radius)
+    // {
+    //     Collider[] hits = Physics.OverlapSphere(position, radius);
+    //     foreach (var hit in hits)
+    //     {
+    //         if (hit.CompareTag("Enemy"))
+    //         {
+    //             return true;
+    //         }
+    //     }
+    //     return false;
+    // }
 
 
 
