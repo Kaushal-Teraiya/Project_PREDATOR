@@ -22,6 +22,14 @@ public class ProximitySensor : MonoBehaviour
 
     }
 
+    public IEnumerable<EnemyMovement> NearbyZombies()
+    {
+        foreach (var zombie in otherZombies)
+        {
+            yield return zombie;
+        }
+    }
+
     void OnTriggerExit(Collider other)
     {
         var fella = other.gameObject.GetComponentInParent<EnemyMovement>();
@@ -35,14 +43,7 @@ public class ProximitySensor : MonoBehaviour
 
     public bool HasNearbyEnemy()
     {
-        if (otherZombies != null)
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+        return otherZombies.Count > 0;
     }
 
     public Vector3 GetSeparationDirection()
@@ -53,12 +54,13 @@ public class ProximitySensor : MonoBehaviour
         }
 
         Vector3 separation = Vector3.zero;
+        
         foreach (var zombie in otherZombies)
         {
             Vector3 direction = myself.transform.position - zombie.transform.position;
-            direction = new Vector3(direction.x, 0, direction.z);
-            Vector3 normalizedDirection = direction.normalized;
-            separation += normalizedDirection;
+            direction.y = 0f;
+            direction.Normalize();
+            separation += direction;
         }
 
         if (separation == Vector3.zero)
