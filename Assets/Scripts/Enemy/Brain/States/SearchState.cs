@@ -57,6 +57,7 @@ public class SearchState : IEnemyState
     public void Tick()
     {
         allowMove = allowRotate = false;
+        
         if (currentPhase == SearchPhase.Moving)
         {
             allowMove = allowRotate = true;
@@ -223,9 +224,10 @@ public class SearchState : IEnemyState
         {
             brain.enemyMovement.MoveTo(targetPosition);
         }
+
         if (allowRotate)
         {
-            if (brain.enemyMovement.isAvoiding())
+            if (brain.enemyMovement.IsAvoiding())
             {
                 //do nothin..
             }
@@ -236,9 +238,6 @@ public class SearchState : IEnemyState
         }
 
         brain.enemyMovement.SetRotationPermission(allowRotate);
-
-
-
     }
     public void OnExit()
     {

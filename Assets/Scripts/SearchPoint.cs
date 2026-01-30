@@ -54,9 +54,6 @@ public class SearchPoint : MonoBehaviour
         //validate slots here
     }
 
-
-
-
     private void ValidateSlots(List<AngularSlots> angularSlots)
     {
         for (int i = 0; i < angularSlotsList.Count; i++)
@@ -95,10 +92,8 @@ public class SearchPoint : MonoBehaviour
             }
 
         }
-
         Debug.Log("NO SLOTS");
         return -1;
-
 
     }
 
