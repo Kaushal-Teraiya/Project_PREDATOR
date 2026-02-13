@@ -1,3 +1,4 @@
+using Mono.Cecil.Cil;
 using Unity.Mathematics;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -6,8 +7,7 @@ using UnityEngine.InputSystem;
 
 public class EnemyMovement : MonoBehaviour
 {
-
-    //[SerializeField] private float stopDistance = 1.2f;
+   // [SerializeField] private float stopDistance = 1.2f;
     [SerializeField] private float enemySpeed = 10f;
     [SerializeField] private float rotationSpeed = 360f;
     [SerializeField] private float rotationThreshold = 2f;
@@ -17,12 +17,39 @@ public class EnemyMovement : MonoBehaviour
     private bool canRotate;
 
     private AvoidanceSteering avoidance;
+    public enum MovementMode
+    {
+        Idle,
+        Investigate,
+        Chase,
+        Search
+    }
+
+    public enum RotationPriority
+    {
+        None,
+        State,
+        Proximity,
+        Vision
+    }
+
+    private MovementMode currentMovementMode;
+    private RotationPriority currentRotationPriority;
+    private Vector3 currentRotationTargetPosition;
+    private Vector3 lastMovementDir;
 
 
     void Awake()
     {
         proximitySensor = GetComponentInChildren<ProximitySensor>();
         avoidance = GetComponent<AvoidanceSteering>();
+        canRotate = true;
+    }
+
+    private void Update()
+    {
+        ResolveSpeed();
+        ApplyRotation();
     }
 
     public void MoveTo(Vector3 destination)
@@ -44,6 +71,7 @@ public class EnemyMovement : MonoBehaviour
         if (avoidance != null && avoidance.HasOverrideDirection(out Vector3 overrideDir))
         {
             movementDir = overrideDir;
+
         }
         else
         {
@@ -59,28 +87,49 @@ public class EnemyMovement : MonoBehaviour
             movementDir += separationVector * separationWeight;
         }
 
-        movementDir = movementDir.normalized;
-
-        if (canRotate)
+        if (movementDir.sqrMagnitude > 0.0001f)
         {
-            RotateTowards(movementDir);
+            lastMovementDir = movementDir.normalized;
         }
+
+        movementDir = movementDir.normalized;
 
         transform.position = Vector3.MoveTowards(transform.position, transform.position + movementDir, enemySpeed * Time.deltaTime);
         Debug.DrawRay(transform.position, movementDir * 2f, Color.cyan);
 
     }
 
-    public bool RotateTowards(Vector3 worldDirection)
+    public bool RotateTowardsIntent()
     {
-        worldDirection.y = 0f;
-        Quaternion targetRotation = Quaternion.LookRotation(worldDirection.normalized);
-        if (worldDirection.sqrMagnitude < 0.0001f)
-            return true;
+        if (!canRotate)
+        {
+            Debug.Log("Rotation blocked by canRotate");
+            return false;
+        }
 
+        if (currentRotationPriority == RotationPriority.None)
+        {
+            return false;
+        }
+
+        var direction = currentRotationTargetPosition - transform.position;
+        direction.y = 0f;
+        Quaternion targetRotation = Quaternion.LookRotation(direction.normalized);
+        // if (direction.sqrMagnitude < 0.0001f)
+        //     return true;
+
+        Debug.Log($"Intent Dir Magnitude: {direction.magnitude}");
         transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
         float angle = Quaternion.Angle(transform.rotation, targetRotation);
-        return angle <= rotationThreshold;
+        bool rotationComplete = angle <= rotationThreshold;
+        Debug.Log($"Angle to target: {Quaternion.Angle(transform.rotation, targetRotation)}");
+
+        // if (rotationComplete)
+        // {
+        //     currentRotationPriority = RotationPriority.None;
+        //     return true;
+        // }
+        return false;
     }
 
     public bool IsAvoiding()
@@ -92,7 +141,82 @@ public class EnemyMovement : MonoBehaviour
         canRotate = allowRotate;
     }
 
+    public void SetMovementMode(MovementMode mode)
+    {
+        currentMovementMode = mode;
+    }
 
-    public void Stop() { }
+    private void ResolveSpeed()
+    {
+        switch (currentMovementMode)
+        {
+            case MovementMode.Idle:
+                enemySpeed = 0f;
+                break;
+
+            case MovementMode.Investigate:
+                enemySpeed = 2f;
+                break;
+
+            case MovementMode.Search:
+                enemySpeed = 4f;
+                break;
+
+            case MovementMode.Chase:
+                enemySpeed = 7f;
+                break;
+
+            default:
+                enemySpeed = 3f;
+                break;
+
+        }
+    }
+
+
+    public void RotationIntent(RotationPriority priority, Vector3 position)
+    {
+        Debug.Log($"Trying to set rotation intent: {priority}, Current: {currentRotationPriority}");
+
+        if (priority < currentRotationPriority)
+        {
+            return;
+        }
+
+        currentRotationTargetPosition = position;
+        currentRotationPriority = priority;
+        Debug.Log($"Rotation intent set to {priority}");
+    }
+    public void Stop()
+    {
+        enemySpeed = 0f;
+    }
+
+    private void ApplyRotation()
+    {
+        Debug.Log($"ApplyRotation - Current Priority: {currentRotationPriority}");
+
+        if (!canRotate)
+        {
+            return;
+        }
+
+        if (currentRotationPriority != RotationPriority.None)
+        {
+            RotateTowardsIntent();
+            return;
+        }
+
+        if (lastMovementDir.sqrMagnitude > 0.0001f)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(lastMovementDir);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+        }
+    }
+
+    public void ClearRotationIntent()
+    {
+        currentRotationPriority = RotationPriority.None;
+    }
 
 }

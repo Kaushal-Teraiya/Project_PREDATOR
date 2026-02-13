@@ -190,9 +190,7 @@ public class SearchPoint : MonoBehaviour
         if (searchPointRadius <= 0f)
             return;
 
-        Gizmos.color = Color.orange;
-
-
+        Gizmos.color = Color.hotPink;
         DrawCircle(
             transform.position,
             searchPointRadius,

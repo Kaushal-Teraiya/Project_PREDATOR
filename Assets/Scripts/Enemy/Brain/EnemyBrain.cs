@@ -1,29 +1,39 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Threading;
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.Rendering;
 
 public class EnemyBrain : MonoBehaviour
 {
+    [SerializeField] private float InvestigateAreaRadius;
+    [SerializeField] private float proximityRadius;
+    [SerializeField] private float maxRadiusForHearing = 8f;
+    [SerializeField] private LayerMask searchPointLayer;
+    [SerializeField] private float SearchPointFactorPercent = 0.5f;
+    [SerializeField] private float arrivalRadius = 0.5f;
+    [SerializeField] private LayerMask obstacleMask;
+    [SerializeField] private float visionGraceDuration = 0.2f;
+
     private SoundSensor soundSensor;
+    private VisionSensor visionSensor;
     private EnemyMovement Movement_Enemy;
     public EnemyMovement enemyMovement => Movement_Enemy;
     private IEnemyState currentState;
     private IdleState idleState;
     private InvestigateState investigateState;
     private SearchState searchState;
+    private ChaseState chaseState;
     private Vector3 currentInvestigationCenter;
     private float currentInvestigationRadius;
-    private GameObject player;
-    [SerializeField] private float InvestigateAreaRadius;
-    [SerializeField] private float proximityRadius;
-    [SerializeField] private float investigationThreshold = 8f;
+    public GameObject player { get; private set; }
     private List<SearchPoint> availableSearchPoints = new List<SearchPoint>();
     private List<SearchPoint> selectedSearchPoints = new List<SearchPoint>();
     public int currentSearchIndex { get; private set; }
-    [SerializeField] private LayerMask searchPointLayer;
-    [SerializeField] private float SearchPointFactorPercent = 0.5f;
     private SearchPoint lastReleasedPoint;
-
     private float lastReleaseTime;
     public bool IsSearchComplete
     {
@@ -32,11 +42,19 @@ public class EnemyBrain : MonoBehaviour
             return currentSearchIndex >= selectedSearchPoints.Count;
         }
     }
-
+    public Vector3 lastConfirmedPosition { get; private set; }
+    public float lastConfirmedSeenTime { get; private set; }
+    private bool currentlyChasing;
+    public float chaseTimeLimit { get; private set; } = 2f;
+    public Vector3 chaseTargetPosition { get; private set; }
+    private float lastChaseTime;
+    private Vector3 investigationForward;
+    private bool postChase;
 
     void Awake()
     {
         soundSensor = GetComponent<SoundSensor>();
+        visionSensor = GetComponentInChildren<VisionSensor>();
         Movement_Enemy = GetComponent<EnemyMovement>();
     }
     void Start()
@@ -44,40 +62,45 @@ public class EnemyBrain : MonoBehaviour
         idleState = new IdleState(this);
         searchState = new SearchState(this);
         investigateState = new InvestigateState(this);
+        chaseState = new ChaseState(this);
         SwitchState(idleState);
         player = GameObject.FindGameObjectWithTag("Player");
     }
 
     void Update()
     {
-        currentState?.Tick();
+        CheckPerception();
         CheckStateChange();
+        currentState?.Tick();
     }
 
     private void SwitchState(IEnemyState newState)
     {
+        enemyMovement.SetRotationPermission(true);
+        enemyMovement.ClearRotationIntent();
         currentState?.OnExit();
         currentState = newState;
         currentState?.OnEnter();
 
     }
 
-    private void InitializeInvestigateState()
+    private void InitializeInvestigateState(Vector3 lastKnownPosition, float radius)
     {
-        currentInvestigationCenter = soundSensor.LastHeardPosition;
-        currentInvestigationRadius = InvestigateAreaRadius;
+        currentInvestigationCenter = lastKnownPosition;
+        currentInvestigationRadius = radius;
+        // currentInvestigationCenter = soundSensor.LastHeardPosition;
+        // currentInvestigationRadius = InvestigateAreaRadius;
         investigateState.SetAreaCenter_AreaRadius(currentInvestigationCenter, currentInvestigationRadius);
     }
 
     public void InitializeSearch()
     {
-
         CollectNearbySearchPoints();
         ShuffleSearchPoints();
 
         var pickN = availableSearchPoints.Count * SearchPointFactorPercent;
-        int rounUp = (int)Mathf.Ceil((float)pickN);
-        int finalN = Mathf.Clamp(rounUp, 2, 8);
+        int roundUp = (int)Mathf.Ceil((float)pickN);
+        int finalN = Mathf.Clamp(roundUp, 2, 8);
         finalN = (int)MathF.Min(finalN, availableSearchPoints.Count);
 
         for (int i = 0; i < finalN; i++)
@@ -90,8 +113,21 @@ public class EnemyBrain : MonoBehaviour
             searchPoint.GenerateSlots();
         }
 
-        currentSearchIndex = 0;
+        if (postChase)
+        {
+            for (int i = selectedSearchPoints.Count - 1; i >= 0; i--)
+            {
+                Vector3 toPoint = selectedSearchPoints[i].transform.position - currentInvestigationCenter;
+                toPoint.y = 0f;
+                if (Vector3.Dot(investigationForward.normalized, toPoint.normalized) <= 0f)
+                {
+                    selectedSearchPoints.RemoveAt(i);
+                }
 
+            }
+        }
+        currentSearchIndex = 0;
+        Debug.Log($"Selected Search Points Count: {selectedSearchPoints.Count}");
     }
 
     private void CollectNearbySearchPoints()
@@ -144,29 +180,26 @@ public class EnemyBrain : MonoBehaviour
         }
     }
 
-
-
     private void CheckStateChange()
     {
-        float proximityCheck = Vector3.Distance(player.transform.position, transform.position);
-        if (proximityCheck < proximityRadius)
+        if (currentState != chaseState && visionSensor.HasLineOfSight)
         {
-            //later we can add closest player for multiplayer here
-            Debug.Log("player is right in front of me");
-            return; //just for now so it doesnt start executing other states
+            SwitchState(chaseState);
+            return;
         }
-        if (currentState == idleState && soundSensor.HasValidSound() && soundSensor.LastHeardRadius >= investigationThreshold)
+
+        if (currentState == idleState && soundSensor.HasValidSound() && soundSensor.LastHeardRadius >= maxRadiusForHearing)
         {
-            InitializeInvestigateState();
+            InitializeInvestigateState(soundSensor.LastHeardPosition, InvestigateAreaRadius);
             SwitchState(investigateState);
         }
 
-        if ((currentState == investigateState || currentState == searchState) && soundSensor.HasValidSound() && soundSensor.LastHeardRadius >= investigationThreshold)
+        if ((currentState == investigateState || currentState == searchState) && soundSensor.HasValidSound() && soundSensor.LastHeardRadius >= maxRadiusForHearing)
         {
             float distance = Vector3.Distance(soundSensor.LastHeardPosition, currentInvestigationCenter);
             if (distance > currentInvestigationRadius)
             {
-                InitializeInvestigateState();
+                InitializeInvestigateState(soundSensor.LastHeardPosition, InvestigateAreaRadius);
                 SwitchState(investigateState);
             }
         }
@@ -180,6 +213,38 @@ public class EnemyBrain : MonoBehaviour
         {
             SwitchState(idleState);
         }
+
+    }
+
+    private void CheckPerception()
+    {
+        if (visionSensor != null && HasVision())
+        {
+            lastConfirmedPosition = visionSensor.LastSeenPosition;
+            lastConfirmedSeenTime = visionSensor.LastSeenTime;
+            if (currentlyChasing)
+            {
+                chaseTargetPosition = lastConfirmedPosition;
+                lastChaseTime = Time.time;
+            }
+
+        }
+
+        Vector3 origin = visionSensor.transform.position;
+        Vector3 direction = player.transform.position - visionSensor.transform.position;
+        float distance = direction.magnitude;
+        bool recentlyChasing = currentlyChasing || Time.time - lastChaseTime <= visionGraceDuration;
+        RaycastHit hit;
+
+        if (distance < proximityRadius && !HasVision()) //this means even if we are not in enemy's vision it can still sense us if we are near them
+        {
+            if (!Physics.Raycast(origin, direction.normalized, out hit, distance, obstacleMask))
+            {
+                enemyMovement.RotationIntent(EnemyMovement.RotationPriority.Proximity, origin + direction.normalized);
+            }
+            //later we can add closest player for multiplayer here
+            // Debug.Log(hit.collider.gameObject.layer);
+        }
     }
 
     public void NotifySearchPointReleased(SearchPoint point)
@@ -187,6 +252,7 @@ public class EnemyBrain : MonoBehaviour
         lastReleasedPoint = point;
         lastReleaseTime = Time.time;
     }
+
 
     public bool CanClaim(SearchPoint point)
     {
@@ -204,13 +270,41 @@ public class EnemyBrain : MonoBehaviour
         if (currentInvestigationRadius <= 0f)
             return;
 
-        Gizmos.color = Color.orange;
+        Gizmos.color = UnityEngine.Color.orange;
 
 
         DrawCircle(
             currentInvestigationCenter,
             currentInvestigationRadius,
             40
+        );
+
+        if (currentInvestigationRadius > 0f)
+        {
+            Gizmos.color = UnityEngine.Color.orange;
+            DrawCircle(currentInvestigationCenter, currentInvestigationRadius, 40);
+        }
+
+        //to visualize last chase target position 
+        if (chaseTargetPosition != Vector3.zero)
+        {
+            Gizmos.color = UnityEngine.Color.red;
+
+            // Sphere at last chase position
+            Gizmos.DrawSphere(chaseTargetPosition, 0.25f);
+
+            // Line from zombie to chase target
+            Gizmos.DrawLine(transform.position, chaseTargetPosition);
+        }
+
+        Gizmos.color = new UnityEngine.Color(0f, 1f, 1f, 0.8f); // bright cyan
+
+        DrawCircle(transform.position, proximityRadius, 40);
+
+        // Optional vertical line for clarity
+        Gizmos.DrawLine(
+            transform.position,
+            transform.position + Vector3.up * 2f
         );
     }
 
@@ -232,5 +326,54 @@ public class EnemyBrain : MonoBehaviour
             prevPoint = nextPoint;
         }
     }
+
+    public bool HasReachedThePosition(Vector3 lastConfirmedPosition)
+    {
+        Vector3 toTarget = lastConfirmedPosition - transform.position;
+        toTarget.y = 0f;
+
+        return toTarget.sqrMagnitude <= arrivalRadius * arrivalRadius;
+    }
+
+    public void SetCurrentlyChasing(bool _isChasing)
+    {
+        currentlyChasing = _isChasing;
+
+        if (_isChasing)
+        {
+            lastChaseTime = Time.time;
+        }
+    }
+
+    public void EndChase(Vector3 lastChasePosition)
+    {
+        SetCurrentlyChasing(false);
+        SetInvestigationForward(enemyMovement.transform.forward);
+        InitializeInvestigateState(lastChasePosition, InvestigateAreaRadius);
+        postChase = true;
+        SwitchState(investigateState);
+    }
+
+
+    public bool HasVision()
+    {
+        return visionSensor.HasLineOfSight;
+    }
+
+    public void InitializeChase()
+    {
+        chaseTargetPosition = lastConfirmedPosition;
+    }
+
+    private void SetInvestigationForward(Vector3 forward)
+    {
+        investigationForward = forward;
+    }
+
+    public void SetPostChase(bool _postChase)
+    {
+        postChase = _postChase;
+    }
+
 
 }

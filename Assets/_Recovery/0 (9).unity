@@ -250,9 +250,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2680e5a585c37b34baec1a567ab90ffb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VisionSensor
-  maxViewDistance: 50
+  maxViewDistance: 20
   player: {fileID: 1584050596}
-  dotProductThreshold: 0.5
+  dotProductThreshold: 0.2
   obstacleMask:
     serializedVersion: 2
     m_Bits: 64
@@ -886,7 +886,7 @@ Transform:
   m_GameObject: {fileID: 1237495237}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0.7237904, z: -0, w: 0.69001997}
-  m_LocalPosition: {x: 5.3, y: -0.03, z: -7.13}
+  m_LocalPosition: {x: 13.1, y: -0.03, z: -7.13}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -934,6 +934,7 @@ MonoBehaviour:
   obstacleMask:
     serializedVersion: 2
     m_Bits: 64
+  proximityCooldown: 1
   visionGraceDuration: 3
 --- !u!54 &1237495242
 Rigidbody:
@@ -1373,7 +1374,7 @@ Transform:
   m_GameObject: {fileID: 1584050592}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 21.19, y: 1.99, z: 2.23}
+  m_LocalPosition: {x: 5.08, y: 1.99, z: 14.2}
   m_LocalScale: {x: 1, y: 2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:

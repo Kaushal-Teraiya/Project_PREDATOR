@@ -8,9 +8,9 @@ public class IdleState : IEnemyState
     }
     public void OnEnter()
     {
-     
+        brain.enemyMovement.SetMovementMode(EnemyMovement.MovementMode.Idle);
     }
-    public void Tick() { }
+    public void Tick() {}
     public void OnExit()
     {
         

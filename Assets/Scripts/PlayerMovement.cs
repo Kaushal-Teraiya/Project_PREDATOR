@@ -9,11 +9,10 @@ public class PlayerMovement : MonoBehaviour
 
     [SerializeField] private float playerWalkSpeed = 5f;
     [SerializeField] private float playerRunSpeed = 10f;
+    [SerializeField] private float jumpHeight = 1.5f;
     private float playerSpeed;
     private float soundEmissionRadius;
-    private Vector3 playerVelocity;
-    private float jumpHeight = 1.5f;
-    private float gravityValue = -9.8f;
+    private Vector3 playerVelocity; private float gravityValue = -9.8f;
     private bool isGrounded;
 
     public InputActionReference moveAction;

@@ -38,6 +38,7 @@ public class SearchState : IEnemyState
     }
     public void OnEnter()
     {
+        brain.enemyMovement.SetMovementMode(EnemyMovement.MovementMode.Search);
         currentTarget = null;
         targetPosition = Vector3.positiveInfinity;
         brain.InitializeSearch();
@@ -56,8 +57,10 @@ public class SearchState : IEnemyState
     }
     public void Tick()
     {
+
+        var Enemy = brain.enemyMovement;
         allowMove = allowRotate = false;
-        
+
         if (currentPhase == SearchPhase.Moving)
         {
             allowMove = allowRotate = true;
@@ -80,7 +83,7 @@ public class SearchState : IEnemyState
                 if (currentTarget.TryClaim(brain)) // only the claimer executes animation
                 {
                     LogPhase($"CLAIMED {currentTarget.name} → Scanning");
-                    brain.enemyMovement.Stop();
+                    Enemy.Stop();
                     //snap to achor play animation and other stuff
                     currentPhase = SearchPhase.Scanning;
                     scanStartTime = Time.time;
@@ -126,7 +129,7 @@ public class SearchState : IEnemyState
             {
                 LogPhase($"Reached offset → Observing {currentTarget.name}");
 
-                brain.enemyMovement.Stop();
+                Enemy.Stop();
                 currentPhase = SearchPhase.Observing;
                 observeStartTime = Time.time;
                 bool isCurious = Random.value < 0.5f;
@@ -222,22 +225,27 @@ public class SearchState : IEnemyState
 
         if (allowMove)
         {
-            brain.enemyMovement.MoveTo(targetPosition);
+            Enemy.MoveTo(targetPosition);
         }
 
         if (allowRotate)
         {
-            if (brain.enemyMovement.IsAvoiding())
-            {
-                //do nothin..
-            }
-            else
-            {
-                brain.enemyMovement.RotateTowards(LookAt - brain.transform.position);
-            }
+            Enemy.RotationIntent(EnemyMovement.RotationPriority.State, LookAt);
         }
 
-        brain.enemyMovement.SetRotationPermission(allowRotate);
+        Enemy.SetRotationPermission(allowRotate);
+
+        // if (allowRotate)
+        // {
+        //     if (brain.enemyMovement.IsAvoiding())
+        //     {
+        //         //do nothin..
+        //     }
+        //     else
+        //     {
+        //        // brain.enemyMovement.RotateTowards(LookAt - brain.transform.position);
+        //     }
+        // }
     }
     public void OnExit()
     {
@@ -247,6 +255,8 @@ public class SearchState : IEnemyState
             currentTarget.ReleaseObserverSlot(observerSlotIndex);
             observerSlotIndex = -1;
         }
+        brain.SetPostChase(false);
+        
     }
 
     void LogPhase(string message)
