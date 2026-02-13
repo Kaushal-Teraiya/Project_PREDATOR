@@ -7,7 +7,7 @@ using UnityEngine.InputSystem;
 
 public class EnemyMovement : MonoBehaviour
 {
-   // [SerializeField] private float stopDistance = 1.2f;
+    [SerializeField] private float stopDistance = 1.2f;
     [SerializeField] private float enemySpeed = 10f;
     [SerializeField] private float rotationSpeed = 360f;
     [SerializeField] private float rotationThreshold = 2f;
