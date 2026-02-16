@@ -7,7 +7,8 @@ using UnityEngine.InputSystem;
 
 public class EnemyMovement : MonoBehaviour
 {
-    [SerializeField] private float stopDistance = 1.2f;
+    [Header("Tunable Parameters")]
+    //[SerializeField] private float stopDistance = 1.2f;
     [SerializeField] private float enemySpeed = 10f;
     [SerializeField] private float rotationSpeed = 360f;
     [SerializeField] private float rotationThreshold = 2f;
@@ -15,7 +16,6 @@ public class EnemyMovement : MonoBehaviour
 
     private ProximitySensor proximitySensor;
     private bool canRotate;
-
     private AvoidanceSteering avoidance;
     public enum MovementMode
     {
@@ -201,6 +201,21 @@ public class EnemyMovement : MonoBehaviour
             return;
         }
 
+        if (avoidance != null && avoidance.IsAvoiding())
+        {
+            if (lastMovementDir.sqrMagnitude > 0.0001f)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(lastMovementDir);
+                transform.rotation = Quaternion.RotateTowards(
+                    transform.rotation,
+                    targetRotation,
+                    rotationSpeed * Time.deltaTime
+                );
+            }
+            return;
+        }
+
+
         if (currentRotationPriority != RotationPriority.None)
         {
             RotateTowardsIntent();
@@ -212,6 +227,8 @@ public class EnemyMovement : MonoBehaviour
             Quaternion targetRotation = Quaternion.LookRotation(lastMovementDir);
             transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
         }
+
+        ClearRotationIntent();
     }
 
     public void ClearRotationIntent()

@@ -9,6 +9,7 @@ public class IdleState : IEnemyState
     public void OnEnter()
     {
         brain.enemyMovement.SetMovementMode(EnemyMovement.MovementMode.Idle);
+        Debug.Log("[idleState] Idle State started.");
     }
     public void Tick() {}
     public void OnExit()

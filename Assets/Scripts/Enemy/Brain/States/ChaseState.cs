@@ -22,6 +22,11 @@ public class ChaseState : IEnemyState
     public void Tick()
     {
         var Enemy = brain.enemyMovement;
+        var dir = brain.transform.position - brain.player.transform.position;
+        dir.Normalize();
+        var offset = brain.attackDistance - 0.5f;
+        var desiredPoint = brain.player.transform.position + dir * offset;
+
         if (brain.HasVision())
         {
             if (chaseTimer > 0f)
@@ -29,22 +34,27 @@ public class ChaseState : IEnemyState
                 Debug.Log($"[CHASE] Vision reacquired. Timer reset from {chaseTimer:F2}");
             }
             chaseTimer = 0f;
-            Enemy.MoveTo(brain.chaseTargetPosition);
+            Enemy.MoveTo(desiredPoint);
             Enemy.RotationIntent(EnemyMovement.RotationPriority.Vision, brain.chaseTargetPosition);
         }
         else
         {
             Enemy.MoveTo(brain.chaseTargetPosition);
-            // if (chaseTimer > brain.chaseTimeLimit && !brain.HasVision())
-            // {
-            //     Debug.Log("[CHASE] Timer exceeded. Ending chase.");
-            //     brain.EndChase(brain.chaseTargetPosition);
-            // }
 
             if (brain.HasReachedThePosition(brain.chaseTargetPosition))
             {
                 brain.EndChase(brain.chaseTargetPosition);
             }
+        }
+
+        var distanceToPlayer = Vector3.Distance(brain.transform.position, brain.player.transform.position);
+        var directionToPlayer = brain.player.transform.position - brain.transform.position;
+        var dot = Vector3.Dot(brain.transform.forward.normalized, directionToPlayer.normalized);
+
+        if (!brain.IsInState(brain.AttackState) && brain.HasVision() && distanceToPlayer <= brain.attackDistance && !brain.IsInCooldown() && dot > 0.5f)
+        {
+            Debug.Log("[Chase] Entering Attack.");
+            brain.SwitchState(brain.AttackState);
         }
     }
 
