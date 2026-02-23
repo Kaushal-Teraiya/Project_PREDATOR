@@ -127,7 +127,7 @@ public class SearchPoint : MonoBehaviour
         angularSlotsList.Clear();
     }
 
-    public void Release(EnemyBrain requester)
+    public void ReleaseSearchPoint(EnemyBrain requester)
     {
         if (currentOccupant != requester)
         {
@@ -139,7 +139,7 @@ public class SearchPoint : MonoBehaviour
         currentOccupant = null;
     }
 
-    public bool TryClaim(EnemyBrain requester)
+    public bool TryClaimSearchPoint(EnemyBrain requester)
     {
         if (IsOccupied)
         {

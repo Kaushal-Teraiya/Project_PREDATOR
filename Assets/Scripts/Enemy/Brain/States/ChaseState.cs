@@ -7,7 +7,7 @@ public class ChaseState : IEnemyState
     {
         this.brain = brain;
     }
-    private float chaseTimer;
+   // private float chaseTimer;
 
 
     public void OnEnter()
@@ -15,7 +15,7 @@ public class ChaseState : IEnemyState
         Debug.Log("Entered Chase");
         brain.SetCurrentlyChasing(true);
         brain.enemyMovement.SetMovementMode(EnemyMovement.MovementMode.Chase);
-        chaseTimer = 0f;
+      //  chaseTimer = 0f;
         brain.InitializeChase();
         //enemy speed change intent will be set here and movement mode emum will set the speeds inside the enemyMovement 
     }
@@ -29,11 +29,11 @@ public class ChaseState : IEnemyState
 
         if (brain.HasVision())
         {
-            if (chaseTimer > 0f)
-            {
-                Debug.Log($"[CHASE] Vision reacquired. Timer reset from {chaseTimer:F2}");
-            }
-            chaseTimer = 0f;
+            // if (chaseTimer > 0f)
+            // {
+            //     Debug.Log($"[CHASE] Vision reacquired. Timer reset from {chaseTimer:F2}");
+            // }
+          //  chaseTimer = 0f;
             Enemy.MoveTo(desiredPoint);
             Enemy.RotationIntent(EnemyMovement.RotationPriority.Vision, brain.chaseTargetPosition);
         }

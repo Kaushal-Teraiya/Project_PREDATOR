@@ -22,7 +22,8 @@ public class EnemyMovement : MonoBehaviour
         Idle,
         Investigate,
         Chase,
-        Search
+        Search,
+        Wander
     }
 
     public enum RotationPriority
@@ -118,11 +119,11 @@ public class EnemyMovement : MonoBehaviour
         // if (direction.sqrMagnitude < 0.0001f)
         //     return true;
 
-        Debug.Log($"Intent Dir Magnitude: {direction.magnitude}");
+//        Debug.Log($"Intent Dir Magnitude: {direction.magnitude}");
         transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
         float angle = Quaternion.Angle(transform.rotation, targetRotation);
         bool rotationComplete = angle <= rotationThreshold;
-        Debug.Log($"Angle to target: {Quaternion.Angle(transform.rotation, targetRotation)}");
+//        Debug.Log($"Angle to target: {Quaternion.Angle(transform.rotation, targetRotation)}");
 
         // if (rotationComplete)
         // {
@@ -166,6 +167,10 @@ public class EnemyMovement : MonoBehaviour
                 enemySpeed = 7f;
                 break;
 
+            case MovementMode.Wander:
+                enemySpeed = 5f;
+                break;
+
             default:
                 enemySpeed = 3f;
                 break;
@@ -176,7 +181,7 @@ public class EnemyMovement : MonoBehaviour
 
     public void RotationIntent(RotationPriority priority, Vector3 position)
     {
-        Debug.Log($"Trying to set rotation intent: {priority}, Current: {currentRotationPriority}");
+//        Debug.Log($"Trying to set rotation intent: {priority}, Current: {currentRotationPriority}");
 
         if (priority < currentRotationPriority)
         {
@@ -185,7 +190,7 @@ public class EnemyMovement : MonoBehaviour
 
         currentRotationTargetPosition = position;
         currentRotationPriority = priority;
-        Debug.Log($"Rotation intent set to {priority}");
+//        Debug.Log($"Rotation intent set to {priority}");
     }
     public void Stop()
     {
@@ -194,7 +199,7 @@ public class EnemyMovement : MonoBehaviour
 
     private void ApplyRotation()
     {
-        Debug.Log($"ApplyRotation - Current Priority: {currentRotationPriority}");
+//        Debug.Log($"ApplyRotation - Current Priority: {currentRotationPriority}");
 
         if (!canRotate)
         {
@@ -234,6 +239,12 @@ public class EnemyMovement : MonoBehaviour
     public void ClearRotationIntent()
     {
         currentRotationPriority = RotationPriority.None;
+    }
+
+    public void DisableProximity()
+    {
+        proximitySensor.enabled = false;
+        avoidance.enabled = false;
     }
 
 }

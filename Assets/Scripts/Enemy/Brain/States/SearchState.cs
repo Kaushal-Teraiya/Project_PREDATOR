@@ -80,7 +80,7 @@ public class SearchState : IEnemyState
             if (distance <= currentTarget.arrivalRadius)// if enmies are in the search point radius
             {
 
-                if (currentTarget.TryClaim(brain)) // only the claimer executes animation
+                if (currentTarget.TryClaimSearchPoint(brain)) // only the claimer executes animation
                 {
                     LogPhase($"CLAIMED {currentTarget.name} → Scanning");
                     Enemy.Stop();
@@ -160,7 +160,7 @@ public class SearchState : IEnemyState
             if (Time.time - scanStartTime >= scanDuration)
             {
                 LogPhase($"Scan complete → Releasing {currentTarget.name}");
-                currentTarget.Release(brain);
+                currentTarget.ReleaseSearchPoint(brain);
                 brain.NotifySearchPointReleased(currentTarget);
                 currentTarget = null;
                 brain.IncrementSearchIndex();
@@ -261,7 +261,7 @@ public class SearchState : IEnemyState
 
     void LogPhase(string message)
     {
-        Debug.Log($"[Search][{brain.name}] {message}");
+//        Debug.Log($"[Search][{brain.name}] {message}");
     }
 
     private void SetLookAt(Vector3 _LookAt)

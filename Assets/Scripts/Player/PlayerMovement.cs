@@ -65,4 +65,11 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    public void DisableMovement()
+    {
+        moveAction.action.Disable();
+        jumpAction.action.Disable();
+        runAction.action.Disable();
+    }
+
 }

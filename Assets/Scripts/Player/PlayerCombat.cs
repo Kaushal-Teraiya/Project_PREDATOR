@@ -11,7 +11,6 @@ public class PlayerCombat : MonoBehaviour
     void Start()
     {
         attack.action.Enable();
-
     }
 
     void Update()
@@ -28,7 +27,7 @@ public class PlayerCombat : MonoBehaviour
             {
                 IDamageable damageable = HitInfo.collider.GetComponentInParent<IDamageable>();
 
-                if (damageable != null)
+                if (damageable != null && damageable!= transform.GetComponentInParent<IDamageable>())
                 {
                     Debug.Log("[PlayerCombat] Applying Damage to Enemies.");
                     damageable.TakeDamage(damageAmount);
@@ -39,5 +38,10 @@ public class PlayerCombat : MonoBehaviour
                 }
             }
         }
+    }
+
+    public void DisableCombat()
+    {
+        attack.action.Disable();
     }
 }

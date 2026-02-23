@@ -31,8 +31,12 @@ public class EnemyBrain : MonoBehaviour
     private SearchState searchState;
     private ChaseState chaseState;
     private AttackState attackState;
+    private DeadState deadState;
+    private WanderState wanderState;
+    public IEnemyState WanderState => wanderState;
     public IEnemyState AttackState => attackState;
     public IEnemyState ChaseState => chaseState;
+    public IEnemyState IdleState => idleState;
 
     [Header("Object & Script References")]
     private EnemyMovement Movement_Enemy;
@@ -41,6 +45,11 @@ public class EnemyBrain : MonoBehaviour
     private float currentInvestigationRadius;
     public GameObject player { get; private set; }
     private PlayerHealth playerHealth;
+    private EnemyHealth enemyHealth;
+    public EnemyHealth _enemyHealth => enemyHealth;
+    [SerializeField]private WayPointManager wayPointManager;
+    public WayPointManager _WayPointManager => wayPointManager;
+
 
     [Header("SearchPoint Data")]
     private List<SearchPoint> availableSearchPoints = new List<SearchPoint>();
@@ -70,12 +79,18 @@ public class EnemyBrain : MonoBehaviour
     private float lastAttackEndTime;
     public int attackDamage { get; private set; } = 50;
 
+    [Header("WanderState Data")]
+    [SerializeField]private float wayPointCollectionRadius = 10f;
+    public float _WayPointCollectionRadius => wayPointCollectionRadius;
+    public LayerMask wayPointMask;
+
 
     void Awake()
     {
         soundSensor = GetComponent<SoundSensor>();
         visionSensor = GetComponentInChildren<VisionSensor>();
         Movement_Enemy = GetComponent<EnemyMovement>();
+        enemyHealth = GetComponent<EnemyHealth>();
     }
     void Start()
     {
@@ -84,6 +99,8 @@ public class EnemyBrain : MonoBehaviour
         investigateState = new InvestigateState(this);
         chaseState = new ChaseState(this);
         attackState = new AttackState(this);
+        deadState = new DeadState(this);
+        wanderState = new WanderState(this);
         SwitchState(idleState);
         player = GameObject.FindGameObjectWithTag("Player");
         playerHealth = player.GetComponent<PlayerHealth>();
@@ -209,6 +226,16 @@ public class EnemyBrain : MonoBehaviour
 
     private void CheckStateChange()
     {
+        if (IsInState(deadState))
+        {
+            return;
+        }
+
+        if (IsInState(wanderState) && HasVision())
+        {
+            SwitchState(chaseState);
+        }
+
         if (!IsInState(chaseState) && !IsInState(attackState) && HasVision())
         {
             SwitchState(chaseState);
@@ -354,6 +381,17 @@ public class EnemyBrain : MonoBehaviour
     public void NotifyAttackEnded()
     {
         lastAttackEndTime = Time.time;
+    }
+
+    public void HandleDeath()
+    {
+        SwitchState(deadState);
+    }
+
+    public void DisablePerception()
+    {
+        visionSensor.enabled = false;
+        soundSensor.enabled = false;
     }
 
     void OnDrawGizmos()
