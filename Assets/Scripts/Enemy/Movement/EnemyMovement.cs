@@ -2,6 +2,7 @@ using Mono.Cecil.Cil;
 using Unity.Mathematics;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.Assertions.Must;
 using UnityEngine.InputSystem;
 
@@ -9,10 +10,11 @@ public class EnemyMovement : MonoBehaviour
 {
     [Header("Tunable Parameters")]
     //[SerializeField] private float stopDistance = 1.2f;
-    [SerializeField] private float enemySpeed = 10f;
+    [SerializeField] private float enemySpeed;
     [SerializeField] private float rotationSpeed = 360f;
     [SerializeField] private float rotationThreshold = 2f;
     [SerializeField] private float separationWeight = 0.5f;
+    public float MovementSpeed => enemySpeed;
 
     private ProximitySensor proximitySensor;
     private bool canRotate;
@@ -38,12 +40,25 @@ public class EnemyMovement : MonoBehaviour
     private RotationPriority currentRotationPriority;
     private Vector3 currentRotationTargetPosition;
     private Vector3 lastMovementDir;
-
+    private Animator animator;
+    private NavMeshAgent agent;
+    private NavMeshPath currentPath;
+    private int currentCornerIndex;
+    private Vector3 lastRequestedDestination;
+    private float currentSpeed;
+    private float repathTimer;
+    [SerializeField] private float repathInterval = 0.5f;
+    [SerializeField] private float acceleration = 10f;
 
     void Awake()
     {
         proximitySensor = GetComponentInChildren<ProximitySensor>();
         avoidance = GetComponent<AvoidanceSteering>();
+        animator = GetComponent<Animator>();
+        agent = GetComponent<NavMeshAgent>();
+        agent.updatePosition = false;
+        agent.updateRotation = false;
+        currentPath = new NavMeshPath();
         canRotate = true;
     }
 
@@ -51,16 +66,52 @@ public class EnemyMovement : MonoBehaviour
     {
         ResolveSpeed();
         ApplyRotation();
+        currentSpeed = Mathf.MoveTowards(currentSpeed, enemySpeed, acceleration * Time.deltaTime);
+        agent.nextPosition = transform.position;
     }
 
     public void MoveTo(Vector3 destination)
     {
         Debug.DrawRay(transform.position, transform.forward * 2f, Color.red);
 
-        Vector3 Direction = destination - transform.position;
-        Direction.y = 0f;
-        Vector3 normalizedDirection = Direction.normalized;
+        repathTimer -= Time.deltaTime;
 
+        if (repathTimer <= 0f)
+        {
+            if (agent.CalculatePath(destination, currentPath))
+            {
+                if (currentPath.status == NavMeshPathStatus.PathComplete)
+                {
+                    currentCornerIndex = 0;
+                }
+            }
+            repathTimer = repathInterval;
+        }
+
+        if (currentPath.corners.Length > 0)
+        {
+            if (currentCornerIndex >= currentPath.corners.Length)
+            {
+                return;
+            }
+
+            destination = currentPath.corners[currentCornerIndex];
+
+            if (Vector3.Distance(transform.position, destination) < 0.3f)
+            {
+                currentCornerIndex++;
+            }
+        }
+
+
+        NavMeshHit hit;
+        if (NavMesh.SamplePosition(destination, out hit, 2f, NavMesh.AllAreas))
+        {
+            destination = hit.position;
+        }
+        // Direction.y = 0f;A
+        Vector3 Direction = destination - transform.position;
+        Vector3 normalizedDirection = Direction.normalized;
 
         if (avoidance != null)
         {
@@ -95,7 +146,13 @@ public class EnemyMovement : MonoBehaviour
 
         movementDir = movementDir.normalized;
 
-        transform.position = Vector3.MoveTowards(transform.position, transform.position + movementDir, enemySpeed * Time.deltaTime);
+        // transform.position = Vector3.MoveTowards(transform.position, transform.position + movementDir, enemySpeed * Time.deltaTime);
+        transform.position += movementDir * currentSpeed * Time.deltaTime;
+        NavMeshHit groundHit;
+        if (NavMesh.SamplePosition(transform.position, out groundHit, 1f, NavMesh.AllAreas))
+        {
+            transform.position = groundHit.position;
+        }
         Debug.DrawRay(transform.position, movementDir * 2f, Color.cyan);
 
     }
@@ -119,11 +176,11 @@ public class EnemyMovement : MonoBehaviour
         // if (direction.sqrMagnitude < 0.0001f)
         //     return true;
 
-//        Debug.Log($"Intent Dir Magnitude: {direction.magnitude}");
+        //        Debug.Log($"Intent Dir Magnitude: {direction.magnitude}");
         transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
         float angle = Quaternion.Angle(transform.rotation, targetRotation);
         bool rotationComplete = angle <= rotationThreshold;
-//        Debug.Log($"Angle to target: {Quaternion.Angle(transform.rotation, targetRotation)}");
+        //        Debug.Log($"Angle to target: {Quaternion.Angle(transform.rotation, targetRotation)}");
 
         // if (rotationComplete)
         // {
@@ -168,7 +225,7 @@ public class EnemyMovement : MonoBehaviour
                 break;
 
             case MovementMode.Wander:
-                enemySpeed = 5f;
+                enemySpeed = 2f;
                 break;
 
             default:
@@ -181,7 +238,7 @@ public class EnemyMovement : MonoBehaviour
 
     public void RotationIntent(RotationPriority priority, Vector3 position)
     {
-//        Debug.Log($"Trying to set rotation intent: {priority}, Current: {currentRotationPriority}");
+        //        Debug.Log($"Trying to set rotation intent: {priority}, Current: {currentRotationPriority}");
 
         if (priority < currentRotationPriority)
         {
@@ -190,7 +247,7 @@ public class EnemyMovement : MonoBehaviour
 
         currentRotationTargetPosition = position;
         currentRotationPriority = priority;
-//        Debug.Log($"Rotation intent set to {priority}");
+        //        Debug.Log($"Rotation intent set to {priority}");
     }
     public void Stop()
     {
@@ -199,7 +256,7 @@ public class EnemyMovement : MonoBehaviour
 
     private void ApplyRotation()
     {
-//        Debug.Log($"ApplyRotation - Current Priority: {currentRotationPriority}");
+        //        Debug.Log($"ApplyRotation - Current Priority: {currentRotationPriority}");
 
         if (!canRotate)
         {

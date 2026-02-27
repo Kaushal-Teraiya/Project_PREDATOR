@@ -20,6 +20,7 @@ public class EnemyBrain : MonoBehaviour
     [SerializeField] private float visionGraceDuration = 0.2f;
     [SerializeField] private float attackCooldown = 1.5f;
 
+
     [Header("Sensors")]
     private SoundSensor soundSensor;
     private VisionSensor visionSensor;
@@ -47,8 +48,9 @@ public class EnemyBrain : MonoBehaviour
     private PlayerHealth playerHealth;
     private EnemyHealth enemyHealth;
     public EnemyHealth _enemyHealth => enemyHealth;
-    [SerializeField]private WayPointManager wayPointManager;
+    [SerializeField] private WayPointManager wayPointManager;
     public WayPointManager _WayPointManager => wayPointManager;
+    private Animator animator;
 
 
     [Header("SearchPoint Data")]
@@ -80,10 +82,17 @@ public class EnemyBrain : MonoBehaviour
     public int attackDamage { get; private set; } = 50;
 
     [Header("WanderState Data")]
-    [SerializeField]private float wayPointCollectionRadius = 10f;
+    [SerializeField] private float wayPointCollectionRadius = 10f;
     public float _WayPointCollectionRadius => wayPointCollectionRadius;
-    public LayerMask wayPointMask;
 
+    [Header("Animation Data")]
+    [SerializeField] private List<AnimationClip> attackVariants = new List<AnimationClip>();
+    [SerializeField] private List<AnimationClip> idleVariants = new List<AnimationClip>();
+    [SerializeField] private List<AnimationClip> walkVariants = new List<AnimationClip>();
+    [SerializeField] private List<AnimationClip> runVariants = new List<AnimationClip>();
+    [SerializeField] private List<AnimationClip> deathVariants = new List<AnimationClip>();
+    private AnimatorOverrideController animatorOverrideController;
+    private RuntimeAnimatorController baseController;
 
     void Awake()
     {
@@ -91,6 +100,28 @@ public class EnemyBrain : MonoBehaviour
         visionSensor = GetComponentInChildren<VisionSensor>();
         Movement_Enemy = GetComponent<EnemyMovement>();
         enemyHealth = GetComponent<EnemyHealth>();
+        animator = GetComponent<Animator>();
+        baseController = animator.runtimeAnimatorController;
+
+        animatorOverrideController = new AnimatorOverrideController
+        {
+            runtimeAnimatorController = baseController
+        };
+
+        AnimationClip walkVariant = walkVariants[UnityEngine.Random.Range(0, walkVariants.Count)];
+        AnimationClip idleVariant = idleVariants[UnityEngine.Random.Range(0, idleVariants.Count)];
+        AnimationClip runVariant = runVariants[UnityEngine.Random.Range(0, runVariants.Count)];
+        AnimationClip attackVariant = attackVariants[UnityEngine.Random.Range(0, attackVariants.Count)];
+        AnimationClip deathVariant = deathVariants[UnityEngine.Random.Range(0, deathVariants.Count)];
+
+        animatorOverrideController["Walk_"] = walkVariant;
+        animatorOverrideController["Idle_"] = idleVariant;
+        animatorOverrideController["Run_"] = runVariant;
+        animatorOverrideController["Attack_"] = attackVariant;
+        animatorOverrideController["Death_"] = deathVariant;
+
+        animator.runtimeAnimatorController = animatorOverrideController;
+
     }
     void Start()
     {
@@ -108,6 +139,7 @@ public class EnemyBrain : MonoBehaviour
 
     void Update()
     {
+        Animator_SetFloat("Speed", enemyMovement.MovementSpeed);
         CheckPerception();
         CheckStateChange();
         currentState?.Tick();
@@ -127,8 +159,6 @@ public class EnemyBrain : MonoBehaviour
     {
         currentInvestigationCenter = lastKnownPosition;
         currentInvestigationRadius = radius;
-        // currentInvestigationCenter = soundSensor.LastHeardPosition;
-        // currentInvestigationRadius = InvestigateAreaRadius;
         investigateState.SetAreaCenter_AreaRadius(currentInvestigationCenter, currentInvestigationRadius);
     }
 
@@ -242,7 +272,7 @@ public class EnemyBrain : MonoBehaviour
             return;
         }
 
-        if (IsInState(idleState) && soundSensor.HasValidSound() && soundSensor.LastHeardRadius >= maxRadiusForHearing)
+        if ((IsInState(idleState) || IsInState(wanderState)) && soundSensor.HasValidSound() && soundSensor.LastHeardRadius >= maxRadiusForHearing)
         {
             InitializeInvestigateState(soundSensor.LastHeardPosition, InvestigateAreaRadius);
             SwitchState(investigateState);
@@ -392,6 +422,47 @@ public class EnemyBrain : MonoBehaviour
     {
         visionSensor.enabled = false;
         soundSensor.enabled = false;
+    }
+
+    public string GetCurrentState()
+    {
+        return currentState.GetType().Name;
+    }
+
+    public void Animator_SetFloat(string floatName, float speed)
+    {
+        animator.SetFloat(floatName, speed);
+    }
+
+    public void Animator_SetTrigger(string triggerName)
+    {
+        animator.SetTrigger(triggerName);
+    }
+
+    public void Animator_SetBool(string boolName, bool value)
+    {
+        animator.SetBool(boolName, value);
+    }
+
+    public bool IsDead()
+    {
+        return enemyHealth.EnemyisDead;
+    }
+
+    public void HandleAttackHit()
+    {
+        if (IsInState(attackState))
+        {
+            attackState.HandleAttackHit();
+        }
+    }
+
+    public void HandleAttackEnd()
+    {
+        if (IsInState(attackState))
+        {
+            attackState.HandleAttackEnd();
+        }
     }
 
     void OnDrawGizmos()

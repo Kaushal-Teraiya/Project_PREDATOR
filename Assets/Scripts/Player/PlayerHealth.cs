@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 
 public class PlayerHealth : MonoBehaviour, IDamageable
@@ -8,12 +9,22 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private PlayerCombat playerCombat;
     public int currentHealth { get; private set; }
     public bool playerisDead { get; private set; }
+    private TextMeshProUGUI healthText;
 
     void Awake()
     {
         playerMovement = GetComponent<PlayerMovement>();
         playerCombat = GetComponent<PlayerCombat>();
         playerLook = GetComponent<PlayerLook>();
+        healthText = GetComponentInChildren<TextMeshProUGUI>();
+    }
+
+    void Update()
+    {
+        if (healthText != null)
+        {
+            healthText.text = currentHealth.ToString();
+        }
     }
 
     void Start()

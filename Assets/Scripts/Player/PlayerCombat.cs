@@ -18,7 +18,7 @@ public class PlayerCombat : MonoBehaviour
         if (attack.action.WasPressedThisFrame())
         {
             Camera cam = Camera.main;
-            Vector3 rayOrigin = cam.transform.position;
+            Vector3 rayOrigin = cam.transform.position + Vector3.forward * 0.5f;
             Vector3 direction = cam.transform.forward.normalized;
             RaycastHit HitInfo;
             Debug.DrawRay(rayOrigin, direction * attackRange, Color.green, 1f);
@@ -27,7 +27,7 @@ public class PlayerCombat : MonoBehaviour
             {
                 IDamageable damageable = HitInfo.collider.GetComponentInParent<IDamageable>();
 
-                if (damageable != null && damageable!= transform.GetComponentInParent<IDamageable>())
+                if (damageable != null && damageable != transform.GetComponentInParent<IDamageable>())
                 {
                     Debug.Log("[PlayerCombat] Applying Damage to Enemies.");
                     damageable.TakeDamage(damageAmount);

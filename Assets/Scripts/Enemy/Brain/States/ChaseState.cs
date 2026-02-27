@@ -35,7 +35,8 @@ public class ChaseState : IEnemyState
             // }
           //  chaseTimer = 0f;
             Enemy.MoveTo(desiredPoint);
-            Enemy.RotationIntent(EnemyMovement.RotationPriority.Vision, brain.chaseTargetPosition);
+            Enemy.ClearRotationIntent();
+            //Enemy.RotationIntent(EnemyMovement.RotationPriority.Vision, brain.chaseTargetPosition);
         }
         else
         {
