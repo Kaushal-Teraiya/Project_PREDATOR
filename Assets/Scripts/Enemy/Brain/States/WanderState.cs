@@ -28,6 +28,8 @@ public class WanderState : IEnemyState
     }
     public void Tick()
     {
+        var Enemy = brain.enemyMovement;
+        Enemy.RequestAnimation(new AnimationIntent(AnimationType.Walk, 20));
 
         if (currentTarget == null)
         {
@@ -38,7 +40,7 @@ public class WanderState : IEnemyState
         if (brain.Suspicion > 0f)
         {
             brain.enemyMovement.MoveTo(brain.lastConfirmedPosition);
-            brain.enemyMovement.RotationIntent(EnemyMovement.RotationPriority.State,brain.lastConfirmedPosition);
+            brain.enemyMovement.RotationIntent(EnemyMovement.RotationPriority.State, brain.lastConfirmedPosition);
             return;
         }
 

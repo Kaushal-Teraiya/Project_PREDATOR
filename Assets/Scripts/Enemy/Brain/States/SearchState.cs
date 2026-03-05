@@ -77,7 +77,7 @@ public class SearchState : IEnemyState
             float distance = Vector3.Distance(brain.transform.position, targetPosition);
             // float threshold = 0.2f;
 
-            if (distance <= currentTarget.arrivalRadius || distance<= 1.5f)// if enmies are in the search point radius
+            if (distance <= currentTarget.arrivalRadius || distance <= 1.5f)// if enmies are in the search point radius
             {
                 if (currentTarget.TryClaimSearchPoint(brain)) // only the claimer executes animation
                 {
@@ -118,6 +118,7 @@ public class SearchState : IEnemyState
             {
                 Debug.Log("[SearchState] MNot able to claim because  of arrival radius issue !!!");
             }
+
         }
 
 
@@ -238,6 +239,19 @@ public class SearchState : IEnemyState
 
         Enemy.SetRotationPermission(allowRotate);
 
+        switch (currentPhase)
+        {
+            case SearchPhase.Moving:
+            case SearchPhase.Spreading:
+                Enemy.RequestAnimation(new AnimationIntent(AnimationType.Walk, 20));
+                break;
+
+            case SearchPhase.Scanning:
+            case SearchPhase.Observing:
+                Enemy.RequestAnimation(new AnimationIntent(AnimationType.Idle, 10));
+                break;
+        }
+
         // if (allowRotate)
         // {
         //     if (brain.enemyMovement.IsAvoiding())
@@ -259,12 +273,12 @@ public class SearchState : IEnemyState
             observerSlotIndex = -1;
         }
         brain.SetPostChase(false);
-        
+
     }
 
     void LogPhase(string message)
     {
-//        Debug.Log($"[Search][{brain.name}] {message}");
+        //        Debug.Log($"[Search][{brain.name}] {message}");
     }
 
     private void SetLookAt(Vector3 _LookAt)

@@ -146,11 +146,12 @@ public class EnemyBrain : MonoBehaviour
 
     void Update()
     {
-        Animator_SetFloat("Speed", enemyMovement.MovementSpeed);
+        // Animator_SetFloat("Speed", enemyMovement.MovementSpeed);
         UpdateSuspicion();
         CheckPerception();
         CheckStateChange();
         currentState?.Tick();
+        enemyMovement.ApplyAnimationIntent();
     }
 
     public void SwitchState(IEnemyState newState)
@@ -269,9 +270,11 @@ public class EnemyBrain : MonoBehaviour
             return;
         }
 
-        if (playerHealth.playerisDead)
+        if (playerHealth.playerisDead && IsInState(attackState))
         {
-            SwitchState(idleState); //temporary idle , later we want multiple different behviour of zombies on player death
+            enemyMovement.SetMovementMode(EnemyMovement.MovementMode.Idle);
+            enemyMovement.Stop();
+            enemyMovement.RequestAnimation(new AnimationIntent(AnimationType.Idle, 70)); //temporary idle , later we want multiple different behviour of zombies on player death
             return;
 
         }
@@ -467,20 +470,7 @@ public class EnemyBrain : MonoBehaviour
         return currentState.GetType().Name;
     }
 
-    public void Animator_SetFloat(string floatName, float speed)
-    {
-        animator.SetFloat(floatName, speed);
-    }
 
-    public void Animator_SetTrigger(string triggerName)
-    {
-        animator.SetTrigger(triggerName);
-    }
-
-    public void Animator_SetBool(string boolName, bool value)
-    {
-        animator.SetBool(boolName, value);
-    }
 
     public bool IsDead()
     {

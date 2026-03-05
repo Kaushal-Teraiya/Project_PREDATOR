@@ -17,6 +17,8 @@ public class IdleState : IEnemyState
     }
     public void Tick()
     {
+        var Enemy = brain.enemyMovement;
+        Enemy.RequestAnimation(new AnimationIntent(AnimationType.Idle , 10));
         idleTimer += Time.deltaTime;
         if (idleTimer >= idleDuration)
         {

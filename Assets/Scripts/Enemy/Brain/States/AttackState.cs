@@ -9,18 +9,22 @@ public class AttackState : IEnemyState
     }
     public void OnEnter()
     {
-        brain.enemyMovement.Stop();
-        brain.enemyMovement.RotationIntent(EnemyMovement.RotationPriority.State, brain.player.transform.position);
-        brain.Animator_SetTrigger("Attack");
+        var Enemy = brain.enemyMovement;
+        Enemy.Stop();
+        Enemy.RotationIntent(EnemyMovement.RotationPriority.State, brain.player.transform.position);
+        Enemy.SetMovementMode(EnemyMovement.MovementMode.Idle);
+        Enemy.RequestAnimation(new AnimationIntent(AnimationType.Attack, 30));
         Debug.Log("[Attack] In Attack..");
     }
     public void Tick()
     {
-
+        var Enemy = brain.enemyMovement;
+        Enemy.RequestAnimation(new AnimationIntent(AnimationType.Attack, 30));
     }
     public void OnExit()
     {
         brain.enemyMovement.SetRotationPermission(true);
+        brain.enemyMovement.Animator_ResetTrigger("Attack");
     }
 
     public void HandleAttackHit()

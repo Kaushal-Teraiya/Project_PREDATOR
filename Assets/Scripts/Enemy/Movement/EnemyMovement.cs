@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Assertions.Must;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 public class EnemyMovement : MonoBehaviour
 {
@@ -36,16 +37,19 @@ public class EnemyMovement : MonoBehaviour
         Vision
     }
 
+
     private MovementMode currentMovementMode;
     private RotationPriority currentRotationPriority;
     private Vector3 currentRotationTargetPosition;
     private Vector3 lastMovementDir;
+    private float currentSpeed;
     private Animator animator;
+    public AnimationIntent currentAnimationIntent;
+
+    [Header("NavMesh Data")]
     private NavMeshAgent agent;
     private NavMeshPath currentPath;
     private int currentCornerIndex;
-    private Vector3 lastRequestedDestination;
-    private float currentSpeed;
     private float repathTimer;
     [SerializeField] private float repathInterval = 0.5f;
     [SerializeField] private float acceleration = 10f;
@@ -64,6 +68,7 @@ public class EnemyMovement : MonoBehaviour
 
     private void Update()
     {
+        ResetAnimationIntent();
         ResolveSpeed();
         ApplyRotation();
         currentSpeed = Mathf.MoveTowards(currentSpeed, enemySpeed, acceleration * Time.deltaTime);
@@ -235,7 +240,6 @@ public class EnemyMovement : MonoBehaviour
         }
     }
 
-
     public void RotationIntent(RotationPriority priority, Vector3 position)
     {
         //        Debug.Log($"Trying to set rotation intent: {priority}, Current: {currentRotationPriority}");
@@ -302,6 +306,67 @@ public class EnemyMovement : MonoBehaviour
     {
         proximitySensor.enabled = false;
         avoidance.enabled = false;
+    }
+
+    public void ResetAnimationIntent()
+    {
+        currentAnimationIntent.animationType = AnimationType.None;
+        currentAnimationIntent.priority = -1;
+    }
+
+    public void RequestAnimation(AnimationIntent intent)
+    {
+        if (intent.priority > currentAnimationIntent.priority)
+        {
+            currentAnimationIntent = intent;
+        }
+    }
+
+    public  void ApplyAnimationIntent()
+    {
+        switch (currentAnimationIntent.animationType)
+        {
+            case AnimationType.Idle:
+                Animator_SetFloat("Speed", 0f);
+                break;
+            case AnimationType.Walk:
+                Animator_SetFloat("Speed", 0.5f);
+                break;
+            case AnimationType.Run:
+                Animator_SetFloat("Speed", 7f);
+                break;
+            case AnimationType.Attack:
+                Animator_SetTrigger("Attack");
+                break;
+            case AnimationType.Death:
+                Animator_SetTrigger("Death");
+                break;
+
+            default:
+                Animator_SetFloat("Speed", 0f);
+                break;
+
+        }
+    }
+
+    public void Animator_SetFloat(string floatName, float speed)
+    {
+        animator.SetFloat(floatName, speed);
+    }
+
+    public void Animator_SetTrigger(string triggerName)
+    {
+        animator.SetTrigger(triggerName);
+    }
+
+    public void Animator_ResetTrigger(string triggerName)
+    {
+        animator.ResetTrigger(triggerName);
+    }
+
+    public void Animator_SetBool(string boolName, bool value)
+    {
+        animator.SetBool(boolName, value);
     }
 
 }
