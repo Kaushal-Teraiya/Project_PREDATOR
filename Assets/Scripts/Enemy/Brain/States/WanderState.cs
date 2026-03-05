@@ -4,7 +4,7 @@ using UnityEngine;
 public class WanderState : IEnemyState
 {
     private EnemyBrain brain;
-    private float arrivalRadius = 0.4f;
+    private float arrivalRadius = 1.5f;
     private bool isWaiting;
     private float waitDuration;
     private float waitTimer;
@@ -32,6 +32,13 @@ public class WanderState : IEnemyState
         if (currentTarget == null)
         {
             PickNewTarget();
+            return;
+        }
+
+        if (brain.Suspicion > 0f)
+        {
+            brain.enemyMovement.MoveTo(brain.lastConfirmedPosition);
+            brain.enemyMovement.RotationIntent(EnemyMovement.RotationPriority.State,brain.lastConfirmedPosition);
             return;
         }
 

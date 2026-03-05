@@ -1,14 +1,17 @@
+using System;
 using UnityEngine;
 
 public class SoundEmitter : MonoBehaviour
 {
-    [Header("Sound Settings")]
-    public float walkRadius = 5f;
-    public float runRadius = 10f;
+    // private  float walkRadius = 5f;
+    // public  float runRadius {get; private set;}= 10f;
+    // private float soundValue
+    private SoundSource debugProfile;
 
-    public void EmitSound(float radius)
+    public void EmitSound(SoundSource soundSource)
     {
-        SoundEvent soundEvent = new SoundEvent(transform.position, radius);
+        debugProfile = soundSource;
+        SoundEvent soundEvent = new SoundEvent(transform.position, soundSource.Radius, soundSource.Value);
         Debug.DrawLine(
           soundEvent.position,
           soundEvent.position + Vector3.up * soundEvent.radius,
@@ -29,8 +32,11 @@ public class SoundEmitter : MonoBehaviour
     void OnDrawGizmos()
     {
         Gizmos.color = Color.red;
-
-        float radiusToDraw = runRadius; // or walkRadius for testing
+        if (debugProfile == null)
+        {
+            return;
+        }
+        float radiusToDraw = debugProfile.Radius; // or walkRadius for testing
 
         DrawCircle(
             transform.position,

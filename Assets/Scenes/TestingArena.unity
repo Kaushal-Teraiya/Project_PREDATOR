@@ -681,6 +681,10 @@ MonoBehaviour:
   deathVariants:
   - {fileID: 7400000, guid: f7f84fd119431cf4480a820cea02dbe7, type: 2}
   - {fileID: -203655887218126122, guid: e0da70acd3de2a448a279e585b803b13, type: 3}
+  suspicion: 0
+  suspicionIncreaseRate: 40
+  suspicionDecayRate: 20
+  chaseThreshold: 100
 --- !u!114 &63388002
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2009,6 +2013,10 @@ MonoBehaviour:
   deathVariants:
   - {fileID: 7400000, guid: f7f84fd119431cf4480a820cea02dbe7, type: 2}
   - {fileID: -203655887218126122, guid: e0da70acd3de2a448a279e585b803b13, type: 3}
+  suspicion: 0
+  suspicionIncreaseRate: 40
+  suspicionDecayRate: 20
+  chaseThreshold: 100
 --- !u!114 &516933292
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2846,6 +2854,10 @@ MonoBehaviour:
   deathVariants:
   - {fileID: 7400000, guid: f7f84fd119431cf4480a820cea02dbe7, type: 2}
   - {fileID: -203655887218126122, guid: e0da70acd3de2a448a279e585b803b13, type: 3}
+  suspicion: 0
+  suspicionIncreaseRate: 40
+  suspicionDecayRate: 20
+  chaseThreshold: 100
 --- !u!114 &765992256
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3716,6 +3728,10 @@ MonoBehaviour:
   deathVariants:
   - {fileID: 7400000, guid: f7f84fd119431cf4480a820cea02dbe7, type: 2}
   - {fileID: -203655887218126122, guid: e0da70acd3de2a448a279e585b803b13, type: 3}
+  suspicion: 0
+  suspicionIncreaseRate: 40
+  suspicionDecayRate: 20
+  chaseThreshold: 100
 --- !u!54 &1237495242
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -4475,6 +4491,10 @@ MonoBehaviour:
   deathVariants:
   - {fileID: 7400000, guid: f7f84fd119431cf4480a820cea02dbe7, type: 2}
   - {fileID: -203655887218126122, guid: e0da70acd3de2a448a279e585b803b13, type: 3}
+  suspicion: 0
+  suspicionIncreaseRate: 40
+  suspicionDecayRate: 20
+  chaseThreshold: 100
 --- !u!114 &1331646825
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4776,6 +4796,10 @@ MonoBehaviour:
   deathVariants:
   - {fileID: 7400000, guid: f7f84fd119431cf4480a820cea02dbe7, type: 2}
   - {fileID: -203655887218126122, guid: e0da70acd3de2a448a279e585b803b13, type: 3}
+  suspicion: 0
+  suspicionIncreaseRate: 40
+  suspicionDecayRate: 20
+  chaseThreshold: 100
 --- !u!114 &1415654185
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5617,6 +5641,11 @@ MonoBehaviour:
   playerWalkSpeed: 20
   playerRunSpeed: 10
   jumpHeight: 2
+  footStepsTime_walk: 0.5
+  footStepsTime_Run: 0.3
+  stepTimer: 0
+  SoundSource_Run: {fileID: 11400000, guid: 4f69c4470318b384f8481abe3119a6dd, type: 2}
+  SoundSource_Walk: {fileID: 11400000, guid: ff0a4a89644c0114db87565d4fa0bfb1, type: 2}
   moveAction: {fileID: 719121436}
   jumpAction: {fileID: 137439}
   runAction: {fileID: 617215832}
@@ -5646,8 +5675,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9da83ecda3aa294428538e5f25daa0e8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  walkRadius: 5
-  runRadius: 10
 --- !u!114 &1584050602
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6663,6 +6690,10 @@ MonoBehaviour:
   deathVariants:
   - {fileID: 7400000, guid: f7f84fd119431cf4480a820cea02dbe7, type: 2}
   - {fileID: -203655887218126122, guid: e0da70acd3de2a448a279e585b803b13, type: 3}
+  suspicion: 0
+  suspicionIncreaseRate: 40
+  suspicionDecayRate: 20
+  chaseThreshold: 100
 --- !u!114 &1871191730
 MonoBehaviour:
   m_ObjectHideFlags: 0

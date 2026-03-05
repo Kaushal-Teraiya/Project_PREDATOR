@@ -11,10 +11,15 @@ public class DebugStateLabel : MonoBehaviour
     void LateUpdate()
     {
         string stateName = brain.GetCurrentState();
+        if (stateName == "SearchState")
+        {
+            stateName += " : " + brain.GetSearchPhase();
+        }
         text.text = stateName;
         text.color = GetColor(stateName);
 
         Vector3 direction = text.transform.position - Camera.main.transform.position;
+        direction.y = 0f;
         text.transform.rotation = Quaternion.LookRotation(direction);
     }
 

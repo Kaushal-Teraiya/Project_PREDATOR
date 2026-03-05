@@ -1,3 +1,4 @@
+using NUnit.Framework;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -10,10 +11,17 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float playerWalkSpeed = 5f;
     [SerializeField] private float playerRunSpeed = 10f;
     [SerializeField] private float jumpHeight = 1.5f;
+    [SerializeField] private float footStepsTime_walk = 0.5f;
+    [SerializeField] private float footStepsTime_Run = 0.3f;
+    [SerializeField] private float stepTimer;
+    [SerializeField] private SoundSource SoundSource_Run;
+    [SerializeField] private SoundSource SoundSource_Walk;
     private float playerSpeed;
-    private float soundEmissionRadius;
-    private Vector3 playerVelocity; private float gravityValue = -9.8f;
+    private SoundSource activeProfile;
+    private Vector3 playerVelocity;
+    private float gravityValue = -9.8f;
     private bool isGrounded;
+    private float stepInterval;
 
     public InputActionReference moveAction;
     public InputActionReference jumpAction;
@@ -43,25 +51,36 @@ public class PlayerMovement : MonoBehaviour
         }
 
         playerVelocity.y += gravityValue * Time.deltaTime;
+        bool isMoving = move.magnitude > 0.1f;
 
         if (runAction.action.IsPressed())
         {
             playerSpeed = playerRunSpeed;
-            soundEmissionRadius = emitter.runRadius;
+            activeProfile = SoundSource_Run;
+            stepInterval = footStepsTime_Run;
         }
         else
         {
             playerSpeed = playerWalkSpeed;
-            soundEmissionRadius = 0f;
+            activeProfile = SoundSource_Walk;
+            stepInterval = footStepsTime_walk;
         }
         Vector3 finalMove = move * playerSpeed + Vector3.up * playerVelocity.y;
         player.Move(finalMove * Time.deltaTime);
 
-        bool isMoving = move.magnitude > 0.1f;
-
-        if (isMoving)
+        if (isMoving && isGrounded)
         {
-            emitter.EmitSound(soundEmissionRadius);
+            stepTimer += Time.deltaTime;
+            if (stepTimer >= stepInterval)
+            {
+                emitter.EmitSound(activeProfile);
+                stepTimer = 0f;
+            }
+        }
+
+        if (!isMoving)
+        {
+            stepTimer = 0f;
         }
     }
 

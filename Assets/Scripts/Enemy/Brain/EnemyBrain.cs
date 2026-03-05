@@ -94,6 +94,13 @@ public class EnemyBrain : MonoBehaviour
     private AnimatorOverrideController animatorOverrideController;
     private RuntimeAnimatorController baseController;
 
+    [Header("Suspicion Data")]
+    [SerializeField] private float suspicion;
+    [SerializeField] private float suspicionIncreaseRate = 40f;
+    [SerializeField] private float suspicionDecayRate = 20f;
+    [SerializeField] private float chaseThreshold = 100f;
+    public float Suspicion => suspicion;
+
     void Awake()
     {
         soundSensor = GetComponent<SoundSensor>();
@@ -140,6 +147,7 @@ public class EnemyBrain : MonoBehaviour
     void Update()
     {
         Animator_SetFloat("Speed", enemyMovement.MovementSpeed);
+        UpdateSuspicion();
         CheckPerception();
         CheckStateChange();
         currentState?.Tick();
@@ -261,15 +269,34 @@ public class EnemyBrain : MonoBehaviour
             return;
         }
 
-        if (IsInState(wanderState) && HasVision())
+        if (playerHealth.playerisDead)
         {
-            SwitchState(chaseState);
+            SwitchState(idleState); //temporary idle , later we want multiple different behviour of zombies on player death
+            return;
+
         }
 
-        if (!IsInState(chaseState) && !IsInState(attackState) && HasVision())
+        // if (IsInState(wanderState) && HasVision())
+        // {
+        //     SwitchState(chaseState);
+        // }
+
+        // if (!IsInState(chaseState) && !IsInState(attackState) && HasVision())
+        // {
+        //     SwitchState(chaseState);
+        //     return;
+        // }
+
+
+
+        if (!IsInState(chaseState) && !IsInState(attackState))
         {
-            SwitchState(chaseState);
-            return;
+            if (suspicion >= chaseThreshold)
+            {
+                lastConfirmedPosition = player.transform.position;
+                SwitchState(chaseState);
+                return;
+            }
         }
 
         if ((IsInState(idleState) || IsInState(wanderState)) && soundSensor.HasValidSound() && soundSensor.LastHeardRadius >= maxRadiusForHearing)
@@ -298,14 +325,6 @@ public class EnemyBrain : MonoBehaviour
             SwitchState(idleState);
         }
 
-        if (playerHealth.playerisDead)
-        {
-            if (!IsInState(idleState))
-            {
-                SwitchState(idleState); //temporary idle , later we want multiple different behviour of zombies on player death
-            }
-            return;
-        }
 
     }
 
@@ -381,6 +400,25 @@ public class EnemyBrain : MonoBehaviour
         InitializeInvestigateState(lastChasePosition, InvestigateAreaRadius);
         postChase = true;
         SwitchState(investigateState);
+    }
+
+    private void UpdateSuspicion()
+    {
+        if (IsInState(deadState) || IsInState(chaseState) || IsInState(attackState))
+        {
+            return;
+        }
+
+        if (HasVision())
+        {
+            suspicion += suspicionIncreaseRate * Time.deltaTime;
+        }
+        else
+        {
+            suspicion -= suspicionDecayRate * Time.deltaTime;
+        }
+
+        suspicion = Mathf.Clamp(suspicion, 0, chaseThreshold);
     }
 
     public bool HasVision()
@@ -463,6 +501,16 @@ public class EnemyBrain : MonoBehaviour
         {
             attackState.HandleAttackEnd();
         }
+    }
+
+    public string GetSearchPhase()
+    {
+        if (IsInState(searchState))
+        {
+            return searchState.GetPhase();
+        }
+
+        return " ";
     }
 
     void OnDrawGizmos()

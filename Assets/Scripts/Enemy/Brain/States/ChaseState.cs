@@ -29,11 +29,7 @@ public class ChaseState : IEnemyState
 
         if (brain.HasVision())
         {
-            // if (chaseTimer > 0f)
-            // {
-            //     Debug.Log($"[CHASE] Vision reacquired. Timer reset from {chaseTimer:F2}");
-            // }
-          //  chaseTimer = 0f;
+          
             Enemy.MoveTo(desiredPoint);
             Enemy.ClearRotationIntent();
             //Enemy.RotationIntent(EnemyMovement.RotationPriority.Vision, brain.chaseTargetPosition);
