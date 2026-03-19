@@ -37,13 +37,6 @@ public class WanderState : IEnemyState
             return;
         }
 
-        if (brain.Suspicion > 0f)
-        {
-            brain.enemyMovement.MoveTo(brain.lastConfirmedPosition);
-            brain.enemyMovement.RotationIntent(EnemyMovement.RotationPriority.State, brain.lastConfirmedPosition);
-            return;
-        }
-
         if (!isWaiting && currentTarget != null && currentTarget.IsClaimedByOther(brain))
         {
             Debug.Log($"{brain.name} abandoned {currentTarget.name}");
@@ -54,7 +47,7 @@ public class WanderState : IEnemyState
         if (isWaiting)   //pause for a while then increment index
         {
             waitTimer += Time.deltaTime;
-
+            brain.enemyMovement.RequestAnimation(new AnimationIntent(AnimationType.Idle, 60));
             if (waitTimer >= waitDuration)
             {
                 isWaiting = false;
@@ -96,6 +89,7 @@ public class WanderState : IEnemyState
         if (currentTarget != null)
         {
             currentTarget.ReleaseWayPoint(brain);
+            brain.enemyMovement.ResetAnimationIntent();
             currentTarget = null;
         }
     }
@@ -122,8 +116,8 @@ public class WanderState : IEnemyState
 
         var randomIndex = Random.Range(0, wayPointList.Count);
         currentTarget = wayPointList[randomIndex];
-        Debug.Log($"{brain.name} picked {currentTarget.name}");
-        brain.enemyMovement.RotationIntent(EnemyMovement.RotationPriority.State, currentTarget.transform.position);
+        //        Debug.Log($"{brain.name} picked {currentTarget.name}");
+        //  brain.enemyMovement.RotationIntent(EnemyMovement.RotationPriority.State, currentTarget.transform.position);
         lastTarget = null;
     }
 

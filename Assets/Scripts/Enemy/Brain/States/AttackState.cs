@@ -13,13 +13,13 @@ public class AttackState : IEnemyState
         Enemy.Stop();
         Enemy.RotationIntent(EnemyMovement.RotationPriority.State, brain.player.transform.position);
         Enemy.SetMovementMode(EnemyMovement.MovementMode.Idle);
-        Enemy.RequestAnimation(new AnimationIntent(AnimationType.Attack, 30));
         Debug.Log("[Attack] In Attack..");
     }
     public void Tick()
     {
         var Enemy = brain.enemyMovement;
         Enemy.RequestAnimation(new AnimationIntent(AnimationType.Attack, 30));
+       
     }
     public void OnExit()
     {
@@ -34,7 +34,7 @@ public class AttackState : IEnemyState
             IDamageable damagable = brain.player.GetComponent<IDamageable>();
             if (damagable != null)
             {
-                damagable.TakeDamage(brain.attackDamage);
+                damagable.TakeDamage(brain.AttackDamage);
             }
             Debug.Log("[Attack] Damage Applied.");
         }
@@ -42,12 +42,26 @@ public class AttackState : IEnemyState
 
     public void HandleAttackEnd()
     {
-        brain.SwitchState(brain.ChaseState);
+        brain.NotifyAttackEnded();
+        float distance = Vector3.Distance(brain.transform.position, brain.player.transform.position);
+
+        if (distance > brain.AttackDistance)
+        {
+            brain.SwitchState(brain.ChaseState);
+            return;
+        }
+
+        StartNextAttack();
+    }
+
+    private void StartNextAttack()
+    {
+        brain.enemyMovement.RequestAnimation(new AnimationIntent(AnimationType.Attack, 30));
     }
 
     private bool TargetInRange(GameObject target)
     {
         var distance = Vector3.Distance(brain.transform.position, target.transform.position);
-        return distance <= brain.attackDistance;
+        return distance <= brain.AttackDistance;
     }
 }

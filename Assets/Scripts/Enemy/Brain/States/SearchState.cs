@@ -116,7 +116,7 @@ public class SearchState : IEnemyState
             }
             else
             {
-                Debug.Log("[SearchState] MNot able to claim because  of arrival radius issue !!!");
+                //      Debug.Log("[SearchState] MNot able to claim because  of arrival radius issue !!!");
             }
 
         }
@@ -138,7 +138,8 @@ public class SearchState : IEnemyState
                 observeStartTime = Time.time;
                 bool isCurious = Random.value < 0.5f;
                 if (isCurious)
-                {
+                {   //IF THERE ARE ANY ROTATION ISSUES IN SEARCH STATE 
+                //CONSIDER USING ROTATION INTENT AND SET IT TO THE FOLLOWING
                     SetLookAt(currentTarget.transform.position);
                 }
                 else
@@ -234,8 +235,25 @@ public class SearchState : IEnemyState
 
         if (allowRotate)
         {
-            Enemy.RotationIntent(EnemyMovement.RotationPriority.State, LookAt);
+            if (currentPhase == SearchPhase.Moving || currentPhase == SearchPhase.Spreading)
+            {
+                Vector3 movementDir = Enemy.GetMovementDirection();
+
+                if (movementDir.sqrMagnitude > 0.0001f)
+                {
+                    Enemy.RotationIntent(EnemyMovement.RotationPriority.State, brain.transform.position + movementDir);
+                }
+            }
+            else
+            {
+                Enemy.RotationIntent(EnemyMovement.RotationPriority.State, LookAt);
+            }
         }
+
+        // if (allowRotate)
+        // {
+        //     Enemy.RotationIntent(EnemyMovement.RotationPriority.State, LookAt);
+        // }
 
         Enemy.SetRotationPermission(allowRotate);
 

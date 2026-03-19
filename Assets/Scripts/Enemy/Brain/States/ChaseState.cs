@@ -1,8 +1,11 @@
 using UnityEngine;
+using UnityEngine.AI;
 
 public class ChaseState : IEnemyState
 {
     private EnemyBrain brain;
+    private float chasePauseTime = 2f;
+    private Vector3 lockedChasePoint;
     public ChaseState(EnemyBrain brain)
     {
         this.brain = brain;
@@ -14,44 +17,103 @@ public class ChaseState : IEnemyState
     {
         Debug.Log("Entered Chase");
         brain.SetCurrentlyChasing(true);
+        //  lockedChasePoint = brain.chaseTargetPosition;
         brain.enemyMovement.SetMovementMode(EnemyMovement.MovementMode.Chase);
-        //  chaseTimer = 0f;
+        if (brain.shouldPauseOnChase)
+        {
+            chasePauseTime = 2f;
+            brain.SetChasePause(false);
+        }
+        else
+        {
+            chasePauseTime = 0f;
+        }
         brain.InitializeChase();
         //enemy speed change intent will be set here and movement mode emum will set the speeds inside the enemyMovement 
     }
     public void Tick()
     {
         var Enemy = brain.enemyMovement;
+        chasePauseTime -= Time.deltaTime;
+
+        if (chasePauseTime > 0)
+        {
+            Enemy.RotationIntent(EnemyMovement.RotationPriority.State, brain.player.transform.position);
+            return;
+        }
         var dir = brain.transform.position - brain.player.transform.position;
         dir.Normalize();
-        var offset = brain.attackDistance - 0.5f;
+        var offset = brain.AttackDistance - brain.AttackOffset;
         var desiredPoint = brain.player.transform.position + dir * offset;
 
-        if (brain.HasVision())
+        var distanceToPlayer = Vector3.Distance(brain.transform.position, brain.player.transform.position);
+        var directionToPlayer = brain.player.transform.position - brain.transform.position;
+        var dot = Vector3.Dot(brain.transform.forward.normalized, directionToPlayer.normalized);
+
+        if (brain.CheckVisibilityResult(VisionSensor.visibilityResult.Chase))
         {
+
+            // NavMeshHit hit;
+            // if (NavMesh.SamplePosition(desiredPoint, out hit, 0.5f, NavMesh.AllAreas))
+            // {
+            //     float heightDiff = Mathf.Abs(hit.position.y - brain.transform.position.y);
+
+            //     if (heightDiff < 1.5f)
+            //     {
+            //         lockedChasePoint = hit.position;
+            //     }
+            // }
 
             Enemy.MoveTo(desiredPoint);
             Enemy.ClearRotationIntent();
+            //  Enemy.RotationIntent(EnemyMovement.RotationPriority.State, brain.player.transform.position);
             //Enemy.RotationIntent(EnemyMovement.RotationPriority.Vision, brain.chaseTargetPosition);
         }
-        else
+        // else if (brain.isEndingChase)
+        // {
+        //     Enemy.MoveTo(brain.chaseTargetPosition);
+
+        //     if (brain.HasReachedThePosition(brain.chaseTargetPosition))
+        //     {
+        //         brain.SetChaseEnd(false);
+        //         brain.EndChase(brain.chaseTargetPosition);
+        //     }
+        // }
+        // else if (brain.WasRecentlyChasing())
+        // {
+        //     Enemy.MoveTo(brain.chaseTargetPosition);
+        // }
+        else if (brain.WasRecentlyChasing() && !brain.CheckVisibilityResult(VisionSensor.visibilityResult.None))
         {
             Enemy.MoveTo(brain.chaseTargetPosition);
-
+            Enemy.ClearRotationIntent();
+        }
+        else if (brain.isEndingChase)
+        {
+            Enemy.MoveTo(brain.chaseTargetPosition);
+            Enemy.ClearRotationIntent();
             if (brain.HasReachedThePosition(brain.chaseTargetPosition))
             {
                 brain.EndChase(brain.chaseTargetPosition);
             }
         }
+        // else
+        // {
+        //     Enemy.MoveTo(brain.chaseTargetPosition);
+
+        //     if (brain.HasReachedThePosition(brain.chaseTargetPosition))
+        //     {
+        //         brain.EndChase(brain.chaseTargetPosition);
+        //     }
+        // }
 
         Enemy.RequestAnimation(new AnimationIntent(AnimationType.Run, 40));
-        var distanceToPlayer = Vector3.Distance(brain.transform.position, brain.player.transform.position);
-        var directionToPlayer = brain.player.transform.position - brain.transform.position;
-        var dot = Vector3.Dot(brain.transform.forward.normalized, directionToPlayer.normalized);
 
-        if (!brain.IsInState(brain.AttackState) && brain.HasVision() && distanceToPlayer <= brain.attackDistance && !brain.IsInCooldown() && dot > 0.5f)
+        if (!brain.IsInState(brain.AttackState) && brain.HasVision() && distanceToPlayer <= brain.AttackDistance && !brain.IsInCooldown() && dot > brain.AttackDotThreshold)
         {
             Debug.Log("[Chase] Entering Attack.");
+            brain.enemyMovement.RotationIntent(EnemyMovement.RotationPriority.State, brain.player.transform.position);
+            //Enemy.RequestAnimation(new AnimationIntent(AnimationType.Attack, 50));
             brain.SwitchState(brain.AttackState);
         }
     }

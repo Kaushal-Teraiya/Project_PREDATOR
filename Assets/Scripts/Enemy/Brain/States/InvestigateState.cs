@@ -31,7 +31,13 @@ public class InvestigateState : IEnemyState
     {
         var Enemy = brain.enemyMovement;
         Enemy.MoveTo(areaCenter);
-        Enemy.RotationIntent(EnemyMovement.RotationPriority.State, areaCenter);
+        Vector3 moveDir = Enemy.GetMovementDirection();
+
+        if (moveDir.sqrMagnitude > 0.001f)
+        {
+            Enemy.RotationIntent(EnemyMovement.RotationPriority.State, brain.transform.position + moveDir);
+        }
+        //   Enemy.RotationIntent(EnemyMovement.RotationPriority.State, areaCenter);
         Enemy.RequestAnimation(new AnimationIntent(AnimationType.Walk, 20));
         float distance = Vector3.Distance(Enemy.transform.position, areaCenter);
         if (distance <= areaRadius)
@@ -42,6 +48,7 @@ public class InvestigateState : IEnemyState
     public void OnExit()
     {
         Debug.Log("investigation exits");
+        brain.enemyMovement.ClearRotationIntent();
         // brain.enemyMovement.Stop();
     }
 }

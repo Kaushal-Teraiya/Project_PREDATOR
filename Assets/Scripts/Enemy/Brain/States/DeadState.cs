@@ -19,12 +19,15 @@ public class DeadState : IEnemyState
         brain.SetCurrentlyChasing(false);
         brain.DisablePerception();
         brain.GetComponentInChildren<CapsuleCollider>().enabled = false;
-        Enemy.RequestAnimation(new AnimationIntent(AnimationType.Death, 50));
+        Enemy.Animator_SetTrigger("IsDead");
         EnableRagdoll();
         //Enable Ragdoll here
     }
 
-    public void Tick() { }
+    public void Tick()
+    {
+       
+    }
 
     public void OnExit() { }
 

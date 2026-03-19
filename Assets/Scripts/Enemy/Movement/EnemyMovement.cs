@@ -81,6 +81,12 @@ public class EnemyMovement : MonoBehaviour
 
         repathTimer -= Time.deltaTime;
 
+        NavMeshHit hit;
+        if (NavMesh.SamplePosition(destination, out hit, 2f, NavMesh.AllAreas))
+        {
+            destination = hit.position;
+        }
+
         if (repathTimer <= 0f)
         {
             if (agent.CalculatePath(destination, currentPath))
@@ -108,12 +114,6 @@ public class EnemyMovement : MonoBehaviour
             }
         }
 
-
-        NavMeshHit hit;
-        if (NavMesh.SamplePosition(destination, out hit, 2f, NavMesh.AllAreas))
-        {
-            destination = hit.position;
-        }
         // Direction.y = 0f;A
         Vector3 Direction = destination - transform.position;
         Vector3 normalizedDirection = Direction.normalized;
@@ -321,8 +321,12 @@ public class EnemyMovement : MonoBehaviour
             currentAnimationIntent = intent;
         }
     }
+    public Vector3 GetMovementDirection()
+    {
+        return lastMovementDir;
+    }
 
-    public  void ApplyAnimationIntent()
+    public void ApplyAnimationIntent()
     {
         switch (currentAnimationIntent.animationType)
         {
@@ -339,7 +343,7 @@ public class EnemyMovement : MonoBehaviour
                 Animator_SetTrigger("Attack");
                 break;
             case AnimationType.Death:
-                Animator_SetTrigger("Death");
+                Animator_SetBool("IsDead", true);
                 break;
 
             default:

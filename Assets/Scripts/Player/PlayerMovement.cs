@@ -16,7 +16,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float stepTimer;
     [SerializeField] private SoundSource SoundSource_Run;
     [SerializeField] private SoundSource SoundSource_Walk;
-    private float playerSpeed;
+    public float playerSpeed { get; private set; }
     private SoundSource activeProfile;
     private Vector3 playerVelocity;
     private float gravityValue = -9.8f;
@@ -26,6 +26,7 @@ public class PlayerMovement : MonoBehaviour
     public InputActionReference moveAction;
     public InputActionReference jumpAction;
     public InputActionReference runAction;
+    public bool isPerformingAction { get; private set; }
 
     void Start()
     {
@@ -82,6 +83,13 @@ public class PlayerMovement : MonoBehaviour
         {
             stepTimer = 0f;
         }
+
+        SetPerformingAction(isMoving || jumpAction.action.WasPressedThisFrame());
+    }
+
+    private void SetPerformingAction(bool status)
+    {
+        isPerformingAction = status;
     }
 
     public void DisableMovement()

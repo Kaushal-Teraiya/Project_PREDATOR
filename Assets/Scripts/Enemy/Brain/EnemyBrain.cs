@@ -2,24 +2,21 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
+using Unity.Mathematics;
+using Unity.VisualScripting;
 using UnityEditor;
+using UnityEditor.PackageManager.Requests;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.EventSystems;
 using UnityEngine.Rendering;
 
 public class EnemyBrain : MonoBehaviour
 {
-    [Header("Tunable Parameters")]
-    [SerializeField] private float InvestigateAreaRadius;
-    [SerializeField] private float proximityRadius;
-    [SerializeField] private float maxRadiusForHearing = 8f;
-    [SerializeField] private LayerMask searchPointLayer;
-    [SerializeField] private float SearchPointFactorPercent = 0.5f;
-    [SerializeField] private float arrivalRadius = 0.5f;
+    [Header("General Parameters")]
+    [SerializeField] private float arrivalRadius;
     [SerializeField] private LayerMask obstacleMask;
-    [SerializeField] private float visionGraceDuration = 0.2f;
-    [SerializeField] private float attackCooldown = 1.5f;
-
+    [SerializeField] private float visionGraceDuration = 3f;
 
     [Header("Sensors")]
     private SoundSensor soundSensor;
@@ -66,20 +63,40 @@ public class EnemyBrain : MonoBehaviour
             return currentSearchIndex >= selectedSearchPoints.Count;
         }
     }
+    [SerializeField] private LayerMask searchPointLayer;
+    [SerializeField] private float SearchPointFactorPercent = 0.5f;
+
+    [Header("InvestigateState Data")]
+    [SerializeField] private float InvestigateAreaRadius;
+    public Vector3 lastStimulusPosition { get; private set; }
+    [SerializeField] private float stimulusMemoryDuration = 5f;
+    private float lastStimulusTime;
 
     [Header("ChaseState Data")]
     public Vector3 lastConfirmedPosition { get; private set; }
     public float lastConfirmedSeenTime { get; private set; }
     private bool currentlyChasing;
     public Vector3 chaseTargetPosition { get; private set; }
+
+    public bool isEndingChase { get; private set; }
     private float lastChaseTime;
     private Vector3 investigationForward;
     private bool postChase;
+    public bool shouldPauseOnChase { get; private set; }
+    public bool hasSeenFirstTime = true;
 
     [Header("AttackState Data")]
-    public float attackDistance { get; private set; } = 4f;
+    [SerializeField] private float attackDistance = 4f;
+    public float AttackDistance => attackDistance;
+    [SerializeField] private float attackOffset;
+    public float AttackOffset => attackOffset;
     private float lastAttackEndTime;
-    public int attackDamage { get; private set; } = 50;
+    [SerializeField] private int attackDamage = 20;
+    public int AttackDamage => attackDamage;
+    [SerializeField] private float attackDotThreshold = 0.5f;
+    public float AttackDotThreshold => attackDotThreshold;
+
+    [SerializeField] private float attackCooldown = 1.5f;
 
     [Header("WanderState Data")]
     [SerializeField] private float wayPointCollectionRadius = 10f;
@@ -94,12 +111,20 @@ public class EnemyBrain : MonoBehaviour
     private AnimatorOverrideController animatorOverrideController;
     private RuntimeAnimatorController baseController;
 
-    [Header("Suspicion Data")]
-    [SerializeField] private float suspicion;
-    [SerializeField] private float suspicionIncreaseRate = 40f;
-    [SerializeField] private float suspicionDecayRate = 20f;
-    [SerializeField] private float chaseThreshold = 100f;
-    public float Suspicion => suspicion;
+    // [Header("Suspicion Data")]
+    // private float suspicion;
+    // [SerializeField] private float suspicionDecayRate = 20f;
+    // [SerializeField] private float chaseThreshold = 100f;
+    // [SerializeField] private float investigationThreshold = 30f;
+    // public float Suspicion => suspicion;
+
+    [Header("Proximity Data")]
+    [SerializeField] private float proximityRadius = 10f;
+
+    [Header("Vision")]
+    public VisionSensor.visibilityResult previousResult { get; private set; }
+    public VisionSensor.visibilityResult currentResult { get; private set; }
+    private Vector3 snapShotPosition;
 
     void Awake()
     {
@@ -142,12 +167,13 @@ public class EnemyBrain : MonoBehaviour
         SwitchState(idleState);
         player = GameObject.FindGameObjectWithTag("Player");
         playerHealth = player.GetComponent<PlayerHealth>();
+        soundSensor.OnSoundHeard += HandleSoundStimulus;
+        visionSensor.OnPeripheralGlimpse += HandlePeripheralStimulus;
     }
 
     void Update()
     {
         // Animator_SetFloat("Speed", enemyMovement.MovementSpeed);
-        UpdateSuspicion();
         CheckPerception();
         CheckStateChange();
         currentState?.Tick();
@@ -176,12 +202,12 @@ public class EnemyBrain : MonoBehaviour
         CollectNearbySearchPoints();
         ShuffleSearchPoints();
 
-        var pickN = availableSearchPoints.Count * SearchPointFactorPercent;
-        int roundUp = (int)Mathf.Ceil((float)pickN);
-        int finalN = Mathf.Clamp(roundUp, 2, 8);
-        finalN = (int)MathF.Min(finalN, availableSearchPoints.Count);
+        var pickNsearchPoints = availableSearchPoints.Count * SearchPointFactorPercent;
+        int roundUp = (int)Mathf.Ceil((float)pickNsearchPoints);
+        int finalNsearchPoints = Mathf.Clamp(roundUp, 2, 8);
+        finalNsearchPoints = (int)MathF.Min(finalNsearchPoints, availableSearchPoints.Count);
 
-        for (int i = 0; i < finalN; i++)
+        for (int i = 0; i < finalNsearchPoints; i++)
         {
             selectedSearchPoints.Add(availableSearchPoints[i]);
         }
@@ -279,44 +305,61 @@ public class EnemyBrain : MonoBehaviour
 
         }
 
-        // if (IsInState(wanderState) && HasVision())
-        // {
-        //     SwitchState(chaseState);
-        // }
-
-        // if (!IsInState(chaseState) && !IsInState(attackState) && HasVision())
-        // {
-        //     SwitchState(chaseState);
-        //     return;
-        // }
-
-
-
-        if (!IsInState(chaseState) && !IsInState(attackState))
+        //INVESTIGATION TRIGGERED BY VISION
+        if (!IsInState(chaseState) && !IsInState(attackState) && IsCenterVision())
         {
-            if (suspicion >= chaseThreshold)
+            if (CheckVisibilityResult(VisionSensor.visibilityResult.Chase))
             {
-                lastConfirmedPosition = player.transform.position;
                 SwitchState(chaseState);
                 return;
             }
         }
 
-        if ((IsInState(idleState) || IsInState(wanderState)) && soundSensor.HasValidSound() && soundSensor.LastHeardRadius >= maxRadiusForHearing)
+        if (!IsInState(chaseState) && !IsInState(attackState) && !IsInState(investigateState) && IsCenterVision())
         {
-            InitializeInvestigateState(soundSensor.LastHeardPosition, InvestigateAreaRadius);
-            SwitchState(investigateState);
+            if (CheckVisibilityResult(VisionSensor.visibilityResult.Investigate))
+            {
+                InitializeInvestigateState(snapShotPosition, 10f);
+                SwitchState(investigateState);
+                return;
+            }
         }
 
-        if ((IsInState(investigateState) || IsInState(searchState)) && soundSensor.HasValidSound() && soundSensor.LastHeardRadius >= maxRadiusForHearing)
+
+        if (Time.time - lastStimulusTime > stimulusMemoryDuration)
         {
-            float distance = Vector3.Distance(soundSensor.LastHeardPosition, currentInvestigationCenter);
-            if (distance > currentInvestigationRadius)
+            lastStimulusPosition = Vector3.zero;
+            // suspicion = 0f;
+        }
+
+        //THIS WHOLE THING WILL BE GONE AND WE WILL INSTEAD HANDLE INVESTIGATION TRANSITION VIA STAGES OF SUSPICION (Check notepad for concept). 7th march 2026
+        // if ((IsInState(idleState) || IsInState(wanderState)) && soundSensor.HasValidSound() && soundSensor.lastHeardValue > investigationThreshold) //&& soundSensor.LastHeardRadius >= maxRadiusForHearing)
+        // {
+        //     InitializeInvestigateState(soundSensor.LastHeardPosition, InvestigateAreaRadius);
+        //     SwitchState(investigateState);
+        // }
+
+        //INVESTIGATION TRIGGERED BY SOUND
+        if (lastStimulusPosition != Vector3.zero)
+        {
+
+            if (IsInState(investigateState) || IsInState(searchState)) // && soundSensor.HasValidSound()) //&& soundSensor.LastHeardRadius >= maxRadiusForHearing)
             {
-                InitializeInvestigateState(soundSensor.LastHeardPosition, InvestigateAreaRadius);
+                float distance = Vector3.Distance(lastStimulusPosition, currentInvestigationCenter);
+                if (distance > currentInvestigationRadius)
+                {
+                    InitializeInvestigateState(lastStimulusPosition, InvestigateAreaRadius);
+                    SwitchState(investigateState);
+                }
+            }
+
+            if (IsInState(idleState) || IsInState(wanderState))
+            {
+                InitializeInvestigateState(lastStimulusPosition, InvestigateAreaRadius);
                 SwitchState(investigateState);
             }
         }
+
 
         if (IsInState(investigateState) && investigateState.hasReachedDestination)
         {
@@ -327,28 +370,66 @@ public class EnemyBrain : MonoBehaviour
         {
             SwitchState(idleState);
         }
-
-
     }
 
     private void CheckPerception()
     {
-        if (visionSensor != null && HasVision())
+        if (visionSensor != null)
         {
-            lastConfirmedPosition = visionSensor.LastSeenPosition;
-            lastConfirmedSeenTime = visionSensor.LastSeenTime;
-            if (currentlyChasing)
+            var oldResult = previousResult;
+            currentResult = visionSensor.VisibilityResult;
+            Debug.Log("[EnemyBrain] current Result: " + currentResult);
+            if (!isEndingChase && oldResult == VisionSensor.visibilityResult.Chase && currentResult == VisionSensor.visibilityResult.None && currentlyChasing)
             {
-                chaseTargetPosition = lastConfirmedPosition;
-                lastChaseTime = Time.time;
+                SetChaseEnd(true);
             }
 
+            if (HasVision() && IsCenterVision())
+            {
+                lastConfirmedPosition = visionSensor.LastSeenPosition;
+                lastConfirmedSeenTime = visionSensor.LastSeenTime;
+
+                if (currentlyChasing)
+                {
+                    NavMeshHit navHit;
+
+                    if (NavMesh.SamplePosition(lastConfirmedPosition, out navHit, 1.5f, NavMesh.AllAreas))
+                    {
+
+                        float heightDifference = Mathf.Abs(navHit.position.y - transform.position.y);
+                        if (heightDifference < 1.5f)
+                        {
+                            chaseTargetPosition = navHit.position;
+                        }
+
+                    }
+
+                    lastChaseTime = Time.time;
+                }
+
+                if (hasSeenFirstTime)
+                {
+                    hasSeenFirstTime = false;
+                    SurpriseModafaka();
+                }
+            }
+
+            //Only take 1 snapshot of playerposition for investigation on transition from none type of visibility into investigate  visibility
+            if (currentResult == VisionSensor.visibilityResult.Investigate && previousResult == VisionSensor.visibilityResult.None)
+            {
+                snapShotPosition = visionSensor.LastSeenPosition;
+            }
+
+            previousResult = currentResult;
+            Debug.Log("[EnemyBrain] previous Result: " + previousResult);
         }
+
+
 
         Vector3 origin = visionSensor.transform.position;
         Vector3 direction = player.transform.position - visionSensor.transform.position;
         float distance = direction.magnitude;
-        bool recentlyChasing = currentlyChasing || Time.time - lastChaseTime <= visionGraceDuration;
+        //  bool recentlyChasing = currentlyChasing || Time.time - lastChaseTime <= visionGraceDuration;
         RaycastHit hit;
 
         if (distance < proximityRadius && !HasVision()) //this means even if we are not in enemy's vision it can still sense us if we are near them
@@ -360,6 +441,11 @@ public class EnemyBrain : MonoBehaviour
             //later we can add closest player for multiplayer here
             // Debug.Log(hit.collider.gameObject.layer);
         }
+    }
+
+    public bool WasRecentlyChasing()
+    {
+        return Time.time - lastConfirmedSeenTime <= visionGraceDuration;
     }
 
     public void NotifySearchPointReleased(SearchPoint point)
@@ -400,33 +486,33 @@ public class EnemyBrain : MonoBehaviour
     {
         SetCurrentlyChasing(false);
         SetInvestigationForward(enemyMovement.transform.forward);
+        chaseTargetPosition = lastChasePosition;
         InitializeInvestigateState(lastChasePosition, InvestigateAreaRadius);
         postChase = true;
+        SetChasePause(true);
         SwitchState(investigateState);
     }
 
-    private void UpdateSuspicion()
+    private void HandleSoundStimulus(Vector3 position)
     {
-        if (IsInState(deadState) || IsInState(chaseState) || IsInState(attackState))
-        {
-            return;
-        }
-
-        if (HasVision())
-        {
-            suspicion += suspicionIncreaseRate * Time.deltaTime;
-        }
-        else
-        {
-            suspicion -= suspicionDecayRate * Time.deltaTime;
-        }
-
-        suspicion = Mathf.Clamp(suspicion, 0, chaseThreshold);
+        lastStimulusPosition = position;
+        lastStimulusTime = Time.time;
+    }
+    private void HandlePeripheralStimulus(Vector3 position)
+    {
+        lastStimulusPosition = position;
+        lastStimulusTime = Time.time;
+        enemyMovement.RotationIntent(EnemyMovement.RotationPriority.State, position);
     }
 
     public bool HasVision()
     {
         return visionSensor.HasLineOfSight;
+    }
+
+    public bool IsCenterVision()
+    {
+        return visionSensor.AngleFactor > 0.5f;
     }
 
     private void SetInvestigationForward(Vector3 forward)
@@ -470,8 +556,6 @@ public class EnemyBrain : MonoBehaviour
         return currentState.GetType().Name;
     }
 
-
-
     public bool IsDead()
     {
         return enemyHealth.EnemyisDead;
@@ -503,8 +587,29 @@ public class EnemyBrain : MonoBehaviour
         return " ";
     }
 
+    private void SurpriseModafaka()
+    {
+        SetChasePause(true);
+    }
+
+    public void SetChasePause(bool permission)
+    {
+        shouldPauseOnChase = permission;
+    }
+
+    public void SetChaseEnd(bool _isEndingChase)
+    {
+        isEndingChase = _isEndingChase;
+    }
+
+    public bool CheckVisibilityResult(VisionSensor.visibilityResult expectedResult)
+    {
+        return visionSensor != null && visionSensor.VisibilityResult == expectedResult;
+    }
+
     void OnDrawGizmos()
     {
+        DrawCircle(transform.position, proximityRadius, 40);
         if (currentInvestigationRadius <= 0f)
             return;
 
@@ -526,7 +631,15 @@ public class EnemyBrain : MonoBehaviour
         //to visualize last chase target position 
         if (chaseTargetPosition != Vector3.zero)
         {
-            Gizmos.color = UnityEngine.Color.red;
+            if (chaseTargetPosition == transform.position)
+            {
+                Gizmos.color = UnityEngine.Color.green;
+            }
+            else
+            {
+                Gizmos.color = UnityEngine.Color.red;
+
+            }
 
             // Sphere at last chase position
             Gizmos.DrawSphere(chaseTargetPosition, 0.25f);
@@ -535,9 +648,9 @@ public class EnemyBrain : MonoBehaviour
             Gizmos.DrawLine(transform.position, chaseTargetPosition);
         }
 
-        Gizmos.color = new UnityEngine.Color(0f, 1f, 1f, 0.8f); // bright cyan
+        Gizmos.color = UnityEngine.Color.brown; // bright cyan
 
-        DrawCircle(transform.position, proximityRadius, 40);
+
 
         // Optional vertical line for clarity
         Gizmos.DrawLine(

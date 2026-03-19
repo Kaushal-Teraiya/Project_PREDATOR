@@ -8,6 +8,8 @@ public class SoundEmitter : MonoBehaviour
     // private float soundValue
     private SoundSource debugProfile;
 
+    //Use this function in all the things that can potentially or obviously make a sound , don't forget to create a sound profile for each of those objects---
+    //      ---then pass the profile from that objects script into EmitSound(profile) functin rest of the work will be handled by the emitter script :)))...
     public void EmitSound(SoundSource soundSource)
     {
         debugProfile = soundSource;
