@@ -391,19 +391,7 @@ public class EnemyBrain : MonoBehaviour
 
                 if (currentlyChasing)
                 {
-                    NavMeshHit navHit;
-
-                    if (NavMesh.SamplePosition(lastConfirmedPosition, out navHit, 1.5f, NavMesh.AllAreas))
-                    {
-
-                        float heightDifference = Mathf.Abs(navHit.position.y - transform.position.y);
-                        if (heightDifference < 1.5f)
-                        {
-                            chaseTargetPosition = navHit.position;
-                        }
-
-                    }
-
+                    chaseTargetPosition = lastConfirmedPosition;
                     lastChaseTime = Time.time;
                 }
 
