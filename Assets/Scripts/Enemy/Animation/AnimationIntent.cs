@@ -4,6 +4,7 @@ public enum AnimationType
     Idle,
     Walk,
     Run,
+    Reposition,
     Attack,
     Death
 }

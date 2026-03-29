@@ -1,6 +1,7 @@
 using Mono.Cecil.Cil;
 using Unity.Mathematics;
 using Unity.VisualScripting;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Assertions.Must;
@@ -10,7 +11,6 @@ using UnityEngine.UI;
 public class EnemyMovement : MonoBehaviour
 {
     [Header("Tunable Parameters")]
-    //[SerializeField] private float stopDistance = 1.2f;
     [SerializeField] private float enemySpeed;
     [SerializeField] private float rotationSpeed = 360f;
     [SerializeField] private float rotationThreshold = 2f;
@@ -26,7 +26,8 @@ public class EnemyMovement : MonoBehaviour
         Investigate,
         Chase,
         Search,
-        Wander
+        Wander,
+        Reposition
     }
 
     public enum RotationPriority
@@ -45,7 +46,7 @@ public class EnemyMovement : MonoBehaviour
     private float currentSpeed;
     private Animator animator;
     public AnimationIntent currentAnimationIntent;
-
+  
     [Header("NavMesh Data")]
     private NavMeshAgent agent;
     private NavMeshPath currentPath;
@@ -53,6 +54,19 @@ public class EnemyMovement : MonoBehaviour
     private float repathTimer;
     [SerializeField] private float repathInterval = 0.5f;
     [SerializeField] private float acceleration = 10f;
+
+    [Header("Lunge Data")]
+    private bool isLunging;
+    private bool isRunning;
+    private bool hasCapturedArcStart;
+    private float delayTimer;
+    private float arcTimer;
+    private float delayDuration;
+    private float arcDuration;
+    private float arcHeight;
+    private Vector3 lungeDirection;
+    private Vector3 arcStartPosition;
+    private Vector3 arcEndPosition;
 
     void Awake()
     {
@@ -71,6 +85,7 @@ public class EnemyMovement : MonoBehaviour
         ResetAnimationIntent();
         ResolveSpeed();
         ApplyRotation();
+        ExecuteLunge();
         currentSpeed = Mathf.MoveTowards(currentSpeed, enemySpeed, acceleration * Time.deltaTime);
         agent.nextPosition = transform.position;
     }
@@ -162,7 +177,7 @@ public class EnemyMovement : MonoBehaviour
 
     }
 
-    public bool RotateTowardsIntent()
+    private bool RotateTowardsIntent()
     {
         if (!canRotate)
         {
@@ -231,6 +246,9 @@ public class EnemyMovement : MonoBehaviour
 
             case MovementMode.Wander:
                 enemySpeed = 2f;
+                break;
+            case MovementMode.Reposition:
+                enemySpeed = 20f;
                 break;
 
             default:
@@ -345,6 +363,9 @@ public class EnemyMovement : MonoBehaviour
             case AnimationType.Death:
                 Animator_SetBool("IsDead", true);
                 break;
+            case AnimationType.Reposition:
+                animator.SetBool("EnterReposition", true);
+                break;
 
             default:
                 Animator_SetFloat("Speed", 0f);
@@ -352,6 +373,54 @@ public class EnemyMovement : MonoBehaviour
 
         }
     }
+
+    public void StartLunge(Vector3 targetPosition, float delayDuration, float arcDuration, float arcHeight)
+    {
+        hasCapturedArcStart = false;
+        isLunging = true;
+        delayTimer = 0f;
+        arcTimer = 0f;
+        arcEndPosition = targetPosition;
+        this.delayDuration = delayDuration;
+        this.arcDuration = arcDuration;
+        this.arcHeight = arcHeight;
+        lungeDirection = (targetPosition - transform.position).normalized;
+        RotationIntent(RotationPriority.State, targetPosition);
+    }
+
+    private void ExecuteLunge()
+    {
+        if (!isLunging) return;
+
+        if (delayTimer < delayDuration)
+        {
+            isRunning = true;
+            delayTimer += Time.deltaTime;
+            //  transform.position += lungeDirection * currentSpeed * Time.deltaTime;
+            return;
+        }
+
+        if (!hasCapturedArcStart)
+        {
+            arcStartPosition = transform.position;
+            hasCapturedArcStart = true;
+            isRunning = false;
+        }
+
+        arcTimer += Time.deltaTime;
+        var t = Mathf.Clamp01(arcTimer / arcDuration);
+        Vector3 horizontal = Vector3.Lerp(arcStartPosition, arcEndPosition, t);
+        var height = arcHeight * 4 * t * (1 - t);
+        horizontal.y += height;
+        transform.position = horizontal;
+        if (arcTimer >= arcDuration)
+        {
+            isLunging = false;
+            arcTimer = 0f;
+            delayTimer = 0f;
+        }
+    }
+
 
     public void Animator_SetFloat(string floatName, float speed)
     {

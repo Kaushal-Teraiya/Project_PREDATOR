@@ -20,11 +20,11 @@ public class IdleState : IEnemyState
         var Enemy = brain.enemyMovement;
         Enemy.RequestAnimation(new AnimationIntent(AnimationType.Idle , 10));
         idleTimer += Time.deltaTime;
-        // if (idleTimer >= idleDuration)
-        // {
-        //     Debug.Log("[IdleState] Entering WanderState");
-        //     brain.SwitchState(brain.WanderState);
-        // }
+        if (idleTimer >= idleDuration)
+        {
+            Debug.Log("[IdleState] Entering WanderState");
+            brain.SwitchState(brain.WanderState);
+        }
     }
     public void OnExit()
     {

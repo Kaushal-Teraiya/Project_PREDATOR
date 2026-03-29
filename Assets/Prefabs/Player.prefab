@@ -305,16 +305,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   player: {fileID: 3272269175635726886}
   playerWalkSpeed: 20
-  playerRunSpeed: 10
+  playerRunSpeed: 30
   jumpHeight: 3
   footStepsTime_walk: 0.5
   footStepsTime_Run: 0.3
-  stepTimer: 0
   SoundSource_Run: {fileID: 11400000, guid: 4f69c4470318b384f8481abe3119a6dd, type: 2}
   SoundSource_Walk: {fileID: 11400000, guid: ff0a4a89644c0114db87565d4fa0bfb1, type: 2}
-  moveAction: {fileID: -8666743256118024188, guid: 6d2de442c44ebe54f9ba18cef2336f7f, type: 3}
-  jumpAction: {fileID: -5351950667269483389, guid: 6d2de442c44ebe54f9ba18cef2336f7f, type: 3}
-  runAction: {fileID: 4583614773088473541, guid: 6d2de442c44ebe54f9ba18cef2336f7f, type: 3}
+  moveAction: {fileID: 0}
+  jumpAction: {fileID: 0}
+  runAction: {fileID: 0}
 --- !u!143 &3272269175635726886
 CharacterController:
   m_ObjectHideFlags: 0
@@ -409,7 +408,7 @@ MonoBehaviour:
   baseVisibility_UseLightZone: 0.15
   baseVisibility_NoLightzone: 1
   intensityTuner: 5
-  useLightZone: 1
+  useLightZone: 0
 --- !u!1 &7308693241244710235
 GameObject:
   m_ObjectHideFlags: 0

@@ -95,10 +95,18 @@ public class VisionSensor : MonoBehaviour
 
                 visionClarity = playerVisiblity.GetVisiblity();
 
-                if (visionClarity > investigateThreshold || distanceBtwEnemyNPlayer <= chaseDistanceThresholdInDarkness)// This line fixes the bug where the zombie would update the player position even if he was in the dark!!
+                if (!playerVisiblity.UseLightZone)
                 {
                     lastSeenPosition = player.transform.position;
                     lastSeenTime = Time.time;
+                }
+                else// This line fixes the bug where the zombie would update the player position even if he was in the dark!!
+                {
+                    if (visionClarity > investigateThreshold || distanceBtwEnemyNPlayer <= chaseDistanceThresholdInDarkness)
+                    {
+                        lastSeenPosition = player.transform.position;
+                        lastSeenTime = Time.time;
+                    }
                 }
             }
             else
@@ -113,9 +121,18 @@ public class VisionSensor : MonoBehaviour
 
         float angleFactor = (dotProduct - dotProductThreshold) / (1 - dotProductThreshold);
         angleFactor = Mathf.Clamp01(angleFactor);
-
+        bool peripheralVision;
         AngleFactor = angleFactor;
-        bool peripheralVision = angleFactor > 0f && angleFactor < 0.5f;
+
+        if (playerVisiblity.UseLightZone)
+        {
+            peripheralVision = angleFactor > 0f && angleFactor < 0.5f && VisibilityResult != visibilityResult.None && distanceBtwEnemyNPlayer <= chaseDistanceThresholdInDarkness;
+        }
+        else
+        {
+            peripheralVision = angleFactor > 0f && angleFactor < 0.5f;
+        }
+
 
         if (peripheralVision && hasLineOfSight)
         {
@@ -140,32 +157,39 @@ public class VisionSensor : MonoBehaviour
         if (hasLineOfSight)
         {
             visionClarity = playerVisiblity.GetVisiblity();
+            if (playerVisiblity.UseLightZone)
+            {
+                if (distanceBtwEnemyNPlayer <= chaseDistanceThresholdInDarkness && hasLineOfSight)
+                {
+                    VisibilityResult = visibilityResult.Chase;
+                    return;
+                }
 
-            if (distanceBtwEnemyNPlayer <= chaseDistanceThresholdInDarkness && hasLineOfSight)
-            {
-                VisibilityResult = visibilityResult.Chase;
-                return;
-            }
-
-            if (visionClarity > chaseThreshold)
-            {
-                VisibilityResult = visibilityResult.Chase;
-            }
-            else if (visionClarity > investigateThreshold)
-            {
-                //investigate directly
-                VisibilityResult = visibilityResult.Investigate;
-            }
-            else if (playerMovement.isPerformingAction && visionClarity > playerVisiblity.BaseVisibility)
-            {
-                //some reaction like agressive scream or animation that shows that zombie is ready to investigate
-                //suspicion accumulation can be done here so that player have time to save themselves from alerting zombies
-                VisibilityResult = visibilityResult.Investigate;
+                if (visionClarity > chaseThreshold)
+                {
+                    VisibilityResult = visibilityResult.Chase;
+                }
+                else if (visionClarity > investigateThreshold)
+                {
+                    //investigate directly
+                    VisibilityResult = visibilityResult.Investigate;
+                }
+                else if (playerMovement.isPerformingAction && visionClarity > playerVisiblity.BaseVisibility)
+                {
+                    //some reaction like agressive scream or animation that shows that zombie is ready to investigate
+                    //suspicion accumulation can be done here so that player have time to save themselves from alerting zombies
+                    VisibilityResult = visibilityResult.Investigate;
+                }
+                else
+                {
+                    VisibilityResult = visibilityResult.None;
+                }
             }
             else
             {
-                VisibilityResult = visibilityResult.None;
+                VisibilityResult = visibilityResult.Chase;
             }
+
         }
 
         previousPlayerPosition = player.position;

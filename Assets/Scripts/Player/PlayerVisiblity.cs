@@ -11,6 +11,7 @@ public class PlayerVisiblity : MonoBehaviour
     [SerializeField] private float baseVisibility_NoLightzone = 1f;
     [SerializeField] private float intensityTuner = 5f;
     [SerializeField] private bool useLightZone = true;
+    public bool UseLightZone => useLightZone;
 
     private void OnTriggerEnter(Collider other)
     {
@@ -79,7 +80,7 @@ public class PlayerVisiblity : MonoBehaviour
     void Update()
     {
         // Debug.Log("[PlayerVisiblity] active lights: " + activeLights.Count);
-        Debug.Log("[PlayerVisibility] Visibility value is : " + GetVisiblity());
+//        Debug.Log("[PlayerVisibility] Visibility value is : " + GetVisiblity());
     }
 }
 

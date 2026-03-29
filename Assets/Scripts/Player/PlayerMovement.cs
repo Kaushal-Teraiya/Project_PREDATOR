@@ -13,7 +13,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float jumpHeight = 1.5f;
     [SerializeField] private float footStepsTime_walk = 0.5f;
     [SerializeField] private float footStepsTime_Run = 0.3f;
-    [SerializeField] private float stepTimer;
+    private float stepTimer;
     [SerializeField] private SoundSource SoundSource_Run;
     [SerializeField] private SoundSource SoundSource_Walk;
     public float playerSpeed { get; private set; }

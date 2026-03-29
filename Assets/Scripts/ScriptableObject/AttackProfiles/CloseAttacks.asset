@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62de18cbe2bbf27488c7c60d3c3cf5a0, type: 3}
+  m_Name: CloseAttacks
+  m_EditorClassIdentifier: Assembly-CSharp::AttackTypes
+  attackName: MeeleAttacks
+  minRange: 2.3
+  maxRange: 3
+  damage: 50
+  attackAnimations:
+  - {fileID: 7400000, guid: 058b4038d841eb647a0b6b6d8d8dc213, type: 2}
+  - {fileID: 7400000, guid: 288e39373c598424ea488941a3e11906, type: 2}
+  - {fileID: 7400000, guid: b7db959fa4c05b94c9e10f6d8580fcdd, type: 2}
+  - {fileID: 7400000, guid: 059ccd2280536c64d9509b87e5a6aa4a, type: 2}
+  - {fileID: 7400000, guid: 2ed1bfc2377ff77449a7ee3f3e6980e9, type: 2}
+  - {fileID: 7400000, guid: 7d23a310cce7a1e48a14c4552e0577e3, type: 2}
+  cooldown: 0.3
+  retreat: 1

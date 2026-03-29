@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 
@@ -10,6 +11,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     public int currentHealth { get; private set; }
     public bool playerisDead { get; private set; }
     private TextMeshProUGUI healthText;
+    public event Action<bool> playerDead;
 
     void Awake()
     {
@@ -36,6 +38,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     {
         if (playerisDead)
         {
+            playerDead?.Invoke(true);
             return;
         }
 

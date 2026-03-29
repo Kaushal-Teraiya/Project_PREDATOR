@@ -52,38 +52,10 @@ public class ChaseState : IEnemyState
 
         if (brain.CheckVisibilityResult(VisionSensor.visibilityResult.Chase))
         {
-
-            // NavMeshHit hit;
-            // if (NavMesh.SamplePosition(desiredPoint, out hit, 0.5f, NavMesh.AllAreas))
-            // {
-            //     float heightDiff = Mathf.Abs(hit.position.y - brain.transform.position.y);
-
-            //     if (heightDiff < 1.5f)
-            //     {
-            //         lockedChasePoint = hit.position;
-            //     }
-            // }
-
             Enemy.MoveTo(desiredPoint);
             Enemy.ClearRotationIntent();
-            //  Enemy.RotationIntent(EnemyMovement.RotationPriority.State, brain.player.transform.position);
-            //Enemy.RotationIntent(EnemyMovement.RotationPriority.Vision, brain.chaseTargetPosition);
         }
-        // else if (brain.isEndingChase)
-        // {
-        //     Enemy.MoveTo(brain.chaseTargetPosition);
-
-        //     if (brain.HasReachedThePosition(brain.chaseTargetPosition))
-        //     {
-        //         brain.SetChaseEnd(false);
-        //         brain.EndChase(brain.chaseTargetPosition);
-        //     }
-        // }
-        // else if (brain.WasRecentlyChasing())
-        // {
-        //     Enemy.MoveTo(brain.chaseTargetPosition);
-        // }
-        else if (brain.WasRecentlyChasing() && !brain.CheckVisibilityResult(VisionSensor.visibilityResult.None))
+        else if (brain.WasRecentlyChasing() && !brain.CheckVisibilityResult(VisionSensor.visibilityResult.None))//visibility is not none => was the second condition
         {
             Enemy.MoveTo(brain.chaseTargetPosition);
             Enemy.ClearRotationIntent();
@@ -109,13 +81,13 @@ public class ChaseState : IEnemyState
 
         Enemy.RequestAnimation(new AnimationIntent(AnimationType.Run, 40));
 
-        if (!brain.IsInState(brain.AttackState) && brain.HasVision() && distanceToPlayer <= brain.AttackDistance && !brain.IsInCooldown() && dot > brain.AttackDotThreshold)
-        {
-            Debug.Log("[Chase] Entering Attack.");
-            brain.enemyMovement.RotationIntent(EnemyMovement.RotationPriority.State, brain.player.transform.position);
-            //Enemy.RequestAnimation(new AnimationIntent(AnimationType.Attack, 50));
-            brain.SwitchState(brain.AttackState);
-        }
+        // if (!brain.IsInState(brain.AttackState) && brain.HasVision() && distanceToPlayer <= brain.AttackDistance && !brain.IsInCooldown() && dot > brain.AttackDotThreshold)
+        // {
+        //     Debug.Log("[Chase] Entering Attack.");
+        //     brain.enemyMovement.RotationIntent(EnemyMovement.RotationPriority.State, brain.player.transform.position);
+        //     //Enemy.RequestAnimation(new AnimationIntent(AnimationType.Attack, 50));
+        //     brain.SwitchState(brain.AttackState);
+        // }
     }
 
     public void OnExit()

@@ -41,6 +41,10 @@ public class DebugStateLabel : MonoBehaviour
                 return Color.gold;
             case "DeadState":
                 return Color.black;
+            case "BufferState":
+                return Color.azure;
+            case "RepositionState":
+                return Color.rebeccaPurple;
             default:
                 return Color.white;
         }

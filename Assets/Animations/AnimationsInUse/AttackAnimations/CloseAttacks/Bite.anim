@@ -6,7 +6,7 @@ AnimationClip:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: AttackVariant1_
+  m_Name: Bite
   serializedVersion: 7
   m_Legacy: 0
   m_Compressed: 0
@@ -170238,7 +170238,7 @@ AnimationClip:
     floatParameter: 0
     intParameter: 0
     messageOptions: 0
-  - time: 4
+  - time: 3.9333334
     functionName: HandleAttackEnd
     data: 
     objectReferenceParameter: {fileID: 0}

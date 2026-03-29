@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Threading;
 using Unity.Mathematics;
 using Unity.VisualScripting;
@@ -31,10 +30,14 @@ public class EnemyBrain : MonoBehaviour
     private AttackState attackState;
     private DeadState deadState;
     private WanderState wanderState;
+    private BufferState bufferState;
+    private RepositionState repositionState;
+    public IEnemyState RepositionState => repositionState;
     public IEnemyState WanderState => wanderState;
     public IEnemyState AttackState => attackState;
     public IEnemyState ChaseState => chaseState;
     public IEnemyState IdleState => idleState;
+    public IEnemyState BufferState => bufferState;
 
     [Header("Object & Script References")]
     private EnemyMovement Movement_Enemy;
@@ -87,6 +90,8 @@ public class EnemyBrain : MonoBehaviour
 
     [Header("AttackState Data")]
     [SerializeField] private float attackDistance = 4f;
+    [SerializeField] private float attackRegisterDistance;
+    public float AttackRegisterDistance => attackRegisterDistance;
     public float AttackDistance => attackDistance;
     [SerializeField] private float attackOffset;
     public float AttackOffset => attackOffset;
@@ -95,20 +100,43 @@ public class EnemyBrain : MonoBehaviour
     public int AttackDamage => attackDamage;
     [SerializeField] private float attackDotThreshold = 0.5f;
     public float AttackDotThreshold => attackDotThreshold;
+    [SerializeField] private AttackTypes closeAttacksAsset;
+    [SerializeField] private AttackTypes midAttacksAsset;
+    [SerializeField] private AttackTypes farAttacksAsset;
+    private AttackTypes currentAttackProfile;
+    public AttackTypes CurrentAttackProfile => currentAttackProfile;
+    public AttackTypes CloseAttackAsset => closeAttacksAsset;
+    public AttackTypes FarAttackAsset => farAttacksAsset;
+    public enum CombatBand
+    {
+        Far,
+        Mid,
+        Close
+    }
+    [SerializeField] private CombatBand currentCombatBand;
+
+    [SerializeField] private float farBandAttackDistance;
+    [SerializeField] private float midBandAttackDistance;
+    [SerializeField] private float closeBandAttackDistance;
+    [SerializeField] private float bandDistanceTolerance = 0.5f;
 
     [SerializeField] private float attackCooldown = 1.5f;
+
+    [Header("Navmesh Data")]
+    [SerializeField] private float distanceForSampling = 5f;
+    public float DistanceForSampling => distanceForSampling;
 
     [Header("WanderState Data")]
     [SerializeField] private float wayPointCollectionRadius = 10f;
     public float _WayPointCollectionRadius => wayPointCollectionRadius;
 
     [Header("Animation Data")]
-    [SerializeField] private List<AnimationClip> attackVariants = new List<AnimationClip>();
+    //[SerializeField] private List<AnimationClip> attackVariants = new List<AnimationClip>();
     [SerializeField] private List<AnimationClip> idleVariants = new List<AnimationClip>();
     [SerializeField] private List<AnimationClip> walkVariants = new List<AnimationClip>();
     [SerializeField] private List<AnimationClip> runVariants = new List<AnimationClip>();
     [SerializeField] private List<AnimationClip> deathVariants = new List<AnimationClip>();
-    private AnimatorOverrideController animatorOverrideController;
+    public AnimatorOverrideController animatorOverrideController;
     private RuntimeAnimatorController baseController;
 
     // [Header("Suspicion Data")]
@@ -125,6 +153,14 @@ public class EnemyBrain : MonoBehaviour
     public VisionSensor.visibilityResult previousResult { get; private set; }
     public VisionSensor.visibilityResult currentResult { get; private set; }
     private Vector3 snapShotPosition;
+
+    [Header("Combat Band Gizmos")]
+    [SerializeField] private bool drawBandGizmos = true;
+
+    [Range(8, 128)]
+    [SerializeField] private int circleSegments = 48;
+
+    public Vector3 Debug_RepositionTarget;
 
     void Awake()
     {
@@ -143,15 +179,14 @@ public class EnemyBrain : MonoBehaviour
         AnimationClip walkVariant = walkVariants[UnityEngine.Random.Range(0, walkVariants.Count)];
         AnimationClip idleVariant = idleVariants[UnityEngine.Random.Range(0, idleVariants.Count)];
         AnimationClip runVariant = runVariants[UnityEngine.Random.Range(0, runVariants.Count)];
-        AnimationClip attackVariant = attackVariants[UnityEngine.Random.Range(0, attackVariants.Count)];
+        //   AnimationClip attackVariant = attackVariants[UnityEngine.Random.Range(0, attackVariants.Count)];
         AnimationClip deathVariant = deathVariants[UnityEngine.Random.Range(0, deathVariants.Count)];
 
         animatorOverrideController["Walk_"] = walkVariant;
         animatorOverrideController["Idle_"] = idleVariant;
         animatorOverrideController["Run_"] = runVariant;
-        animatorOverrideController["Attack_"] = attackVariant;
+        // animatorOverrideController["Attack_"] = attackVariant;
         animatorOverrideController["Death_"] = deathVariant;
-
         animator.runtimeAnimatorController = animatorOverrideController;
 
     }
@@ -164,9 +199,12 @@ public class EnemyBrain : MonoBehaviour
         attackState = new AttackState(this);
         deadState = new DeadState(this);
         wanderState = new WanderState(this);
+        bufferState = new BufferState(this);
+        repositionState = new RepositionState(this);
         SwitchState(idleState);
         player = GameObject.FindGameObjectWithTag("Player");
         playerHealth = player.GetComponent<PlayerHealth>();
+        playerHealth.playerDead += HandleEnemyStateOnPlayerDeath;
         soundSensor.OnSoundHeard += HandleSoundStimulus;
         visionSensor.OnPeripheralGlimpse += HandlePeripheralStimulus;
     }
@@ -187,7 +225,6 @@ public class EnemyBrain : MonoBehaviour
         currentState?.OnExit();
         currentState = newState;
         currentState?.OnEnter();
-
     }
 
     private void InitializeInvestigateState(Vector3 lastKnownPosition, float radius)
@@ -304,12 +341,38 @@ public class EnemyBrain : MonoBehaviour
             return;
 
         }
+        var distanceToPlayer = Vector3.Distance(transform.position, player.transform.position);
+
+
+        if (IsInState(repositionState) && distanceToPlayer > farAttacksAsset.maxRange)
+        {
+            //MAKE SURE TO CHECK VISIBILITY RESULT BEFORE TRANSITIONING TO ANY STATE BECAUSE WE HAVE TO TAKE DARKNESS IN ACCOUNT AS WELL.
+            SwitchState(chaseState);
+        }
+        if (IsInState(repositionState))
+        {
+            return;
+        }
+
+        var directionToPlayer = player.transform.position - transform.position;
+        var dot = Vector3.Dot(transform.forward.normalized, directionToPlayer.normalized);
+
+        if (!IsInState(AttackState) && IsInState(chaseState) && HasVision() && IsInCombatBand() && !IsInCooldown() && dot > AttackDotThreshold)
+        {
+            Debug.Log("[Chase] Entering Attack.");
+            // Debug.Log("[EnemeyBrain] Dot for Attack is: " + dot);
+            enemyMovement.RotationIntent(EnemyMovement.RotationPriority.State, player.transform.position);
+            //Enemy.RequestAnimation(new AnimationIntent(AnimationType.Attack, 50));
+            SwitchState(AttackState);
+        }
 
         //INVESTIGATION TRIGGERED BY VISION
         if (!IsInState(chaseState) && !IsInState(attackState) && IsCenterVision())
         {
             if (CheckVisibilityResult(VisionSensor.visibilityResult.Chase))
             {
+                SelectNextBand();
+                Debug.Log("[EnemyBrain] current combat band is " + GetCurrentCombatBand());
                 SwitchState(chaseState);
                 return;
             }
@@ -333,6 +396,8 @@ public class EnemyBrain : MonoBehaviour
         }
 
         //THIS WHOLE THING WILL BE GONE AND WE WILL INSTEAD HANDLE INVESTIGATION TRANSITION VIA STAGES OF SUSPICION (Check notepad for concept). 7th march 2026
+        //19th march 2026 LOL I LITERALLY DIDN'T DO THAT , REALISED THE GRADUAL SUSPICION INCREMENT IS MESSY & NOT IT.. HAD TO HANDLE BOTH SOUND AND VISION SEPARATELY , FUNNY THING IS THE WHOLE SUSPCION SYSTEM IS GONE..
+        //---
         // if ((IsInState(idleState) || IsInState(wanderState)) && soundSensor.HasValidSound() && soundSensor.lastHeardValue > investigationThreshold) //&& soundSensor.LastHeardRadius >= maxRadiusForHearing)
         // {
         //     InitializeInvestigateState(soundSensor.LastHeardPosition, InvestigateAreaRadius);
@@ -342,7 +407,6 @@ public class EnemyBrain : MonoBehaviour
         //INVESTIGATION TRIGGERED BY SOUND
         if (lastStimulusPosition != Vector3.zero)
         {
-
             if (IsInState(investigateState) || IsInState(searchState)) // && soundSensor.HasValidSound()) //&& soundSensor.LastHeardRadius >= maxRadiusForHearing)
             {
                 float distance = Vector3.Distance(lastStimulusPosition, currentInvestigationCenter);
@@ -378,7 +442,7 @@ public class EnemyBrain : MonoBehaviour
         {
             var oldResult = previousResult;
             currentResult = visionSensor.VisibilityResult;
-            Debug.Log("[EnemyBrain] current Result: " + currentResult);
+            //            Debug.Log("[EnemyBrain] current Result: " + currentResult);
             if (!isEndingChase && oldResult == VisionSensor.visibilityResult.Chase && currentResult == VisionSensor.visibilityResult.None && currentlyChasing)
             {
                 SetChaseEnd(true);
@@ -391,19 +455,7 @@ public class EnemyBrain : MonoBehaviour
 
                 if (currentlyChasing)
                 {
-                    NavMeshHit navHit;
-
-                    if (NavMesh.SamplePosition(lastConfirmedPosition, out navHit, 1.5f, NavMesh.AllAreas))
-                    {
-
-                        float heightDifference = Mathf.Abs(navHit.position.y - transform.position.y);
-                        if (heightDifference < 1.5f)
-                        {
-                            chaseTargetPosition = navHit.position;
-                        }
-
-                    }
-
+                    chaseTargetPosition = lastConfirmedPosition;
                     lastChaseTime = Time.time;
                 }
 
@@ -421,7 +473,7 @@ public class EnemyBrain : MonoBehaviour
             }
 
             previousResult = currentResult;
-            Debug.Log("[EnemyBrain] previous Result: " + previousResult);
+            //            Debug.Log("[EnemyBrain] previous Result: " + previousResult);
         }
 
 
@@ -503,6 +555,74 @@ public class EnemyBrain : MonoBehaviour
         lastStimulusPosition = position;
         lastStimulusTime = Time.time;
         enemyMovement.RotationIntent(EnemyMovement.RotationPriority.State, position);
+    }
+
+    private void HandleEnemyStateOnPlayerDeath(bool state)
+    {
+        SwitchState(idleState);
+    }
+
+    public void SelectNextBand()
+    {
+        var value = UnityEngine.Random.value;
+
+        if (value < 0.33)
+        {
+            currentCombatBand = CombatBand.Close;
+            currentAttackProfile = closeAttacksAsset;
+        }
+        else if (value < 0.66)
+        {
+            currentCombatBand = CombatBand.Mid;
+            currentAttackProfile = midAttacksAsset;
+        }
+        else
+        {
+            currentCombatBand = CombatBand.Far;
+            currentAttackProfile = farAttacksAsset;
+        }
+    }
+
+    public CombatBand GetCurrentCombatBand()
+    {
+        return currentCombatBand;
+    }
+
+    public void OverrideAttackAnimation(AnimationClip clip)
+    {
+        animatorOverrideController["Attack_"] = clip;
+        animator.runtimeAnimatorController = animatorOverrideController;
+        animator.Play("Attack", 0, 0f);
+    }
+
+    private bool IsInCombatBand()
+    {
+        float distanceToPlayer = Vector3.Distance(transform.position, player.transform.position);
+        float desiredBandDistance = GetDesiredBandDistance(GetCurrentCombatBand()) / 2;
+        float positioning = Mathf.Abs(distanceToPlayer - desiredBandDistance);
+        Debug.Log("[EnemyBrain] Distanceto Player " + distanceToPlayer);
+        return positioning <= desiredBandDistance + bandDistanceTolerance;
+    }
+
+    private float GetDesiredBandDistance(CombatBand combatBand)
+    {
+        if (combatBand == CombatBand.Far)
+        {
+            return farBandAttackDistance;
+        }
+        else if (combatBand == CombatBand.Mid)
+        {
+            return midBandAttackDistance;
+        }
+        else
+        {
+            return closeBandAttackDistance;
+        }
+    }
+
+    public void ApplyRootMotion(bool _applyRootMotion)
+    {
+        animator.applyRootMotion = _applyRootMotion;
     }
 
     public bool HasVision()
@@ -610,11 +730,11 @@ public class EnemyBrain : MonoBehaviour
     void OnDrawGizmos()
     {
         DrawCircle(transform.position, proximityRadius, 40);
-        if (currentInvestigationRadius <= 0f)
-            return;
-
-        Gizmos.color = UnityEngine.Color.orange;
-
+        if (currentInvestigationRadius > 0f)
+        {
+            Gizmos.color = UnityEngine.Color.orange;
+            DrawCircle(currentInvestigationCenter, currentInvestigationRadius, 40);
+        }
 
         DrawCircle(
             currentInvestigationCenter,
@@ -657,6 +777,57 @@ public class EnemyBrain : MonoBehaviour
             transform.position,
             transform.position + Vector3.up * 2f
         );
+
+        if (!drawBandGizmos || player == null)
+            return;
+
+        DrawBand(closeAttacksAsset, UnityEngine.Color.green);
+        DrawBand(midAttacksAsset, UnityEngine.Color.yellow);
+        DrawBand(farAttacksAsset, Color.red);
+
+        DrawRepositionTarget();
+    }
+
+    void DrawBand(AttackTypes profile, Color color)
+    {
+        if (profile == null)
+            return;
+
+        Vector3 center = player.transform.position;
+
+        Gizmos.color = color;
+
+        DrawCirclev2(center, profile.minRange);
+        DrawCirclev2(center, profile.maxRange);
+    }
+
+    void DrawCirclev2(Vector3 center, float radius)
+    {
+        float step = Mathf.PI * 2f / circleSegments;
+
+        Vector3 prevPoint = center + new Vector3(Mathf.Cos(0), 0, Mathf.Sin(0)) * radius;
+
+        for (int i = 1; i <= circleSegments; i++)
+        {
+            float angle = step * i;
+
+            Vector3 nextPoint =
+                center +
+                new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle)) * radius;
+
+            Gizmos.DrawLine(prevPoint, nextPoint);
+
+            prevPoint = nextPoint;
+        }
+    }
+    void DrawRepositionTarget()
+    {
+        if (Debug_RepositionTarget == Vector3.zero)
+            return;
+
+        Gizmos.color = UnityEngine.Color.cyan;
+
+        Gizmos.DrawSphere(Debug_RepositionTarget, 0.2f);
     }
 
     void DrawCircle(Vector3 center, float radius, int segments)

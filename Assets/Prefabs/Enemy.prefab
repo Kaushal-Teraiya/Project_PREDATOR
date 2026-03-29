@@ -315,7 +315,7 @@ MonoBehaviour:
   obstacleMask:
     serializedVersion: 2
     m_Bits: 64
-  visionGraceDuration: 0.1
+  visionGraceDuration: 3
   wayPointManager: {fileID: 0}
   searchPointLayer:
     serializedVersion: 2
@@ -324,11 +324,21 @@ MonoBehaviour:
   InvestigateAreaRadius: 18
   stimulusMemoryDuration: 5
   hasSeenFirstTime: 1
-  attackDistance: 3.5
+  attackDistance: 0
+  attackRegisterDistance: 3.5
   attackOffset: 0.5
   attackDamage: 20
-  attackDotThreshold: 0.5
-  attackCooldown: 1.5
+  attackDotThreshold: 0.3
+  closeAttacksAsset: {fileID: 11400000, guid: 44ea479b4fd99a54cacdf3a864c31edf, type: 2}
+  midAttacksAsset: {fileID: 11400000, guid: e8ba48ab214fa484ca1d3751638b8b0d, type: 2}
+  farAttacksAsset: {fileID: 11400000, guid: b32d36cd3bb58b74cb2e25407c483532, type: 2}
+  currentCombatBand: 0
+  farBandAttackDistance: 10
+  midBandAttackDistance: 4.5
+  closeBandAttackDistance: 2
+  bandDistanceTolerance: 0.5
+  attackCooldown: 0.001
+  distanceForSampling: 100
   wayPointCollectionRadius: 50
   attackVariants:
   - {fileID: 7400000, guid: 059ccd2280536c64d9509b87e5a6aa4a, type: 2}
@@ -339,6 +349,7 @@ MonoBehaviour:
   - {fileID: 7400000, guid: 2ed1bfc2377ff77449a7ee3f3e6980e9, type: 2}
   - {fileID: 7400000, guid: 02c479cd67fa1a2449dad66e2a772982, type: 2}
   - {fileID: 7400000, guid: caeaca3eb610c194d8b60d087d10eb27, type: 2}
+  - {fileID: -203655887218126122, guid: d578037de8ebfe74985a5fa39704c27b, type: 3}
   idleVariants:
   - {fileID: 7400000, guid: 1a5e2cdbd0b081c4091eeaa2e3b9bf77, type: 2}
   - {fileID: 7400000, guid: eb959fb099ede1f469796e77a21887b9, type: 2}
@@ -353,7 +364,11 @@ MonoBehaviour:
   deathVariants:
   - {fileID: 7400000, guid: f7f84fd119431cf4480a820cea02dbe7, type: 2}
   - {fileID: 7400000, guid: c7fc567b80c167d4d9e3299766db5cfa, type: 2}
+  animatorOverrideController: {fileID: 22100000, guid: 09caca1e7c6927546a3e3c4000cddc68, type: 2}
   proximityRadius: 7
+  drawBandGizmos: 1
+  circleSegments: 48
+  Debug_RepositionTarget: {x: 0, y: 0, z: 0}
 --- !u!114 &8114743750698512363
 MonoBehaviour:
   m_ObjectHideFlags: 0
