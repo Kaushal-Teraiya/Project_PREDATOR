@@ -254,7 +254,7 @@ GameObject:
   - component: {fileID: 2441392738962376485}
   - component: {fileID: 2543830044629575685}
   - component: {fileID: 1035355286651946980}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Enemy
   m_TagString: Enemy
   m_Icon: {fileID: 0}
@@ -311,11 +311,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1422926dcbe6c44f9c3ef0380d28faa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyBrain
-  arrivalRadius: 0.3
-  obstacleMask:
-    serializedVersion: 2
-    m_Bits: 64
-  visionGraceDuration: 3
   wayPointManager: {fileID: 0}
   searchPointLayer:
     serializedVersion: 2
@@ -323,9 +318,9 @@ MonoBehaviour:
   SearchPointFactorPercent: 0.5
   InvestigateAreaRadius: 18
   stimulusMemoryDuration: 5
+  chaseTargetArrivalRadius: 0.3
   hasSeenFirstTime: 1
   attackDistance: 0
-  attackRegisterDistance: 3.5
   attackOffset: 0.5
   attackDamage: 20
   attackDotThreshold: 0.3
@@ -338,18 +333,9 @@ MonoBehaviour:
   closeBandAttackDistance: 2
   bandDistanceTolerance: 0.5
   attackCooldown: 0.001
+  lungeAttackPredictionDistance: 5
   distanceForSampling: 100
   wayPointCollectionRadius: 50
-  attackVariants:
-  - {fileID: 7400000, guid: 059ccd2280536c64d9509b87e5a6aa4a, type: 2}
-  - {fileID: 7400000, guid: 7d23a310cce7a1e48a14c4552e0577e3, type: 2}
-  - {fileID: 7400000, guid: 058b4038d841eb647a0b6b6d8d8dc213, type: 2}
-  - {fileID: 7400000, guid: 288e39373c598424ea488941a3e11906, type: 2}
-  - {fileID: 7400000, guid: b7db959fa4c05b94c9e10f6d8580fcdd, type: 2}
-  - {fileID: 7400000, guid: 2ed1bfc2377ff77449a7ee3f3e6980e9, type: 2}
-  - {fileID: 7400000, guid: 02c479cd67fa1a2449dad66e2a772982, type: 2}
-  - {fileID: 7400000, guid: caeaca3eb610c194d8b60d087d10eb27, type: 2}
-  - {fileID: -203655887218126122, guid: d578037de8ebfe74985a5fa39704c27b, type: 3}
   idleVariants:
   - {fileID: 7400000, guid: 1a5e2cdbd0b081c4091eeaa2e3b9bf77, type: 2}
   - {fileID: 7400000, guid: eb959fb099ede1f469796e77a21887b9, type: 2}
@@ -361,11 +347,27 @@ MonoBehaviour:
   - {fileID: 7400000, guid: a79264f87cac7054ab14f2f4123ae8a8, type: 2}
   - {fileID: 7400000, guid: e64ca7a2499fb0b4aa495711b75cbdd9, type: 2}
   - {fileID: 7400000, guid: 45bea733fb961c44986429e3d229131c, type: 2}
+  - {fileID: 7400000, guid: a2efbb15d389b2744912a35e4517c2a5, type: 2}
   deathVariants:
   - {fileID: 7400000, guid: f7f84fd119431cf4480a820cea02dbe7, type: 2}
   - {fileID: 7400000, guid: c7fc567b80c167d4d9e3299766db5cfa, type: 2}
+  - {fileID: 7400000, guid: 34aa3becc915d144e83962c3338b5817, type: 2}
   animatorOverrideController: {fileID: 22100000, guid: 09caca1e7c6927546a3e3c4000cddc68, type: 2}
   proximityRadius: 7
+  proximityObstacleMask:
+    serializedVersion: 2
+    m_Bits: 64
+  visionGraceDuration: 3
+  obstacleMaskForReposition:
+    serializedVersion: 2
+    m_Bits: 576
+  midBandCompression: 1
+  farBandCompression: 1
+  repositionArrivalRadius: 2
+  Debug_movementAngle: 0
+  Debug_FrontSemiCircle: 0
+  Debug_BackSemiCircle: 0
+  sliceHalfAngle: 45
   drawBandGizmos: 1
   circleSegments: 48
   Debug_RepositionTarget: {x: 0, y: 0, z: 0}
@@ -427,11 +429,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AvoidanceSteering
   dotProductThreshold: 0.6
-  distanceBetweenZombiesThreshold: 5
+  Zombie_DistanceThreshold: 5
+  Player_DistanceThreshold: 6
   avoidanceMinLockTime: 0.5
   escalationTime: 3
-  defaultYaw: 60
-  escalatedYaw: 90
+  Zombie_defaultYaw: 55
+  Player_defaultYaw: 45
+  Zombie_escalatedYaw: 180
+  Player_escalatedYaw: 90
 --- !u!114 &5470954742829798216
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -481,7 +486,7 @@ Animator:
   m_Controller: {fileID: 9100000, guid: d3063cfe50f081540b1c9400ae910d3e, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
-  m_ApplyRootMotion: 0
+  m_ApplyRootMotion: 1
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0

@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: FarAttacks
   m_EditorClassIdentifier: Assembly-CSharp::AttackTypes
   attackName: FarAttacks
-  minRange: 8
-  maxRange: 10
+  minRange: 10
+  maxRange: 11
   damage: 30
   attackAnimations:
   - {fileID: 7400000, guid: e03c32ace1e606448aae52407758ff55, type: 2}
@@ -24,3 +24,5 @@ MonoBehaviour:
   lungeArcHeight: 3
   lungeDelay: 0.5
   lungeDuration: 1
+  attackRange: 10
+  attackRegisterDistance: 4

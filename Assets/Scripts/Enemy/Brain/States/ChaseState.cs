@@ -15,7 +15,8 @@ public class ChaseState : IEnemyState
 
     public void OnEnter()
     {
-        Debug.Log("Entered Chase");
+        brain.enemyMovement.SetPlayerAvoidance(false);
+        //        Debug.Log("Entered Chase");
         brain.SetCurrentlyChasing(true);
         //  lockedChasePoint = brain.chaseTargetPosition;
         brain.enemyMovement.SetMovementMode(EnemyMovement.MovementMode.Chase);
@@ -64,34 +65,18 @@ public class ChaseState : IEnemyState
         {
             Enemy.MoveTo(brain.chaseTargetPosition);
             Enemy.ClearRotationIntent();
-            if (brain.HasReachedThePosition(brain.chaseTargetPosition))
+            if (brain.HasReachedThePosition(brain.chaseTargetPosition, brain.ChaseTargetArrivalRadius))
             {
                 brain.EndChase(brain.chaseTargetPosition);
             }
         }
-        // else
-        // {
-        //     Enemy.MoveTo(brain.chaseTargetPosition);
-
-        //     if (brain.HasReachedThePosition(brain.chaseTargetPosition))
-        //     {
-        //         brain.EndChase(brain.chaseTargetPosition);
-        //     }
-        // }
-
+     
         Enemy.RequestAnimation(new AnimationIntent(AnimationType.Run, 40));
-
-        // if (!brain.IsInState(brain.AttackState) && brain.HasVision() && distanceToPlayer <= brain.AttackDistance && !brain.IsInCooldown() && dot > brain.AttackDotThreshold)
-        // {
-        //     Debug.Log("[Chase] Entering Attack.");
-        //     brain.enemyMovement.RotationIntent(EnemyMovement.RotationPriority.State, brain.player.transform.position);
-        //     //Enemy.RequestAnimation(new AnimationIntent(AnimationType.Attack, 50));
-        //     brain.SwitchState(brain.AttackState);
-        // }
     }
 
     public void OnExit()
     {
         brain.SetCurrentlyChasing(false);
+        brain.enemyMovement.SetPlayerAvoidance(true);
     }
 }

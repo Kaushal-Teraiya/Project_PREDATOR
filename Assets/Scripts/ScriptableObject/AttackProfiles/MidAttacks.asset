@@ -13,11 +13,23 @@ MonoBehaviour:
   m_Name: MidAttacks
   m_EditorClassIdentifier: Assembly-CSharp::AttackTypes
   attackName: Kick
-  minRange: 5
-  maxRange: 6
+  minRange: 3.5
+  maxRange: 4
   damage: 30
   attackAnimations:
   - {fileID: 7400000, guid: 02c479cd67fa1a2449dad66e2a772982, type: 2}
   - {fileID: 7400000, guid: caeaca3eb610c194d8b60d087d10eb27, type: 2}
+  - {fileID: 7400000, guid: 73e5d493855ac744d9a22781e20c02d4, type: 2}
+  - {fileID: 7400000, guid: cad6433e90e45cd45a1debc469de33e6, type: 2}
+  - {fileID: 7400000, guid: bc7eb5354f722774ea1b1d92ebc6621c, type: 2}
+  - {fileID: 7400000, guid: 288e39373c598424ea488941a3e11906, type: 2}
+  - {fileID: 7400000, guid: 059ccd2280536c64d9509b87e5a6aa4a, type: 2}
+  - {fileID: 7400000, guid: 058b4038d841eb647a0b6b6d8d8dc213, type: 2}
   cooldown: 0.5
   retreat: 1
+  usesLunge: 0
+  lungeArcHeight: 0
+  lungeDelay: 0
+  lungeDuration: 0
+  attackRange: 4.5
+  attackRegisterDistance: 6

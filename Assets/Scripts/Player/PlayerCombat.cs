@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -7,6 +8,7 @@ public class PlayerCombat : MonoBehaviour
     public int DamageAmount => damageAmount;
     public InputActionReference attack;
     [SerializeField] private float attackRange;
+    [SerializeField] private LayerMask damagableLayer;
 
     void Start()
     {

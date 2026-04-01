@@ -1,22 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
-using Unity.Mathematics;
-using Unity.VisualScripting;
-using UnityEditor;
-using UnityEditor.PackageManager.Requests;
+using UnityEditor.ShaderGraph.Internal;
 using UnityEngine;
-using UnityEngine.AI;
-using UnityEngine.EventSystems;
 using UnityEngine.Rendering;
 
 public class EnemyBrain : MonoBehaviour
 {
-    [Header("General Parameters")]
-    [SerializeField] private float arrivalRadius;
-    [SerializeField] private LayerMask obstacleMask;
-    [SerializeField] private float visionGraceDuration = 3f;
-
     [Header("Sensors")]
     private SoundSensor soundSensor;
     private VisionSensor visionSensor;
@@ -51,6 +40,7 @@ public class EnemyBrain : MonoBehaviour
     [SerializeField] private WayPointManager wayPointManager;
     public WayPointManager _WayPointManager => wayPointManager;
     private Animator animator;
+    private PlayerMovement playerMovement;
 
 
     [Header("SearchPoint Data")]
@@ -80,7 +70,8 @@ public class EnemyBrain : MonoBehaviour
     public float lastConfirmedSeenTime { get; private set; }
     private bool currentlyChasing;
     public Vector3 chaseTargetPosition { get; private set; }
-
+    [SerializeField] private float chaseTargetArrivalRadius;
+    public float ChaseTargetArrivalRadius => chaseTargetArrivalRadius;
     public bool isEndingChase { get; private set; }
     private float lastChaseTime;
     private Vector3 investigationForward;
@@ -89,8 +80,9 @@ public class EnemyBrain : MonoBehaviour
     public bool hasSeenFirstTime = true;
 
     [Header("AttackState Data")]
-    [SerializeField] private float attackDistance = 4f;
-    [SerializeField] private float attackRegisterDistance;
+    [SerializeField] private float attackDistance; //creats a spacioing between Enemy and Player.
+    private float attackRegisterDistance; //Defines at which distance the performed attack is registered.
+    //[SerializeField] private float midRangeAttackRegisterDistance, closeRangeAttackRegisterDistance, farRangeAttackRegisterDistance;
     public float AttackRegisterDistance => attackRegisterDistance;
     public float AttackDistance => attackDistance;
     [SerializeField] private float attackOffset;
@@ -121,6 +113,7 @@ public class EnemyBrain : MonoBehaviour
     [SerializeField] private float bandDistanceTolerance = 0.5f;
 
     [SerializeField] private float attackCooldown = 1.5f;
+    [SerializeField] private float lungeAttackPredictionDistance = 1.5f;
 
     [Header("Navmesh Data")]
     [SerializeField] private float distanceForSampling = 5f;
@@ -148,11 +141,28 @@ public class EnemyBrain : MonoBehaviour
 
     [Header("Proximity Data")]
     [SerializeField] private float proximityRadius = 10f;
+    [SerializeField] private LayerMask proximityObstacleMask;
 
     [Header("Vision")]
+    [SerializeField] private float visionGraceDuration = 3f;
     public VisionSensor.visibilityResult previousResult { get; private set; }
     public VisionSensor.visibilityResult currentResult { get; private set; }
     private Vector3 snapShotPosition;
+
+    [Header("RepositionState Data")]
+    [SerializeField] private LayerMask obstacleMaskForReposition;
+    [SerializeField] private float midBandCompression = 0.5f;
+    [SerializeField] private float farBandCompression = 0.75f;
+    [SerializeField] private float repositionArrivalRadius = 0.5f;
+    [SerializeField] private float sliceHalfAngle;
+    [SerializeField] private float repositionTimeout = 5f;
+    private bool isCommitedToReposition;
+    public float Debug_movementAngle;
+    public bool Debug_FrontSemiCircle, Debug_BackSemiCircle;
+    public float RepositionTimeout => repositionTimeout;
+    public bool IsCommitedToReposition => isCommitedToReposition;
+    public float RepositionArrivalRadius => repositionArrivalRadius;
+    public LayerMask ObstacleMaskForReposition => obstacleMaskForReposition;
 
     [Header("Combat Band Gizmos")]
     [SerializeField] private bool drawBandGizmos = true;
@@ -169,6 +179,7 @@ public class EnemyBrain : MonoBehaviour
         Movement_Enemy = GetComponent<EnemyMovement>();
         enemyHealth = GetComponent<EnemyHealth>();
         animator = GetComponent<Animator>();
+
         baseController = animator.runtimeAnimatorController;
 
         animatorOverrideController = new AnimatorOverrideController
@@ -203,6 +214,7 @@ public class EnemyBrain : MonoBehaviour
         repositionState = new RepositionState(this);
         SwitchState(idleState);
         player = GameObject.FindGameObjectWithTag("Player");
+        playerMovement = player.transform.GetComponent<PlayerMovement>();
         playerHealth = player.GetComponent<PlayerHealth>();
         playerHealth.playerDead += HandleEnemyStateOnPlayerDeath;
         soundSensor.OnSoundHeard += HandleSoundStimulus;
@@ -212,6 +224,7 @@ public class EnemyBrain : MonoBehaviour
     void Update()
     {
         // Animator_SetFloat("Speed", enemyMovement.MovementSpeed);
+        enemyMovement.ResetAnimationIntent();
         CheckPerception();
         CheckStateChange();
         currentState?.Tick();
@@ -344,7 +357,7 @@ public class EnemyBrain : MonoBehaviour
         var distanceToPlayer = Vector3.Distance(transform.position, player.transform.position);
 
 
-        if (IsInState(repositionState) && distanceToPlayer > farAttacksAsset.maxRange)
+        if (IsInState(repositionState) && distanceToPlayer > farAttacksAsset.maxRange * 1.5f && !isCommitedToReposition)
         {
             //MAKE SURE TO CHECK VISIBILITY RESULT BEFORE TRANSITIONING TO ANY STATE BECAUSE WE HAVE TO TAKE DARKNESS IN ACCOUNT AS WELL.
             SwitchState(chaseState);
@@ -484,9 +497,9 @@ public class EnemyBrain : MonoBehaviour
         //  bool recentlyChasing = currentlyChasing || Time.time - lastChaseTime <= visionGraceDuration;
         RaycastHit hit;
 
-        if (distance < proximityRadius && !HasVision()) //this means even if we are not in enemy's vision it can still sense us if we are near them
+        if (distance < proximityRadius && !HasVision() && !IsInState(attackState)) //this means even if we are not in enemy's vision it can still sense us if we are near them
         {
-            if (!Physics.Raycast(origin, direction.normalized, out hit, distance, obstacleMask))
+            if (!Physics.Raycast(origin, direction.normalized, out hit, distance, proximityObstacleMask))
             {
                 enemyMovement.RotationIntent(EnemyMovement.RotationPriority.Proximity, origin + direction.normalized);
             }
@@ -516,12 +529,12 @@ public class EnemyBrain : MonoBehaviour
         return true;
     }
 
-    public bool HasReachedThePosition(Vector3 lastConfirmedPosition)
+    public bool HasReachedThePosition(Vector3 lastConfirmedPosition, float _arrivalRadius)
     {
         Vector3 toTarget = lastConfirmedPosition - transform.position;
         toTarget.y = 0f;
 
-        return toTarget.sqrMagnitude <= arrivalRadius * arrivalRadius;
+        return toTarget.sqrMagnitude <= _arrivalRadius * _arrivalRadius;
     }
 
     public void SetCurrentlyChasing(bool _isChasing)
@@ -598,31 +611,132 @@ public class EnemyBrain : MonoBehaviour
     private bool IsInCombatBand()
     {
         float distanceToPlayer = Vector3.Distance(transform.position, player.transform.position);
-        float desiredBandDistance = GetDesiredBandDistance(GetCurrentCombatBand()) / 2;
+        float desiredBandDistance = GetDesiredBandDistance(GetCurrentCombatBand(), currentAttackProfile) / 2;
         float positioning = Mathf.Abs(distanceToPlayer - desiredBandDistance);
-        Debug.Log("[EnemyBrain] Distanceto Player " + distanceToPlayer);
+        //        Debug.Log("[EnemyBrain] Distanceto Player " + distanceToPlayer);
         return positioning <= desiredBandDistance + bandDistanceTolerance;
     }
 
-    private float GetDesiredBandDistance(CombatBand combatBand)
+    private float GetDesiredBandDistance(CombatBand combatBand, AttackTypes currentProfile)
     {
-        if (combatBand == CombatBand.Far)
+        if (combatBand == CombatBand.Far && currentProfile == farAttacksAsset)
         {
-            return farBandAttackDistance;
+            return currentProfile.attackRange;
         }
-        else if (combatBand == CombatBand.Mid)
+        else if (combatBand == CombatBand.Mid && currentProfile == midAttacksAsset)
         {
-            return midBandAttackDistance;
+            return currentProfile.attackRange;
         }
         else
         {
-            return closeBandAttackDistance;
+            return currentProfile.attackRange;
         }
     }
+
+    public Vector2 GetEffectiveBandRange(AttackTypes attackProfile)
+    {
+        var effectiveMinRange = attackProfile.minRange;
+        var effectiveMaxRange = attackProfile.maxRange;
+
+        if (playerMovement.isPerformingAction)
+        {
+            if (attackProfile == midAttacksAsset)
+            {
+                effectiveMaxRange *= midBandCompression;
+                effectiveMinRange *= midBandCompression;
+            }
+            else if (attackProfile == farAttacksAsset)
+            {
+                effectiveMaxRange *= farBandCompression;
+                effectiveMinRange *= farBandCompression;
+            }
+
+        }
+
+        float safetyMargin = 0.4f;
+
+        if (effectiveMaxRange < effectiveMinRange + safetyMargin)
+        {
+            effectiveMaxRange = effectiveMinRange + safetyMargin;
+        }
+
+        Vector2 effectiveBandRanges = new Vector2(effectiveMinRange, effectiveMaxRange);
+        return effectiveBandRanges;
+    }
+
+    public Vector3 PredictPlayerPosition(float predictionTime, float maxPredictionDistance)
+    {
+        var playerVelocity = playerMovement.GetPlayerVelocity();
+        playerVelocity.y = 0f;
+
+        if (playerVelocity.sqrMagnitude < 0.01f)
+        {
+            return player.transform.position;
+        }
+
+        Vector3 predictedOffset = playerVelocity * predictionTime;
+        if (predictedOffset.magnitude > maxPredictionDistance)
+        {
+            predictedOffset = predictedOffset.normalized * maxPredictionDistance;
+        }
+
+        return player.transform.position + predictedOffset;
+    }
+
+    public float ChooseBandSlice()
+    {
+        if (currentAttackProfile == farAttacksAsset)
+        {
+            return UnityEngine.Random.Range(0f, 360f);
+        }
+
+        var velocity = playerMovement.GetPlayerVelocity();
+        velocity.y = 0f;
+
+        if (velocity.sqrMagnitude < 0.01f)
+        {
+            return UnityEngine.Random.Range(0f, 360f);
+        }
+
+        var movementDirection = velocity.normalized;
+        var movementIntent = Vector3.Dot(player.transform.forward, movementDirection);
+        Vector3 facing = player.transform.forward;
+
+        float movementAngle = Mathf.Atan2(facing.z, facing.x) * Mathf.Rad2Deg;
+
+        Debug_movementAngle = movementAngle;
+        Debug_FrontSemiCircle = Debug_BackSemiCircle = false;
+
+        if (movementIntent > 0.3)
+        {
+            //choose front hemisphere
+            Debug_FrontSemiCircle = true;
+            return UnityEngine.Random.Range(movementAngle - sliceHalfAngle, movementAngle + sliceHalfAngle);
+        }
+        else if (movementIntent < -0.3)
+        {
+            // choose back hemisphere
+            Debug_BackSemiCircle = true;
+            float oppositeAngle = movementAngle + 180f;
+            return UnityEngine.Random.Range(oppositeAngle - sliceHalfAngle, oppositeAngle + sliceHalfAngle);
+        }
+        else
+        {
+            //  choose full circle normally
+            return UnityEngine.Random.Range(0f, 360f);
+        }
+
+    }
+
 
     public void ApplyRootMotion(bool _applyRootMotion)
     {
         animator.applyRootMotion = _applyRootMotion;
+    }
+
+    public void SetAttackRegisterDistance(AttackTypes currentProfile)
+    {
+        attackRegisterDistance = currentProfile.attackRegisterDistance;
     }
 
     public bool HasVision()
@@ -727,6 +841,17 @@ public class EnemyBrain : MonoBehaviour
         return visionSensor != null && visionSensor.VisibilityResult == expectedResult;
     }
 
+    public void SetIsCommitedToReposition(bool _isCommited)
+    {
+        isCommitedToReposition = _isCommited;
+    }
+
+    public float GetPredictionDistance()
+    {
+        return lungeAttackPredictionDistance;
+    }
+
+    #region DebugGizmos
     void OnDrawGizmos()
     {
         DrawCircle(transform.position, proximityRadius, 40);
@@ -770,8 +895,6 @@ public class EnemyBrain : MonoBehaviour
 
         Gizmos.color = UnityEngine.Color.brown; // bright cyan
 
-
-
         // Optional vertical line for clarity
         Gizmos.DrawLine(
             transform.position,
@@ -786,21 +909,184 @@ public class EnemyBrain : MonoBehaviour
         DrawBand(farAttacksAsset, Color.red);
 
         DrawRepositionTarget();
-    }
 
+        if (player != null && farAttacksAsset != null)
+        {
+            float engagementRadius = farAttacksAsset.maxRange * 1.5f;
+
+            Gizmos.color = new Color(1f, 0f, 1f, 0.9f); // strong magenta
+
+            float thickness = 0.15f; // controls ring thickness
+            int layers = 5;          // number of rings stacked
+
+            for (int i = 0; i < layers; i++)
+            {
+                float offset = thickness * (i - layers / 2f);
+                DrawCirclev2(player.transform.position, engagementRadius + offset);
+            }
+        }
+
+        // ===== Lunge Prediction Debug =====
+
+        if (player != null && farAttacksAsset != null && playerMovement != null)
+        {
+            float predictionTime =
+                farAttacksAsset.lungeDelay +
+                farAttacksAsset.lungeDuration;
+
+            float maxPredictionDistance = 2.5f; // tweak later per enemy type
+
+            Vector3 predictedPosition =
+                PredictPlayerPosition(predictionTime, maxPredictionDistance);
+
+            // Blue = current player position
+            Gizmos.color = Color.blue;
+            Gizmos.DrawSphere(player.transform.position, 0.15f);
+
+            // Yellow = prediction offset line
+            Gizmos.color = Color.orangeRed;
+            Gizmos.DrawLine(player.transform.position, predictedPosition);
+
+            // Red = predicted future player position
+            Gizmos.color = Color.pink;
+            Gizmos.DrawSphere(predictedPosition, 0.18f);
+
+            // Green = final lunge landing position
+            Vector3 direction =
+                (predictedPosition - transform.position).normalized;
+
+            Vector3 landingPosition =
+                predictedPosition -
+                direction * (farAttacksAsset.minRange - 1.2f);
+
+            Gizmos.color = Color.green;
+            Gizmos.DrawSphere(landingPosition, 0.22f);
+
+            Gizmos.DrawLine(transform.position, landingPosition);
+        }
+
+        float radius = farAttacksAsset.maxRange + 1.5f;
+
+        // Draw movement arrow + divider
+        DrawMovementDebug();
+
+        // Draw active semicircle
+
+        if (Debug_FrontSemiCircle)
+        {
+            DrawSemicircle(
+                player.transform.position,
+                Debug_movementAngle - sliceHalfAngle,
+                Debug_movementAngle + sliceHalfAngle,
+                radius,
+                Color.green
+            );
+        }
+
+        if (Debug_BackSemiCircle)
+        {
+            float oppositeAngle = Debug_movementAngle + 180f;
+
+            DrawSemicircle(
+                player.transform.position,
+                oppositeAngle - sliceHalfAngle,
+                oppositeAngle + sliceHalfAngle,
+                radius,
+                Color.red
+            );
+        }
+    }
+    void DrawSemicircle(Vector3 center, float startAngle, float endAngle, float radius, Color color)
+    {
+        Gizmos.color = color;
+
+        int segments = 40;
+
+        float thickness = 1.2f;
+
+        float step = (endAngle - startAngle) / segments;
+
+        for (int i = 0; i < segments; i++)
+        {
+            float angleA = startAngle + step * i;
+            float angleB = startAngle + step * (i + 1);
+
+            Vector3 innerA =
+                center + DirectionFromAngle(angleA) * radius;
+
+            Vector3 innerB =
+                center + DirectionFromAngle(angleB) * radius;
+
+            Vector3 outerA =
+                center + DirectionFromAngle(angleA) * (radius + thickness);
+
+            Vector3 outerB =
+                center + DirectionFromAngle(angleB) * (radius + thickness);
+
+            Gizmos.DrawLine(innerA, innerB);
+            Gizmos.DrawLine(outerA, outerB);
+            Gizmos.DrawLine(innerA, outerA);
+        }
+    }
+    Vector3 DirectionFromAngle(float angle)
+    {
+        float rad = angle * Mathf.Deg2Rad;
+
+        return new Vector3(
+            Mathf.Cos(rad),
+            0f,
+            Mathf.Sin(rad)
+        );
+    }
+    void DrawMovementDebug()
+    {
+        if (player == null || playerMovement == null)
+            return;
+
+        Vector3 velocity =
+            playerMovement.GetPlayerVelocity();
+
+        velocity.y = 0f;
+
+        if (velocity.sqrMagnitude < 0.01f)
+            return;
+
+        Vector3 moveDir =
+            velocity.normalized;
+
+        // Movement direction arrow
+        Gizmos.color = Color.cyan;
+
+        Gizmos.DrawLine(
+            player.transform.position,
+            player.transform.position +
+            moveDir * 5f
+        );
+
+        // Divider line between front/back halves
+        Vector3 perpendicular =
+            Vector3.Cross(Vector3.up, moveDir);
+
+        Gizmos.color = Color.white;
+
+        Gizmos.DrawLine(
+            player.transform.position - perpendicular * 5f,
+            player.transform.position + perpendicular * 5f
+        );
+    }
     void DrawBand(AttackTypes profile, Color color)
     {
         if (profile == null)
             return;
 
-        Vector3 center = player.transform.position;
-
+        Vector3 center;
+        center = player.transform.position;
         Gizmos.color = color;
 
         DrawCirclev2(center, profile.minRange);
         DrawCirclev2(center, profile.maxRange);
-    }
 
+    }
     void DrawCirclev2(Vector3 center, float radius)
     {
         float step = Mathf.PI * 2f / circleSegments;
@@ -827,9 +1113,8 @@ public class EnemyBrain : MonoBehaviour
 
         Gizmos.color = UnityEngine.Color.cyan;
 
-        Gizmos.DrawSphere(Debug_RepositionTarget, 0.2f);
+        Gizmos.DrawSphere(Debug_RepositionTarget, 1f);
     }
-
     void DrawCircle(Vector3 center, float radius, int segments)
     {
         float angleStep = 360f / segments;
@@ -848,7 +1133,5 @@ public class EnemyBrain : MonoBehaviour
             prevPoint = nextPoint;
         }
     }
-
-
-
+    #endregion DebugGizmos
 }

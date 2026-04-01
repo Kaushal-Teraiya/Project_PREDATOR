@@ -14,4 +14,6 @@ public class AttackTypes : ScriptableObject
     public float lungeArcHeight;
     public float lungeDelay;
     public float lungeDuration;
+    public float attackRange;
+    public float attackRegisterDistance;
 }

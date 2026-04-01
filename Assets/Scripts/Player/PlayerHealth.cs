@@ -43,7 +43,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
 
         currentHealth -= amount;
-        Debug.Log("[PlayerHealth] player is taking Damage.");
+        //Debug.Log("[PlayerHealth] player is taking Damage.");
 
         if (currentHealth <= 0)
         {

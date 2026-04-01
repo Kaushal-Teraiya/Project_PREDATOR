@@ -99,4 +99,9 @@ public class PlayerMovement : MonoBehaviour
         runAction.action.Disable();
     }
 
+    public Vector3 GetPlayerVelocity()
+    {
+        return player.velocity;
+    }
+
 }

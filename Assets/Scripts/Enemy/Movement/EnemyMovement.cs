@@ -46,7 +46,7 @@ public class EnemyMovement : MonoBehaviour
     private float currentSpeed;
     private Animator animator;
     public AnimationIntent currentAnimationIntent;
-  
+
     [Header("NavMesh Data")]
     private NavMeshAgent agent;
     private NavMeshPath currentPath;
@@ -57,7 +57,7 @@ public class EnemyMovement : MonoBehaviour
 
     [Header("Lunge Data")]
     private bool isLunging;
-    private bool isRunning;
+    //private bool isRunning;
     private bool hasCapturedArcStart;
     private float delayTimer;
     private float arcTimer;
@@ -67,6 +67,7 @@ public class EnemyMovement : MonoBehaviour
     private Vector3 lungeDirection;
     private Vector3 arcStartPosition;
     private Vector3 arcEndPosition;
+    private AnimationIntent lastAppliedAnimationIntent;
 
     void Awake()
     {
@@ -248,7 +249,7 @@ public class EnemyMovement : MonoBehaviour
                 enemySpeed = 2f;
                 break;
             case MovementMode.Reposition:
-                enemySpeed = 20f;
+                enemySpeed = 10f;
                 break;
 
             default:
@@ -285,6 +286,7 @@ public class EnemyMovement : MonoBehaviour
             return;
         }
 
+        Quaternion beforeRotation = transform.rotation;
         if (avoidance != null && avoidance.IsAvoiding())
         {
             if (lastMovementDir.sqrMagnitude > 0.0001f)
@@ -296,6 +298,7 @@ public class EnemyMovement : MonoBehaviour
                     rotationSpeed * Time.deltaTime
                 );
             }
+            UpdateRotationAnimation(beforeRotation);
             return;
         }
 
@@ -303,6 +306,7 @@ public class EnemyMovement : MonoBehaviour
         if (currentRotationPriority != RotationPriority.None)
         {
             RotateTowardsIntent();
+            UpdateRotationAnimation(beforeRotation);
             return;
         }
 
@@ -310,8 +314,9 @@ public class EnemyMovement : MonoBehaviour
         {
             Quaternion targetRotation = Quaternion.LookRotation(lastMovementDir);
             transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
-        }
 
+        }
+        UpdateRotationAnimation(beforeRotation);
         ClearRotationIntent();
     }
 
@@ -324,6 +329,12 @@ public class EnemyMovement : MonoBehaviour
     {
         proximitySensor.enabled = false;
         avoidance.enabled = false;
+    }
+
+    public void EnableProximity()
+    {
+        proximitySensor.enabled = true;
+        avoidance.enabled = true;
     }
 
     public void ResetAnimationIntent()
@@ -346,6 +357,10 @@ public class EnemyMovement : MonoBehaviour
 
     public void ApplyAnimationIntent()
     {
+        if (currentAnimationIntent.animationType == lastAppliedAnimationIntent.animationType) return;
+
+        lastAppliedAnimationIntent = currentAnimationIntent;
+
         switch (currentAnimationIntent.animationType)
         {
             case AnimationType.Idle:
@@ -364,9 +379,9 @@ public class EnemyMovement : MonoBehaviour
                 Animator_SetBool("IsDead", true);
                 break;
             case AnimationType.Reposition:
-                animator.SetBool("EnterReposition", true);
+                if (!animator.GetCurrentAnimatorStateInfo(0).IsName("ArmsBackRun"))
+                    animator.SetTrigger("EnterReposition");
                 break;
-
             default:
                 Animator_SetFloat("Speed", 0f);
                 break;
@@ -374,9 +389,24 @@ public class EnemyMovement : MonoBehaviour
         }
     }
 
+    private void UpdateRotationAnimation(Quaternion previousRotation)
+    {
+        float angleDelta = Quaternion.Angle(previousRotation, transform.rotation);
+        if (angleDelta < 0.2f)
+        {
+            Animator_SetFloat("TurnAmount", 0f);
+            return;
+        }
+
+        float signedAngle = Vector3.SignedAngle(previousRotation * Vector3.forward, transform.forward, Vector3.up);
+        float normalizedTurn = Mathf.Clamp(signedAngle / 45f, -1f, 1f);
+        Animator_SetFloat("TurnAmount", normalizedTurn);
+    }
+
     public void StartLunge(Vector3 targetPosition, float delayDuration, float arcDuration, float arcHeight)
     {
         hasCapturedArcStart = false;
+        DisableProximity();
         isLunging = true;
         delayTimer = 0f;
         arcTimer = 0f;
@@ -394,7 +424,7 @@ public class EnemyMovement : MonoBehaviour
 
         if (delayTimer < delayDuration)
         {
-            isRunning = true;
+            //  isRunning = true;
             delayTimer += Time.deltaTime;
             //  transform.position += lungeDirection * currentSpeed * Time.deltaTime;
             return;
@@ -404,7 +434,7 @@ public class EnemyMovement : MonoBehaviour
         {
             arcStartPosition = transform.position;
             hasCapturedArcStart = true;
-            isRunning = false;
+            //  isRunning = false;
         }
 
         arcTimer += Time.deltaTime;
@@ -415,12 +445,18 @@ public class EnemyMovement : MonoBehaviour
         transform.position = horizontal;
         if (arcTimer >= arcDuration)
         {
+            RotationIntent(RotationPriority.State, transform.position + lungeDirection);
             isLunging = false;
             arcTimer = 0f;
             delayTimer = 0f;
+            // EnableProximity();
         }
     }
 
+    public void SetPlayerAvoidance(bool _value)
+    {
+        avoidance.SetPlayerAvoidance(_value);
+    }
 
     public void Animator_SetFloat(string floatName, float speed)
     {

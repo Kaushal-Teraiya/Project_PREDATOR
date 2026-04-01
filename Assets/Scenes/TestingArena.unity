@@ -20,13 +20,13 @@ RenderSettings:
   m_FogDensity: 0.018
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
-  m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
+  m_AmbientSkyColor: {r: 0.3558632, g: 0.48185483, b: 0.5698112, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
-  m_AmbientIntensity: 1
-  m_AmbientMode: 0
-  m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 2100000, guid: 9af23ba5fa5364ff598888460e0e2759, type: 2}
+  m_AmbientIntensity: 3.02
+  m_AmbientMode: 1
+  m_SubtractiveShadowColor: {r: 1, g: 1, b: 1, a: 1}
+  m_SkyboxMaterial: {fileID: 2100000, guid: 54fe2f000ad8f424fb63cc3ea0ae2bb2, type: 2}
   m_HaloStrength: 0.532
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -447,11 +447,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AvoidanceSteering
   dotProductThreshold: 0.6
-  distanceBetweenZombiesThreshold: 5
-  avoidanceMinLockTime: 0.5
+  Zombie_DistanceThreshold: 0
+  Player_DistanceThreshold: 0
+  Zombie_avoidanceMinLockTime: 0.5
+  Player_avoidanceMinLockTime: 1.2
   escalationTime: 3
-  defaultYaw: 60
-  escalatedYaw: 90
+  Zombie_defaultYaw: 0
+  Player_defaultYaw: 0
+  Zombie_escalatedYaw: 0
+  Player_escalatedYaw: 0
 --- !u!54 &63387999
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -509,11 +513,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1422926dcbe6c44f9c3ef0380d28faa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyBrain
-  arrivalRadius: 0.5
-  obstacleMask:
-    serializedVersion: 2
-    m_Bits: 64
-  visionGraceDuration: 3
   wayPointManager: {fileID: 1562593277}
   searchPointLayer:
     serializedVersion: 2
@@ -521,9 +520,9 @@ MonoBehaviour:
   SearchPointFactorPercent: 0.5
   InvestigateAreaRadius: 18
   stimulusMemoryDuration: 5
+  chaseTargetArrivalRadius: 0
   hasSeenFirstTime: 1
   attackDistance: 4
-  attackRegisterDistance: 0
   attackOffset: 0
   attackDamage: 20
   attackDotThreshold: 0.5
@@ -536,6 +535,7 @@ MonoBehaviour:
   closeBandAttackDistance: 0
   bandDistanceTolerance: 0.5
   attackCooldown: 1.5
+  lungeAttackPredictionDistance: 1.5
   distanceForSampling: 5
   wayPointCollectionRadius: 10
   idleVariants:
@@ -554,6 +554,21 @@ MonoBehaviour:
   - {fileID: -203655887218126122, guid: e0da70acd3de2a448a279e585b803b13, type: 3}
   animatorOverrideController: {fileID: 0}
   proximityRadius: 10
+  proximityObstacleMask:
+    serializedVersion: 2
+    m_Bits: 0
+  visionGraceDuration: 3
+  obstacleMaskForReposition:
+    serializedVersion: 2
+    m_Bits: 0
+  midBandCompression: 0.5
+  farBandCompression: 0.75
+  repositionArrivalRadius: 0.5
+  sliceHalfAngle: 0
+  repositionTimeout: 5
+  Debug_movementAngle: 0
+  Debug_FrontSemiCircle: 0
+  Debug_BackSemiCircle: 0
   drawBandGizmos: 1
   circleSegments: 48
   Debug_RepositionTarget: {x: 0, y: 0, z: 0}
@@ -850,11 +865,11 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 516933283}
+    m_TransformParent: {fileID: 672203552}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 86c14310436a83942872cf43be39a024, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1.7
+      value: 1.6999999
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 86c14310436a83942872cf43be39a024, type: 3}
       propertyPath: m_LocalScale.y
@@ -862,7 +877,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 86c14310436a83942872cf43be39a024, type: 3}
       propertyPath: m_LocalScale.z
-      value: 1.7
+      value: 1.6999999
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 86c14310436a83942872cf43be39a024, type: 3}
       propertyPath: m_LocalPosition.x
@@ -882,15 +897,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 86c14310436a83942872cf43be39a024, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 86c14310436a83942872cf43be39a024, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 86c14310436a83942872cf43be39a024, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 86c14310436a83942872cf43be39a024, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -1072,6 +1087,9 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1237495239}
+  - {fileID: 578425910}
+  - {fileID: 1934617289}
+  - {fileID: 672203552}
   - {fileID: 1871191721}
   - {fileID: 765992247}
   - {fileID: 516933283}
@@ -1117,7 +1135,6 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 2082036322}
   - {fileID: 1691735496}
   - {fileID: 604458055}
   - {fileID: 10513360}
@@ -1199,11 +1216,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AvoidanceSteering
   dotProductThreshold: 0.6
-  distanceBetweenZombiesThreshold: 5
-  avoidanceMinLockTime: 0.5
+  Zombie_DistanceThreshold: 0
+  Player_DistanceThreshold: 0
+  Zombie_avoidanceMinLockTime: 0.5
+  Player_avoidanceMinLockTime: 1.2
   escalationTime: 3
-  defaultYaw: 60
-  escalatedYaw: 90
+  Zombie_defaultYaw: 0
+  Player_defaultYaw: 0
+  Zombie_escalatedYaw: 0
+  Player_escalatedYaw: 0
 --- !u!54 &516933289
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -1261,11 +1282,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1422926dcbe6c44f9c3ef0380d28faa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyBrain
-  arrivalRadius: 0.3
-  obstacleMask:
-    serializedVersion: 2
-    m_Bits: 64
-  visionGraceDuration: 3
   wayPointManager: {fileID: 1562593277}
   searchPointLayer:
     serializedVersion: 2
@@ -1273,9 +1289,9 @@ MonoBehaviour:
   SearchPointFactorPercent: 0.5
   InvestigateAreaRadius: 18
   stimulusMemoryDuration: 5
+  chaseTargetArrivalRadius: 0
   hasSeenFirstTime: 1
   attackDistance: 3.5
-  attackRegisterDistance: 0
   attackOffset: 0.5
   attackDamage: 20
   attackDotThreshold: 0.5
@@ -1288,6 +1304,7 @@ MonoBehaviour:
   closeBandAttackDistance: 0
   bandDistanceTolerance: 0.5
   attackCooldown: 1.5
+  lungeAttackPredictionDistance: 1.5
   distanceForSampling: 5
   wayPointCollectionRadius: 50
   idleVariants:
@@ -1306,6 +1323,21 @@ MonoBehaviour:
   - {fileID: 7400000, guid: c7fc567b80c167d4d9e3299766db5cfa, type: 2}
   animatorOverrideController: {fileID: 0}
   proximityRadius: 10
+  proximityObstacleMask:
+    serializedVersion: 2
+    m_Bits: 0
+  visionGraceDuration: 3
+  obstacleMaskForReposition:
+    serializedVersion: 2
+    m_Bits: 0
+  midBandCompression: 0.5
+  farBandCompression: 0.75
+  repositionArrivalRadius: 0.5
+  sliceHalfAngle: 0
+  repositionTimeout: 5
+  Debug_movementAngle: 0
+  Debug_FrontSemiCircle: 0
+  Debug_BackSemiCircle: 0
   drawBandGizmos: 1
   circleSegments: 48
   Debug_RepositionTarget: {x: 0, y: 0, z: 0}
@@ -1346,6 +1378,11 @@ NavMeshAgent:
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 0
+--- !u!224 &578425910 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+  m_PrefabInstance: {fileID: 2056208320}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &583373607
 GameObject:
   m_ObjectHideFlags: 0
@@ -1474,11 +1511,11 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 1871191721}
+    m_TransformParent: {fileID: 578425910}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 8d2bbd20a0fa79646b201fff1c574855, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1.7
+      value: 1.6999999
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8d2bbd20a0fa79646b201fff1c574855, type: 3}
       propertyPath: m_LocalScale.y
@@ -1486,7 +1523,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8d2bbd20a0fa79646b201fff1c574855, type: 3}
       propertyPath: m_LocalScale.z
-      value: 1.7
+      value: 1.6999999
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8d2bbd20a0fa79646b201fff1c574855, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1506,15 +1543,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8d2bbd20a0fa79646b201fff1c574855, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8d2bbd20a0fa79646b201fff1c574855, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8d2bbd20a0fa79646b201fff1c574855, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8d2bbd20a0fa79646b201fff1c574855, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -1541,6 +1578,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8d2bbd20a0fa79646b201fff1c574855, type: 3}
+--- !u!224 &672203552 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+  m_PrefabInstance: {fileID: 850823485}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &703867848
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1634,7 +1676,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 765992247}
+    m_TransformParent: {fileID: 1934617289}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: e26e9c5577c41bb40b989dbe0f2c394f, type: 3}
       propertyPath: m_LocalScale.x
@@ -1739,7 +1781,6 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1707716183}
   - {fileID: 327662073}
   - {fileID: 583373608}
   - {fileID: 1302282236}
@@ -1821,11 +1862,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AvoidanceSteering
   dotProductThreshold: 0.6
-  distanceBetweenZombiesThreshold: 5
-  avoidanceMinLockTime: 0.5
+  Zombie_DistanceThreshold: 0
+  Player_DistanceThreshold: 0
+  Zombie_avoidanceMinLockTime: 0.5
+  Player_avoidanceMinLockTime: 1.2
   escalationTime: 3
-  defaultYaw: 60
-  escalatedYaw: 90
+  Zombie_defaultYaw: 0
+  Player_defaultYaw: 0
+  Zombie_escalatedYaw: 0
+  Player_escalatedYaw: 0
 --- !u!54 &765992253
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -1883,11 +1928,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1422926dcbe6c44f9c3ef0380d28faa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyBrain
-  arrivalRadius: 0.3
-  obstacleMask:
-    serializedVersion: 2
-    m_Bits: 64
-  visionGraceDuration: 3
   wayPointManager: {fileID: 1562593277}
   searchPointLayer:
     serializedVersion: 2
@@ -1895,9 +1935,9 @@ MonoBehaviour:
   SearchPointFactorPercent: 0.5
   InvestigateAreaRadius: 18
   stimulusMemoryDuration: 5
+  chaseTargetArrivalRadius: 0
   hasSeenFirstTime: 1
   attackDistance: 3.5
-  attackRegisterDistance: 0
   attackOffset: 0.5
   attackDamage: 20
   attackDotThreshold: 0.5
@@ -1910,6 +1950,7 @@ MonoBehaviour:
   closeBandAttackDistance: 0
   bandDistanceTolerance: 0.5
   attackCooldown: 1.5
+  lungeAttackPredictionDistance: 1.5
   distanceForSampling: 5
   wayPointCollectionRadius: 50
   idleVariants:
@@ -1928,6 +1969,21 @@ MonoBehaviour:
   - {fileID: 7400000, guid: c7fc567b80c167d4d9e3299766db5cfa, type: 2}
   animatorOverrideController: {fileID: 0}
   proximityRadius: 10
+  proximityObstacleMask:
+    serializedVersion: 2
+    m_Bits: 0
+  visionGraceDuration: 3
+  obstacleMaskForReposition:
+    serializedVersion: 2
+    m_Bits: 0
+  midBandCompression: 0.5
+  farBandCompression: 0.75
+  repositionArrivalRadius: 0.5
+  sliceHalfAngle: 0
+  repositionTimeout: 5
+  Debug_movementAngle: 0
+  Debug_FrontSemiCircle: 0
+  Debug_BackSemiCircle: 0
   drawBandGizmos: 1
   circleSegments: 48
   Debug_RepositionTarget: {x: 0, y: 0, z: 0}
@@ -2203,6 +2259,127 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &850823485
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 507825057}
+    m_Modifications:
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_Pivot.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_Pivot.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 200
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -12.78
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.69001997
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0.7237904
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 10.27
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -0.03
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: -92.737
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2588982911951620730, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: player
+      value: 
+      objectReference: {fileID: 1584050596}
+    - target: {fileID: 3186572725680893476, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: wayPointManager
+      value: 
+      objectReference: {fileID: 1562593277}
+    - target: {fileID: 7396628185523005442, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_Name
+      value: Enemy (8)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7396628185523005442, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8684067060896314359, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: Player_DistanceThreshold
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8684067060896314359, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: Player_avoidanceMinLockTime
+      value: 0.8
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects:
+    - {fileID: 3757715685237449197, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2082036322}
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
 --- !u!1 &878947468
 GameObject:
   m_ObjectHideFlags: 0
@@ -2719,11 +2896,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AvoidanceSteering
   dotProductThreshold: 0.6
-  distanceBetweenZombiesThreshold: 5
-  avoidanceMinLockTime: 0.5
+  Zombie_DistanceThreshold: 0
+  Player_DistanceThreshold: 0
+  Zombie_avoidanceMinLockTime: 0.5
+  Player_avoidanceMinLockTime: 1.2
   escalationTime: 3
-  defaultYaw: 60
-  escalatedYaw: 90
+  Zombie_defaultYaw: 0
+  Player_defaultYaw: 0
+  Zombie_escalatedYaw: 0
+  Player_escalatedYaw: 0
 --- !u!54 &1331646822
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -2781,11 +2962,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1422926dcbe6c44f9c3ef0380d28faa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyBrain
-  arrivalRadius: 0.3
-  obstacleMask:
-    serializedVersion: 2
-    m_Bits: 64
-  visionGraceDuration: 3
   wayPointManager: {fileID: 1562593277}
   searchPointLayer:
     serializedVersion: 2
@@ -2793,9 +2969,9 @@ MonoBehaviour:
   SearchPointFactorPercent: 0.5
   InvestigateAreaRadius: 18
   stimulusMemoryDuration: 5
+  chaseTargetArrivalRadius: 0
   hasSeenFirstTime: 1
   attackDistance: 3.5
-  attackRegisterDistance: 0
   attackOffset: 0.5
   attackDamage: 20
   attackDotThreshold: 0.5
@@ -2808,6 +2984,7 @@ MonoBehaviour:
   closeBandAttackDistance: 0
   bandDistanceTolerance: 0.5
   attackCooldown: 1.5
+  lungeAttackPredictionDistance: 1.5
   distanceForSampling: 5
   wayPointCollectionRadius: 50
   idleVariants:
@@ -2826,6 +3003,21 @@ MonoBehaviour:
   - {fileID: 7400000, guid: c7fc567b80c167d4d9e3299766db5cfa, type: 2}
   animatorOverrideController: {fileID: 0}
   proximityRadius: 10
+  proximityObstacleMask:
+    serializedVersion: 2
+    m_Bits: 0
+  visionGraceDuration: 3
+  obstacleMaskForReposition:
+    serializedVersion: 2
+    m_Bits: 0
+  midBandCompression: 0.5
+  farBandCompression: 0.75
+  repositionArrivalRadius: 0.5
+  sliceHalfAngle: 0
+  repositionTimeout: 5
+  Debug_movementAngle: 0
+  Debug_FrontSemiCircle: 0
+  Debug_BackSemiCircle: 0
   drawBandGizmos: 1
   circleSegments: 48
   Debug_RepositionTarget: {x: 0, y: 0, z: 0}
@@ -2866,6 +3058,127 @@ NavMeshAgent:
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 0
+--- !u!1001 &1375438441
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 507825057}
+    m_Modifications:
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_Pivot.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_Pivot.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 200
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -13.28
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.69001997
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0.7237904
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -0.24
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -0.03
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: -92.737
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2588982911951620730, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: player
+      value: 
+      objectReference: {fileID: 1584050596}
+    - target: {fileID: 3186572725680893476, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: wayPointManager
+      value: 
+      objectReference: {fileID: 1562593277}
+    - target: {fileID: 7396628185523005442, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_Name
+      value: Enemy (7)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7396628185523005442, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8684067060896314359, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: Player_DistanceThreshold
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8684067060896314359, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: Player_avoidanceMinLockTime
+      value: 0.8
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects:
+    - {fileID: 3757715685237449197, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1707716183}
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
 --- !u!1 &1384445393
 GameObject:
   m_ObjectHideFlags: 0
@@ -3040,11 +3353,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AvoidanceSteering
   dotProductThreshold: 0.6
-  distanceBetweenZombiesThreshold: 5
-  avoidanceMinLockTime: 0.5
+  Zombie_DistanceThreshold: 0
+  Player_DistanceThreshold: 0
+  Zombie_avoidanceMinLockTime: 0.5
+  Player_avoidanceMinLockTime: 1.2
   escalationTime: 3
-  defaultYaw: 60
-  escalatedYaw: 90
+  Zombie_defaultYaw: 0
+  Player_defaultYaw: 0
+  Zombie_escalatedYaw: 0
+  Player_escalatedYaw: 0
 --- !u!54 &1415654182
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -3102,11 +3419,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1422926dcbe6c44f9c3ef0380d28faa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyBrain
-  arrivalRadius: 0.3
-  obstacleMask:
-    serializedVersion: 2
-    m_Bits: 64
-  visionGraceDuration: 3
   wayPointManager: {fileID: 1562593277}
   searchPointLayer:
     serializedVersion: 2
@@ -3114,9 +3426,9 @@ MonoBehaviour:
   SearchPointFactorPercent: 0.5
   InvestigateAreaRadius: 18
   stimulusMemoryDuration: 5
+  chaseTargetArrivalRadius: 0
   hasSeenFirstTime: 1
   attackDistance: 3.5
-  attackRegisterDistance: 0
   attackOffset: 0.5
   attackDamage: 20
   attackDotThreshold: 0.5
@@ -3129,6 +3441,7 @@ MonoBehaviour:
   closeBandAttackDistance: 0
   bandDistanceTolerance: 0.5
   attackCooldown: 1.5
+  lungeAttackPredictionDistance: 1.5
   distanceForSampling: 5
   wayPointCollectionRadius: 50
   idleVariants:
@@ -3147,6 +3460,21 @@ MonoBehaviour:
   - {fileID: 7400000, guid: c7fc567b80c167d4d9e3299766db5cfa, type: 2}
   animatorOverrideController: {fileID: 0}
   proximityRadius: 10
+  proximityObstacleMask:
+    serializedVersion: 2
+    m_Bits: 0
+  visionGraceDuration: 3
+  obstacleMaskForReposition:
+    serializedVersion: 2
+    m_Bits: 0
+  midBandCompression: 0.5
+  farBandCompression: 0.75
+  repositionArrivalRadius: 0.5
+  sliceHalfAngle: 0
+  repositionTimeout: 5
+  Debug_movementAngle: 0
+  Debug_FrontSemiCircle: 0
+  Debug_BackSemiCircle: 0
   drawBandGizmos: 1
   circleSegments: 48
   Debug_RepositionTarget: {x: 0, y: 0, z: 0}
@@ -4116,7 +4444,6 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 2019183982}
   - {fileID: 2120087636}
   - {fileID: 878947469}
   - {fileID: 139838620}
@@ -4198,11 +4525,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AvoidanceSteering
   dotProductThreshold: 0.6
-  distanceBetweenZombiesThreshold: 5
-  avoidanceMinLockTime: 0.5
+  Zombie_DistanceThreshold: 0
+  Player_DistanceThreshold: 0
+  Zombie_avoidanceMinLockTime: 0.5
+  Player_avoidanceMinLockTime: 1.2
   escalationTime: 3
-  defaultYaw: 60
-  escalatedYaw: 90
+  Zombie_defaultYaw: 0
+  Player_defaultYaw: 0
+  Zombie_escalatedYaw: 0
+  Player_escalatedYaw: 0
 --- !u!54 &1871191727
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -4260,11 +4591,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1422926dcbe6c44f9c3ef0380d28faa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyBrain
-  arrivalRadius: 0.3
-  obstacleMask:
-    serializedVersion: 2
-    m_Bits: 64
-  visionGraceDuration: 3
   wayPointManager: {fileID: 1562593277}
   searchPointLayer:
     serializedVersion: 2
@@ -4272,9 +4598,9 @@ MonoBehaviour:
   SearchPointFactorPercent: 0.5
   InvestigateAreaRadius: 18
   stimulusMemoryDuration: 5
+  chaseTargetArrivalRadius: 0
   hasSeenFirstTime: 1
   attackDistance: 3.5
-  attackRegisterDistance: 0
   attackOffset: 0.5
   attackDamage: 20
   attackDotThreshold: 0.5
@@ -4287,6 +4613,7 @@ MonoBehaviour:
   closeBandAttackDistance: 0
   bandDistanceTolerance: 0.5
   attackCooldown: 1.5
+  lungeAttackPredictionDistance: 1.5
   distanceForSampling: 5
   wayPointCollectionRadius: 50
   idleVariants:
@@ -4305,6 +4632,21 @@ MonoBehaviour:
   - {fileID: 7400000, guid: c7fc567b80c167d4d9e3299766db5cfa, type: 2}
   animatorOverrideController: {fileID: 0}
   proximityRadius: 10
+  proximityObstacleMask:
+    serializedVersion: 2
+    m_Bits: 0
+  visionGraceDuration: 3
+  obstacleMaskForReposition:
+    serializedVersion: 2
+    m_Bits: 0
+  midBandCompression: 0.5
+  farBandCompression: 0.75
+  repositionArrivalRadius: 0.5
+  sliceHalfAngle: 0
+  repositionTimeout: 5
+  Debug_movementAngle: 0
+  Debug_FrontSemiCircle: 0
+  Debug_BackSemiCircle: 0
   drawBandGizmos: 1
   circleSegments: 48
   Debug_RepositionTarget: {x: 0, y: 0, z: 0}
@@ -4345,6 +4687,11 @@ NavMeshAgent:
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 0
+--- !u!224 &1934617289 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+  m_PrefabInstance: {fileID: 1375438441}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1955865162
 GameObject:
   m_ObjectHideFlags: 0
@@ -4482,6 +4829,122 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 3ea9cc4fe43fdfe44a32765509ebf66a, type: 3}
   m_PrefabInstance: {fileID: 1766472297}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &2056208320
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 507825057}
+    m_Modifications:
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_Pivot.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_Pivot.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 200
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -7.47
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.69001997
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0.7237904
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 4.56
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -0.03
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: -92.737
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2588982911951620730, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: player
+      value: 
+      objectReference: {fileID: 1584050596}
+    - target: {fileID: 3186572725680893476, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: wayPointManager
+      value: 
+      objectReference: {fileID: 1562593277}
+    - target: {fileID: 7396628185523005442, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_Name
+      value: Enemy (6)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7396628185523005442, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects:
+    - {fileID: 3757715685237449197, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2019183982}
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1232642496797770928, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+  m_SourcePrefab: {fileID: 100100000, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
 --- !u!4 &2082036322 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 86c14310436a83942872cf43be39a024, type: 3}
@@ -4843,10 +5306,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 833453706187871840, guid: 63cc82c7a272c0a40b37c57e42a0072e, type: 3}
-      propertyPath: useLightZone
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 3240690407180083767, guid: 63cc82c7a272c0a40b37c57e42a0072e, type: 3}
       propertyPath: m_LocalPosition.x
       value: -1.2
@@ -4861,19 +5320,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3240690407180083767, guid: 63cc82c7a272c0a40b37c57e42a0072e, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.7071068
+      value: -0.08654645
       objectReference: {fileID: 0}
     - target: {fileID: 3240690407180083767, guid: 63cc82c7a272c0a40b37c57e42a0072e, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 3240690407180083767, guid: 63cc82c7a272c0a40b37c57e42a0072e, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.7071068
+      value: -0.9962478
       objectReference: {fileID: 0}
     - target: {fileID: 3240690407180083767, guid: 63cc82c7a272c0a40b37c57e42a0072e, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 3240690407180083767, guid: 63cc82c7a272c0a40b37c57e42a0072e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -4881,7 +5340,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3240690407180083767, guid: 63cc82c7a272c0a40b37c57e42a0072e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: -90
+      value: -189.93
       objectReference: {fileID: 0}
     - target: {fileID: 3240690407180083767, guid: 63cc82c7a272c0a40b37c57e42a0072e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
@@ -4902,6 +5361,10 @@ PrefabInstance:
     - target: {fileID: 6462491823532195136, guid: 63cc82c7a272c0a40b37c57e42a0072e, type: 3}
       propertyPath: m_Name
       value: Player
+      objectReference: {fileID: 0}
+    - target: {fileID: 9089002690014562658, guid: 63cc82c7a272c0a40b37c57e42a0072e, type: 3}
+      propertyPath: damagableLayer.m_Bits
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -20,15 +20,19 @@ public class AvoidanceSteering : MonoBehaviour
 
     [Header("Detection")]
     [SerializeField] private float dotProductThreshold;
-    [SerializeField] private float distanceBetweenZombiesThreshold;
+    [SerializeField] private float Zombie_DistanceThreshold;
+    [SerializeField] private float Player_DistanceThreshold;
 
     [Header("Timing")]
-    [SerializeField] private float avoidanceMinLockTime;
+    [SerializeField] private float Zombie_avoidanceMinLockTime = 0.5f;
+    [SerializeField] private float Player_avoidanceMinLockTime = 1.2f;
     [SerializeField] private float escalationTime;
 
     [Header("Angles")]
-    [SerializeField] private float defaultYaw;
-    [SerializeField] private float escalatedYaw;
+    [SerializeField] private float Zombie_defaultYaw;
+    [SerializeField] private float Player_defaultYaw;
+    [SerializeField] private float Zombie_escalatedYaw;
+    [SerializeField] private float Player_escalatedYaw;
 
     private ProximitySensor proximitySensor;
     private AvoidanceMode mode = AvoidanceMode.None;
@@ -36,6 +40,7 @@ public class AvoidanceSteering : MonoBehaviour
     private Quaternion yawRotation;
     private int handedness;
     private bool CanRotate;
+    private bool avoidanceEnabled;
 
     public bool HasOverrideDirection(out Vector3 overrideDir)
     {
@@ -63,22 +68,29 @@ public class AvoidanceSteering : MonoBehaviour
 
     private void UpdateAvoidance()
     {
-
         if (mode == AvoidanceMode.None)
         {
-
             if (!CanRotate)
                 return;
-            TryCommitAvoidance();
+            Zombie_TryCommitAvoidance();
+            if (avoidanceEnabled)
+            {
+                Player_TryCommitAvoidance();//Minor fix don't let avoidance work with player in states like chase state
+            }
             return;
         }
 
         float elapsedTime = Time.time - intent.avoidanceStartTime;
 
-        if (elapsedTime < avoidanceMinLockTime)
+        if (elapsedTime < Zombie_avoidanceMinLockTime)
         {
             return;
         }
+
+        // if (proximitySensor.HasNearbyPlayer() && elapsedTime < Player_avoidanceMinLockTime)
+        // {
+        //     return;
+        // }
 
         if (!OppositeSideHasPressure() && IsForwardAligned())
         {
@@ -92,14 +104,14 @@ public class AvoidanceSteering : MonoBehaviour
         }
     }
 
-    private void TryCommitAvoidance()
+    private void Zombie_TryCommitAvoidance()
     {
         foreach (var otherZombie in proximitySensor.NearbyZombies())
         {
             Vector3 fromZombieToOtherZombie = otherZombie.transform.position - transform.position;
             fromZombieToOtherZombie.y = 0f;
 
-            if (fromZombieToOtherZombie.magnitude > distanceBetweenZombiesThreshold)
+            if (fromZombieToOtherZombie.magnitude > Zombie_DistanceThreshold)
             {
                 continue;
             }
@@ -115,6 +127,31 @@ public class AvoidanceSteering : MonoBehaviour
             break;
         }
     }
+
+    private void Player_TryCommitAvoidance()
+    {
+        foreach (var player in proximitySensor.NearbyPlayer())
+        {
+            Vector3 fromZombieToPlayer = player.transform.position - transform.position;
+            fromZombieToPlayer.y = 0f;
+
+            if (fromZombieToPlayer.magnitude > Player_DistanceThreshold)
+            {
+                continue;
+            }
+
+            fromZombieToPlayer.Normalize();
+
+            if (Vector3.Dot(transform.forward, fromZombieToPlayer) < dotProductThreshold)
+            {
+                continue;
+            }
+
+            Commit(transform.forward, fromZombieToPlayer);
+            break;
+        }
+    }
+
 
     private void Commit(Vector3 baseForward, Vector3 directionFromZtoOtherZ)
     {
@@ -132,9 +169,19 @@ public class AvoidanceSteering : MonoBehaviour
             intent.avoidanceSide = (int)Mathf.Sign(crossProduct.y);
         }
 
-        intent.yaw = defaultYaw * intent.avoidanceSide;
-        yawRotation = Quaternion.Euler(0f, intent.yaw, 0f);
-        mode = AvoidanceMode.Avoid;
+        if (proximitySensor.HasNearbyPlayer())
+        {
+
+            intent.yaw = Player_defaultYaw * intent.avoidanceSide;
+            yawRotation = Quaternion.Euler(0f, intent.yaw, 0f);
+            mode = AvoidanceMode.Avoid;
+        }
+        else
+        {
+            intent.yaw = Zombie_defaultYaw * intent.avoidanceSide;
+            yawRotation = Quaternion.Euler(0f, intent.yaw, 0f);
+            mode = AvoidanceMode.Avoid;
+        }
     }
 
     private bool OppositeSideHasPressure()
@@ -144,7 +191,7 @@ public class AvoidanceSteering : MonoBehaviour
             Vector3 fromZombieToOther = otherZombie.transform.position - transform.position;
             fromZombieToOther.y = 0f;
 
-            if (fromZombieToOther.magnitude > distanceBetweenZombiesThreshold)
+            if (fromZombieToOther.magnitude > Zombie_DistanceThreshold)
             {
                 continue;
             }
@@ -181,9 +228,18 @@ public class AvoidanceSteering : MonoBehaviour
 
     private void Escalate()
     {
-        intent.yaw = escalatedYaw * intent.avoidanceSide;
-        yawRotation = Quaternion.Euler(0f, intent.yaw, 0f);
-        mode = AvoidanceMode.Esc180;
+        if (proximitySensor.HasNearbyPlayer())
+        {
+            intent.yaw = Player_defaultYaw * intent.avoidanceSide;
+            yawRotation = Quaternion.Euler(0f, intent.yaw, 0f);
+            mode = AvoidanceMode.Esc180;
+        }
+        else
+        {
+            intent.yaw = Zombie_defaultYaw * intent.avoidanceSide;
+            yawRotation = Quaternion.Euler(0f, intent.yaw, 0f);
+            mode = AvoidanceMode.Esc180;
+        }
     }
 
     private void Release()
@@ -202,5 +258,10 @@ public class AvoidanceSteering : MonoBehaviour
     public bool IsAvoiding()
     {
         return mode != AvoidanceMode.None;
+    }
+
+    public void SetPlayerAvoidance(bool _value)
+    {
+        avoidanceEnabled = _value;
     }
 }
