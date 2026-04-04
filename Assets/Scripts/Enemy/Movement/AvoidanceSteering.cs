@@ -25,7 +25,7 @@ public class AvoidanceSteering : MonoBehaviour
 
     [Header("Timing")]
     [SerializeField] private float Zombie_avoidanceMinLockTime = 0.5f;
-    [SerializeField] private float Player_avoidanceMinLockTime = 1.2f;
+    //[SerializeField] private float Player_avoidanceMinLockTime = 1.2f;
     [SerializeField] private float escalationTime;
 
     [Header("Angles")]

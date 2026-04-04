@@ -8,7 +8,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private PlayerMovement playerMovement;
     private PlayerLook playerLook;
     private PlayerCombat playerCombat;
-    public int currentHealth { get; private set; }
+    public float currentHealth { get; private set; }
     public bool playerisDead { get; private set; }
     private TextMeshProUGUI healthText;
     public event Action<bool> playerDead;
@@ -34,7 +34,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         currentHealth = maxHealth;
     }
 
-    public void TakeDamage(int amount)
+    public void TakeDamage(float  amount)
     {
         if (playerisDead)
         {

@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 public class PlayerLook : MonoBehaviour
 {
-    public Transform cameraTransform;
+    public Transform cameraPivot;
     public float mouseSensitivity = 100f;
     private bool canLook = true;
     private float xRotation = 0f;
@@ -34,7 +34,7 @@ public class PlayerLook : MonoBehaviour
         xRotation -= mouseY;
         xRotation = Mathf.Clamp(xRotation, -80f, 80f);
 
-        cameraTransform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+        cameraPivot.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
     }
 
     public void DisableLook()

@@ -21,8 +21,13 @@ public class RepositionState : IEnemyState
     public void OnEnter()
     {
         brain.enemyMovement.Animator_SetBool("canExitReposition", false);
-        //        Debug.Log("Reposition ENTER");
         brain.SelectNextBand();
+        // if (!BandPositionCoordinator.Instance.TryReserveBand(brain.GetCurrentCombatBand()))
+        // {
+        //     brain.SwitchState(brain.RepositionState);
+        // }
+        //        Debug.Log("Reposition ENTER");
+
         brain.SetIsCommitedToReposition(true);
         SetFoundValidPosition(false);
         //   brain.enemyMovement.RequestAnimation(new AnimationIntent(AnimationType.Reposition, 100));

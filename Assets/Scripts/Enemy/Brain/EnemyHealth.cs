@@ -5,7 +5,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     [SerializeField] private int maxHealth;
     private EnemyBrain brain;
-    public int currentHealth { get; private set; }
+    public float currentHealth { get; private set; }
     public bool EnemyisDead { get; private set; }
 
     void Awake()
@@ -18,7 +18,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         currentHealth = maxHealth;
     }
 
-    public void TakeDamage(int amount)
+    public void TakeDamage(float amount)
     {
         if (EnemyisDead)
         {

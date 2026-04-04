@@ -107,6 +107,7 @@ public class AttackState : IEnemyState
     {
         brain.NotifyAttackEnded();
         brain.SetIsCommitedToReposition(false);
+        // BandPositionCoordinator.Instance.ReleaseBand(brain.GetCurrentCombatBand());
         // brain.SwitchState(brain.BufferState);
         float distance = Vector3.Distance(brain.transform.position, brain.player.transform.position);
         var value = Random.value;
