@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Net;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class WeaponRuntimeInstance
@@ -11,12 +12,24 @@ public class WeaponRuntimeInstance
     private IFireModeExecutor fireModeExecutor;
     private Transform muzzleTransform;
     private Transform trailMarker;
+    private MonoBehaviour coroutineRunner;
+    private bool isReloading;
+    public int currentAmmo { get; private set; }
+    public int remainingMagazines { get; private set; }
+    private PlayerLook playerLook;
+    private Animator weaponAnimator;
 
-    public WeaponRuntimeInstance(WeaponFireConfig weaponFireConfig, Transform muzzleTransform, Transform trailMarker)
+    public WeaponRuntimeInstance(WeaponFireConfig weaponFireConfig, Transform muzzleTransform, Transform trailMarker, MonoBehaviour coroutineRunner, PlayerLook playerLook, Animator weaponAnimator)
     {
         this.weaponFireConfig = weaponFireConfig;
         this.muzzleTransform = muzzleTransform;
         this.trailMarker = trailMarker;
+        this.coroutineRunner = coroutineRunner;
+        this.playerLook = playerLook;
+        this.weaponAnimator = weaponAnimator;
+        currentAmmo = weaponFireConfig.maxAmmoCapacity;
+        remainingMagazines = weaponFireConfig.maxMagazineCapacity;
+
         cooldownDuration = 1 / weaponFireConfig.fireRate;
         fireModeExecutor = FireModeExecutorFactory.Create(GetFireMode());
 
@@ -26,20 +39,30 @@ public class WeaponRuntimeInstance
         }
     }
 
-    public void TryFire(bool isPressed, bool wasPressed, Transform fireOrigin, Transform owner, MonoBehaviour coroutineRuinner)
+    public void TryFire(bool isPressed, bool wasPressed, Transform fireOrigin, Transform owner, System.Action<RecoilConfig> onShotFired, Animator weaponAnimator)
     {
-        fireModeExecutor.TryExecuteFire(this, isPressed, wasPressed, fireOrigin, owner, coroutineRuinner);
+        fireModeExecutor.TryExecuteFire(this, isPressed, wasPressed, fireOrigin, owner, coroutineRunner, onShotFired, weaponAnimator);
     }
 
-    public bool PerformShot(Transform fireOrigin, Transform owner, MonoBehaviour coroutineRunner)
+    public bool PerformShot(Transform fireOrigin, Transform owner)
     {
         if (Time.time < nextAllowedFireTime)
         {
             return false;
         }
 
+        if (!canShoot())
+        {
+            return false;
+        }
+
+        var recoilConfig = weaponFireConfig.weaponVisualConfig.recoilConfig;
         owner.GetComponent<SoundEmitter>()?.EmitSound(weaponFireConfig.soundProfile);
         SpawnMuzzleFlash();
+        HandleAmmo();
+        //   playerLook.ApplyRecoil(recoilConfig.verticleRecoil, recoilConfig.horizontalRecoil);
+        //  playerLook.SetRecoverySpeed(recoilConfig.recoilRecoverySpeed);
+
         nextAllowedFireTime = Time.time + cooldownDuration;
 
         HitResult hitResult;
@@ -54,7 +77,7 @@ public class WeaponRuntimeInstance
                 if (damageable != ownerDamageable)
                 {
                     Debug.Log("[WeaponRuntimeInstance] Applying Damage to Enemies.");
-                    damageable.TakeDamage(weaponFireConfig.damage);
+                    damageable.TakeDamage(hitResult, weaponFireConfig.damage);
                 }
             }
             else
@@ -62,7 +85,7 @@ public class WeaponRuntimeInstance
                 Debug.Log("[WeaponRuntimeInstance] damageable is NUll");
             }
         }
-        SpawnTrail(hitResult, spreadDirection, fireOrigin, coroutineRunner, trailMarker);
+        SpawnTrail(hitResult, spreadDirection, fireOrigin, trailMarker);
         return true;
     }
 
@@ -93,7 +116,7 @@ public class WeaponRuntimeInstance
         GameObject.Destroy(muzzleFlash, 2f);
     }
 
-    private void SpawnTrail(HitResult hitResult, Vector3 spreadDirection, Transform fireOrigin, MonoBehaviour coroutineRunner, Transform trailMarker)
+    private void SpawnTrail(HitResult hitResult, Vector3 spreadDirection, Transform fireOrigin, Transform trailMarker)
     {
         var visualConfig = weaponFireConfig.weaponVisualConfig;
 
@@ -130,5 +153,79 @@ public class WeaponRuntimeInstance
 
         return spreadDirection;
     }
+
+    public void HandleAmmo()
+    {
+        currentAmmo--;
+
+        if (remainingMagazines < 0)
+        {
+            currentAmmo = 0;
+            remainingMagazines = 0;
+            Debug.Log("[WeaponRuntimeInstance] Ammo Over");
+            return;
+        }
+        if (currentAmmo <= 0)
+        {
+            RequestReload();
+        }
+
+    }
+
+    private IEnumerator Reload()
+    {
+        if (remainingMagazines <= 0)
+        {
+            Debug.Log("[WeaponRuntimeInstance] No Ammo Left");
+            yield break;
+        }
+        isReloading = true;
+        weaponAnimator.SetBool("isReloading", isReloading);
+        weaponAnimator.SetTrigger("Reload");
+        yield return null;
+
+        yield return new WaitUntil(() => weaponAnimator.GetCurrentAnimatorStateInfo(0).IsName("Reload"));
+        yield return new WaitUntil(() => weaponAnimator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1);
+        // float reloadDuration = (weaponAnimator.GetCurrentAnimatorStateInfo(0).length);
+        // yield return new WaitForSeconds(reloadDuration);
+        remainingMagazines--;
+        currentAmmo = weaponFireConfig.maxAmmoCapacity;
+        isReloading = false;
+        weaponAnimator.SetBool("isReloading", false);
+    }
+
+    private bool canShoot()
+    {
+        if (currentAmmo > 0 && currentAmmo <= weaponFireConfig.maxAmmoCapacity && !isReloading)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    public void RequestReload()
+    {
+        if (isReloading)
+        {
+            Debug.Log("[WeaponRuntimeInstance] Cannot Reload at this moment.");
+            return;
+        }
+
+        if (currentAmmo == weaponFireConfig.maxAmmoCapacity)
+        {
+            Debug.Log("[WeaponRuntimeInstance] Cannot Reload at this moment.");
+            return;
+        }
+
+        if (remainingMagazines <= 0)
+        {
+            Debug.Log("[WeaponRuntimeInstance] Cannot Reload at this moment.");
+            return;
+        }
+
+        coroutineRunner.StartCoroutine(Reload());
+    }
+
 }
 

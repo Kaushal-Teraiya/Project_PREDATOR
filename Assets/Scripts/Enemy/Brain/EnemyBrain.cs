@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using UnityEditor.ShaderGraph.Internal;
+//using UnityEditor.ShaderGraph.Internal;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -9,6 +9,21 @@ public class EnemyBrain : MonoBehaviour
     [Header("Sensors")]
     private SoundSensor soundSensor;
     private VisionSensor visionSensor;
+
+    [Header("Archetype")]
+
+    public Archetype enemyArchetype;
+    public enum Archetype
+    {
+        Walker,
+        Runner,
+        Hopper,
+        WallCrawler
+    }
+
+    private EnemyMovement.MovementSurface preferredMovementSurface;
+    // private bool canClimbWalls;
+    // private bool canLunge;
 
     [Header("States")]
     private IEnemyState currentState;
@@ -172,6 +187,25 @@ public class EnemyBrain : MonoBehaviour
 
     public Vector3 Debug_RepositionTarget;
 
+    [Header("Ragdoll")]
+    public RagdollController ragdollController { get; private set; }
+    public Vector3 LastHitDirection { get; private set; }
+    public float LastHitForce { get; private set; }
+
+    [Header("WallDetection")]
+    [SerializeField] private float wallSearchRadius = 10f;
+    [SerializeField] private LayerMask climbableSurfaceMask;
+    private Vector3 selectedWallPoint;
+    private Vector3 selectedWallNormal;
+    private bool hasWallTarget;
+    [SerializeField] private float attachDistance = 2f;
+
+    public void SetHitImpact(Vector3 direction, float force)
+    {
+        LastHitDirection = direction;
+        LastHitForce = force;
+    }
+
     void Awake()
     {
         soundSensor = GetComponent<SoundSensor>();
@@ -179,7 +213,7 @@ public class EnemyBrain : MonoBehaviour
         Movement_Enemy = GetComponent<EnemyMovement>();
         enemyHealth = GetComponent<EnemyHealth>();
         animator = GetComponent<Animator>();
-
+        ragdollController = GetComponent<RagdollController>();
         baseController = animator.runtimeAnimatorController;
 
         animatorOverrideController = new AnimatorOverrideController
@@ -219,6 +253,8 @@ public class EnemyBrain : MonoBehaviour
         playerHealth.playerDead += HandleEnemyStateOnPlayerDeath;
         soundSensor.OnSoundHeard += HandleSoundStimulus;
         visionSensor.OnPeripheralGlimpse += HandlePeripheralStimulus;
+        enemyMovement.SetSurfaceTraversalAllowed(IsWallCrawler());
+        preferredMovementSurface = EnemyMovement.MovementSurface.Wall;
     }
 
     void Update()
@@ -227,7 +263,13 @@ public class EnemyBrain : MonoBehaviour
         enemyMovement.ResetAnimationIntent();
         CheckPerception();
         CheckStateChange();
-        currentState?.Tick();
+        //DetectSurface();
+        bool isHandlingWall = EvaluateSurfacePreference();
+        if (!isHandlingWall)
+        {
+            currentState?.Tick();
+        }
+
         enemyMovement.ApplyAnimationIntent();
     }
 
@@ -341,6 +383,10 @@ public class EnemyBrain : MonoBehaviour
 
     private void CheckStateChange()
     {
+        if (IsWallCrawler())
+        {
+            return;
+        }
         if (IsInState(deadState))
         {
             return;
@@ -447,6 +493,41 @@ public class EnemyBrain : MonoBehaviour
         {
             SwitchState(idleState);
         }
+    }
+
+    private bool EvaluateSurfacePreference()
+    {
+        if (preferredMovementSurface == EnemyMovement.MovementSurface.Wall)// && !enemyMovement.IsCurrentSurface(EnemyMovement.MovementSurface.Wall))
+        {
+            if (!hasWallTarget)
+            {
+                if (TryFindNearbyWall(out RaycastHit hitWall))
+                {
+                    selectedWallPoint = hitWall.point;
+                    selectedWallNormal = hitWall.normal;
+                    hasWallTarget = true;
+                }
+            }
+
+            if (hasWallTarget)
+            {
+                enemyMovement.SetMovementMode(EnemyMovement.MovementMode.Wander);
+                enemyMovement.RequestAnimation(new AnimationIntent(AnimationType.Run, 50));
+                enemyMovement.MoveTo(selectedWallPoint);
+
+                float distanceToWall = Vector3.Distance(transform.position, selectedWallPoint);
+
+                if (distanceToWall < attachDistance && !enemyMovement.IsCurrentSurface(EnemyMovement.MovementSurface.Wall))
+                {
+                    enemyMovement.SetWallNormal(selectedWallNormal);
+                    enemyMovement.SwitchSurface(EnemyMovement.MovementSurface.Wall);
+                    hasWallTarget = false;
+                }
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void CheckPerception()
@@ -728,6 +809,54 @@ public class EnemyBrain : MonoBehaviour
 
     }
 
+    private bool TryFindNearbyWall(out RaycastHit wallHit)
+    {
+
+        float bestDistance = float.MaxValue;
+        RaycastHit bestHit = default;
+
+        Vector3[] directions =
+        {
+            transform.forward,
+            -transform.forward,
+            transform.right,
+            -transform.right,
+
+            (transform.forward + transform.right).normalized,
+            (transform.forward - transform.right).normalized,
+            (-transform.right + transform.right).normalized,
+            (-transform.forward - transform.right).normalized
+        };
+        foreach (var direction in directions)
+        {
+            Debug.DrawRay(transform.position, direction * wallSearchRadius, Color.cyan);
+            if (Physics.Raycast(transform.position + Vector3.up * 1.0f, direction, out RaycastHit hitSurface, wallSearchRadius, climbableSurfaceMask, QueryTriggerInteraction.Ignore))
+            {
+                float angle = Vector3.Angle(hitSurface.normal, Vector3.up);
+
+                if (angle > 80f && angle < 100f)
+                {
+                    float distance = hitSurface.distance;
+
+                    if (distance < bestDistance)
+                    {
+                        bestDistance = distance;
+                        bestHit = hitSurface;
+                    }
+                }
+            }
+        }
+
+        if (bestDistance < float.MaxValue)
+        {
+            wallHit = bestHit;
+            return true;
+        }
+
+        wallHit = default;
+        return false;
+    }
+
 
     public void ApplyRootMotion(bool _applyRootMotion)
     {
@@ -851,7 +980,23 @@ public class EnemyBrain : MonoBehaviour
         return lungeAttackPredictionDistance;
     }
 
+    public bool IsWallCrawler()
+    {
+        return enemyArchetype == Archetype.WallCrawler;
+    }
     #region DebugGizmos
+    void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(transform.position, wallSearchRadius);
+        if (hasWallTarget)
+        {
+            Gizmos.color = Color.magenta;
+            Gizmos.DrawSphere(selectedWallPoint, 0.2f);
+
+            Gizmos.DrawLine(transform.position, selectedWallPoint);
+        }
+    }
     void OnDrawGizmos()
     {
         DrawCircle(transform.position, proximityRadius, 40);

@@ -19,21 +19,28 @@ public class DeadState : IEnemyState
         brain.SetCurrentlyChasing(false);
         brain.DisablePerception();
         brain.GetComponentInChildren<CapsuleCollider>().enabled = false;
-        Enemy.Animator_SetTrigger("IsDead");
+        // 
         EnableRagdoll();
         //Enable Ragdoll here
     }
 
     public void Tick()
     {
-       
+
     }
 
     public void OnExit() { }
 
     public void EnableRagdoll()
     {
-        //disable main colldier(capsule)
-        //enable all body colliders and rigidbodies
+        if (brain.ragdollController == null)
+        {
+            Debug.Log("[DeadState] Ragdoll controller is null");
+            brain.enemyMovement.Animator_SetTrigger("IsDead");
+            return;
+        }
+          Vector3 testDirection =
+            (brain.transform.position - brain.player.transform.position).normalized;
+        brain.ragdollController.EnableFullRagdoll(testDirection, brain.LastHitForce);
     }
 }

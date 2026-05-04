@@ -34,7 +34,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         currentHealth = maxHealth;
     }
 
-    public void TakeDamage(float  amount)
+    public void TakeDamage(HitResult hitResult , float  amount)
     {
         if (playerisDead)
         {

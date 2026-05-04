@@ -32,7 +32,7 @@ public class PlayerCombat : MonoBehaviour
                 if (damageable != null && damageable != transform.GetComponentInParent<IDamageable>())
                 {
                     Debug.Log("[PlayerCombat] Applying Damage to Enemies.");
-                    damageable.TakeDamage(damageAmount);
+                   // damageable.TakeDamage(damageAmount);
                 }
                 else
                 {

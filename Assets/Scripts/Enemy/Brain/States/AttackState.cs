@@ -97,7 +97,16 @@ public class AttackState : IEnemyState
             IDamageable damagable = brain.player.GetComponent<IDamageable>();
             if (damagable != null)
             {
-                damagable.TakeDamage(brain.AttackDamage);
+                HitResult hitResult = new HitResult
+                {
+                    hitObject = brain.player,
+                    hitDirection = brain.transform.forward,
+                    hitForce = 0f,
+                    hitNormal = Vector3.zero,
+                    success = true
+
+                };
+                damagable.TakeDamage(hitResult, brain.AttackDamage);
             }
             //            Debug.Log("[Attack] Damage Applied.");
         }

@@ -1,4 +1,4 @@
-using Mono.Cecil.Cil;
+//using Mono.Cecil.Cil;
 using Unity.Mathematics;
 using Unity.VisualScripting;
 using UnityEditor;
@@ -15,6 +15,8 @@ public class EnemyMovement : MonoBehaviour
     [SerializeField] private float rotationSpeed = 360f;
     [SerializeField] private float rotationThreshold = 2f;
     [SerializeField] private float separationWeight = 0.5f;
+    [SerializeField] private LayerMask WallSurfaceMask;
+    [SerializeField] private LayerMask CeilingSurfaceMask;
     public float MovementSpeed => enemySpeed;
 
     private ProximitySensor proximitySensor;
@@ -30,6 +32,13 @@ public class EnemyMovement : MonoBehaviour
         Reposition
     }
 
+    public enum MovementSurface
+    {
+        Ground,
+        Wall,
+        Ceiling
+    }
+
     public enum RotationPriority
     {
         None,
@@ -39,6 +48,7 @@ public class EnemyMovement : MonoBehaviour
     }
 
 
+    private MovementSurface currentMovementSurface;
     private MovementMode currentMovementMode;
     private RotationPriority currentRotationPriority;
     private Vector3 currentRotationTargetPosition;
@@ -68,6 +78,11 @@ public class EnemyMovement : MonoBehaviour
     private Vector3 arcStartPosition;
     private Vector3 arcEndPosition;
     private AnimationIntent lastAppliedAnimationIntent;
+    private bool allowSurfaceTraversal;
+    private bool wallDetected;
+    private bool ceilingDetected;
+    private RaycastHit lastHitWall;
+    private Vector3 currentWallNormal;
 
     void Awake()
     {
@@ -81,17 +96,59 @@ public class EnemyMovement : MonoBehaviour
         canRotate = true;
     }
 
+    private void Start()
+    {
+        currentMovementSurface = MovementSurface.Ground;
+    }
+
     private void Update()
     {
         ResetAnimationIntent();
         ResolveSpeed();
         ApplyRotation();
         ExecuteLunge();
+        Debug.Log("[FINAL ROTATION] " + transform.rotation.eulerAngles);
+        Debug.Log("[SURFACE] Current: " + currentMovementSurface);
+        // Debug.Log("[EnemyMovement] Enemy Speed is " + enemySpeed);
         currentSpeed = Mathf.MoveTowards(currentSpeed, enemySpeed, acceleration * Time.deltaTime);
         agent.nextPosition = transform.position;
     }
 
     public void MoveTo(Vector3 destination)
+    {
+        switch (currentMovementSurface)
+        {
+            case MovementSurface.Ground:
+                HandleGroundMovement(destination);
+                break;
+            case MovementSurface.Wall:
+                HandleWallMovement(destination);
+                break;
+        }
+
+    }
+
+    private void HandleWallMovement(Vector3 destination)
+    {
+
+        Vector3 direction = destination - transform.position;
+        Vector3 movementDir = direction.normalized;
+        Debug.Log("[WallMovement] movementDir: " + movementDir);
+        Debug.Log("[WallMovement] currentWallNormal: " + currentWallNormal);
+        Debug.DrawRay(transform.position, currentWallNormal * 50f, Color.yellow);   // wall normal
+        Debug.DrawRay(transform.position + Vector3.up * 3f, movementDir * 50f, Color.whiteSmoke);       // movement
+        movementDir = Vector3.ProjectOnPlane(movementDir, currentWallNormal).normalized;
+
+        if (movementDir.sqrMagnitude > 0.0001f)
+        {
+            lastMovementDir = movementDir;
+        }
+
+        transform.position += movementDir * currentSpeed * Time.deltaTime;
+        Debug.DrawRay(transform.position, movementDir, Color.black);
+    }
+
+    private void HandleGroundMovement(Vector3 destination)
     {
         Debug.DrawRay(transform.position, transform.forward * 2f, Color.red);
 
@@ -167,13 +224,13 @@ public class EnemyMovement : MonoBehaviour
 
         movementDir = movementDir.normalized;
 
-        // transform.position = Vector3.MoveTowards(transform.position, transform.position + movementDir, enemySpeed * Time.deltaTime);
         transform.position += movementDir * currentSpeed * Time.deltaTime;
         NavMeshHit groundHit;
         if (NavMesh.SamplePosition(transform.position, out groundHit, 1f, NavMesh.AllAreas))
         {
             transform.position = groundHit.position;
         }
+
         Debug.DrawRay(transform.position, movementDir * 2f, Color.cyan);
 
     }
@@ -280,12 +337,67 @@ public class EnemyMovement : MonoBehaviour
     private void ApplyRotation()
     {
         //        Debug.Log($"ApplyRotation - Current Priority: {currentRotationPriority}");
-
         if (!canRotate)
         {
+            Debug.Log("[Rotation] BLOCKED: canRotate = false");
             return;
         }
 
+        if (IsCurrentSurface(MovementSurface.Wall))
+        {
+            Debug.Log("[Rotation] Using WALL rotation");
+            WallRotation();
+            return;
+        }
+        Debug.Log("[Rotation] Using GROUND rotation");
+        GroundRotation();
+    }
+
+    private void WallRotation()
+    {
+        // if (lastMovementDir.sqrMagnitude < 0.0001f)
+        // {
+        //     Debug.Log("[WallRotation] SKIPPED: lastMovementDir too small");
+        //     return;
+        // }
+        // Debug.Log("[WallRotation] Running");
+
+        // Vector3 forward = Vector3.ProjectOnPlane(lastMovementDir, currentWallNormal).normalized;
+        // Vector3 up = currentWallNormal;
+        // Vector3 right = Vector3.Cross(up, forward).normalized;
+        // forward = Vector3.Cross(right, up).normalized;
+
+        // Debug.Log("[WallRotation] FIXED Forward: " + forward);
+        // Debug.Log("[WallRotation] FIXED Up: " + up);
+
+        // Quaternion targetRotation = Quaternion.LookRotation(forward, up);
+        // transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+
+        if (currentWallNormal == Vector3.zero)
+            return;
+
+        // Step 1: align UP to wall normal
+        Quaternion alignUp = Quaternion.FromToRotation(transform.up, currentWallNormal);
+
+        transform.rotation = alignUp * transform.rotation;
+
+        // Step 2: OPTIONAL - align forward along movement
+        if (lastMovementDir.sqrMagnitude > 0.001f)
+        {
+            Vector3 forward = Vector3.ProjectOnPlane(lastMovementDir, currentWallNormal).normalized;
+
+            Quaternion look = Quaternion.LookRotation(forward, currentWallNormal);
+
+            transform.rotation = Quaternion.RotateTowards(
+                transform.rotation,
+                look,
+                rotationSpeed * Time.deltaTime
+            );
+        }
+    }
+
+    private void GroundRotation()
+    {
         Quaternion beforeRotation = transform.rotation;
         if (avoidance != null && avoidance.IsAvoiding())
         {
@@ -451,6 +563,91 @@ public class EnemyMovement : MonoBehaviour
             delayTimer = 0f;
             // EnableProximity();
         }
+    }
+
+    public void SetWallNormal(Vector3 wallNormal)
+    {
+        currentWallNormal = wallNormal;
+    }
+
+    // public void DetectWall()
+    // {
+    //     if (!allowSurfaceTraversal)
+    //     {
+    //         return;
+    //     }
+    //     var origin = transform.position;
+    //     var direction = transform.forward;
+    //     var maxDistance = 10f;
+    //     var surfaceMask = WallSurfaceMask;
+    //     RaycastHit hitSurface;
+    //     Debug.DrawRay(origin, direction * maxDistance, Color.pink);
+
+    //     if (Physics.Raycast(origin, direction, out hitSurface, maxDistance, surfaceMask))
+    //     {
+    //         lastHitWall = hitSurface;
+    //         wallDetected = true;
+    //     }
+    // }
+
+    // public void DetectCeiling()
+    // {
+    //     if (!allowSurfaceTraversal)
+    //     {
+    //         return;
+    //     }
+    //     var origin = transform.position;
+    //     var direction = Vector3.up;
+    //     var maxDistance = 2f;
+    //     var surfaceMask = CeilingSurfaceMask;
+
+    //     if (Physics.Raycast(origin, direction, maxDistance, surfaceMask))
+    //     {
+    //         ceilingDetected = true;
+    //     }
+    // }
+
+    public void SetCurrentMovementSurface(MovementSurface surface)
+    {
+        currentMovementSurface = surface;
+    }
+
+    public void SwitchSurface(MovementSurface newSurface)
+    {
+        Debug.Log("[EnemyMovement] Switching Surface to " + newSurface);
+        SetCurrentMovementSurface(newSurface);
+
+        if (newSurface == MovementSurface.Wall)
+        {
+            OrientToWall(currentWallNormal);
+        }
+    }
+
+    private void OrientToWall(Vector3 wallNormal)
+    {
+        Vector3 outward = -wallNormal;
+        Vector3 surfaceUp = Vector3.ProjectOnPlane(Vector3.forward, wallNormal).normalized;
+        Quaternion targetBodyRotation = Quaternion.LookRotation(outward, surfaceUp);
+        transform.rotation = targetBodyRotation;
+    }
+    public bool IsWallDetected()
+    {
+        return wallDetected;
+    }
+
+    public bool IsCeilingDetected()
+    {
+        return ceilingDetected;
+    }
+
+    public bool IsCurrentSurface(MovementSurface movementSurface)
+    {
+        return currentMovementSurface == movementSurface;
+    }
+
+    public void SetSurfaceTraversalAllowed(bool isCrawler)
+    {
+        allowSurfaceTraversal = isCrawler;
     }
 
     public void SetPlayerAvoidance(bool _value)

@@ -3,8 +3,12 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "WeaponConfig/NewWeaponFireConfig")]
 public class WeaponFireConfig : ScriptableObject
 {
-    public string weaponName , weaponType;
+    public string weaponName, weaponType;
     public float damage;
+    public int maxAmmoCapacity;
+    public int maxMagazineCapacity;
+    public float hitForce;
+    public float reloadTime;
     public float range;
     public float fireRate;
     public HitDetector hitDetector;

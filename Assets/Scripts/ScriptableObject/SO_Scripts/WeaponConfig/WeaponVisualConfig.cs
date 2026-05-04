@@ -9,5 +9,5 @@ public class WeaponVisualConfig : ScriptableObject
     public Transform fireOriginOverride;
     public WeaponSoundConfig weaponSoundConfig;
     public TrailConfig trailConfig;
-
+    public RecoilConfig recoilConfig;
 }

@@ -18,7 +18,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         currentHealth = maxHealth;
     }
 
-    public void TakeDamage(float amount)
+    public void TakeDamage(HitResult hitResult, float amount)
     {
         if (EnemyisDead)
         {
@@ -32,12 +32,13 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         {
             currentHealth = 0;
             EnemyisDead = true;
-            EnemyDie();
+            EnemyDie(hitResult);
         }
     }
 
-    private void EnemyDie()
+    private void EnemyDie(HitResult hitResult)
     {
+        brain.SetHitImpact(hitResult.hitDirection, hitResult.hitForce);
         brain.HandleDeath();
         //do other stuff on enemy death
         Debug.Log("[EnemyHealth] Enemy is Dead.");

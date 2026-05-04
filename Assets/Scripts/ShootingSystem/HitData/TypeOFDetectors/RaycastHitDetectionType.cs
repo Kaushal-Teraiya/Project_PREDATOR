@@ -14,6 +14,8 @@ public class RaycastHitDetectionType : HitDetector
             hitResult.success = true;
             hitResult.hitObject = hitInfo.collider.gameObject;
             hitResult.hitPosition = hitInfo.point;
+            hitResult.hitDirection = spreadDirection;
+            hitResult.hitForce = weaponConfig.hitForce;
             hitResult.hitNormal = hitInfo.normal;
             return true;
         }

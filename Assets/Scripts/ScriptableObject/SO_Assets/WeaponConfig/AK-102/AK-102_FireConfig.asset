@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c41a65df869df8e4a8184df9b94e115f, type: 3}
+  m_Name: AK-102_FireConfig
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponFireConfig
+  weaponName: AK47
+  weaponType: Automatic
+  damage: 15
+  maxAmmoCapacity: 30
+  maxMagazineCapacity: 5
+  hitForce: 500
+  reloadTime: 3
+  range: 50
+  fireRate: 20
+  hitDetector: {fileID: 11400000, guid: 055b8a600f8da84458e19519c9152384, type: 2}
+  soundProfile: {fileID: 11400000, guid: 7f81129f622a64f4d82173b34fe8eddf, type: 2}
+  fireMode: 1
+  burstCount: 3
+  burstCycleCooldown: 0.3
+  weaponVisualConfig: {fileID: 11400000, guid: 6646eabcccaa9594c82327b598b835a8, type: 2}
+  hitMask:
+    serializedVersion: 2
+    m_Bits: 512
+  usesSpread: 1
+  bulletSpread: {x: 0.2, y: 0.2, z: 0.2}

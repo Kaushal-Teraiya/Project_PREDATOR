@@ -1,5 +1,5 @@
 using UnityEngine;
 public interface IFireModeExecutor
 {
-   public void TryExecuteFire(WeaponRuntimeInstance weapon, bool isPressed, bool wasPressed, Transform fireOrigin, Transform owner , MonoBehaviour coroutineRunner);
+   public void TryExecuteFire(WeaponRuntimeInstance weapon, bool isPressed, bool wasPressed, Transform fireOrigin, Transform owner, MonoBehaviour coroutineRunner, System.Action<RecoilConfig> onShotFired, Animator weaponAnimator);
 }
