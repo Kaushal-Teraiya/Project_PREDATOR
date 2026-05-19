@@ -312,7 +312,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1422926dcbe6c44f9c3ef0380d28faa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyBrain
-  enemyArchetype: 3
   wayPointManager: {fileID: 0}
   searchPointLayer:
     serializedVersion: 2
@@ -374,11 +373,7 @@ MonoBehaviour:
   drawBandGizmos: 1
   circleSegments: 48
   Debug_RepositionTarget: {x: 0, y: 0, z: 0}
-  wallSearchRadius: 10
-  climbableSurfaceMask:
-    serializedVersion: 2
-    m_Bits: 64
-  attachDistance: 4
+  enemyArchetype: {fileID: 11400000, guid: 6f54888bdbae1ff4ea0cb3aff651b3b1, type: 2}
 --- !u!114 &8114743750698512363
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -394,7 +389,7 @@ MonoBehaviour:
   enemySpeed: 2
   rotationSpeed: 280
   rotationThreshold: 2
-  separationWeight: 0.8
+  separationWeight: -5.29
   WallSurfaceMask:
     serializedVersion: 2
     m_Bits: 64
@@ -500,7 +495,7 @@ Animator:
   m_Controller: {fileID: 9100000, guid: d3063cfe50f081540b1c9400ae910d3e, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
-  m_ApplyRootMotion: 1
+  m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0

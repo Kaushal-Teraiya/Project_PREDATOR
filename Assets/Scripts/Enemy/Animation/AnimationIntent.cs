@@ -4,6 +4,8 @@ public enum AnimationType
     Idle,
     Walk,
     Run,
+    WallCrawl,
+    CrawlJump,
     Reposition,
     Attack,
     Death

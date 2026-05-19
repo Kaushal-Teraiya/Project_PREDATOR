@@ -84,7 +84,7 @@ public class AttackState : IEnemyState
     public void OnExit()
     {
         brain.enemyMovement.SetRotationPermission(true);
-        brain.ApplyRootMotion(false);
+        //brain.ApplyRootMotion(false);
         brain.enemyMovement.EnableProximity();
         brain.enemyMovement.Animator_ResetTrigger("Attack");
         brain.enemyMovement.Animator_SetBool("canExitAttack", true);

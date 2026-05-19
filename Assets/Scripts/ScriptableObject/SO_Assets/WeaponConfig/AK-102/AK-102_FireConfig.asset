@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WeaponFireConfig
   weaponName: AK47
   weaponType: Automatic
-  damage: 15
+  damage: 30
   maxAmmoCapacity: 30
   maxMagazineCapacity: 5
   hitForce: 500
