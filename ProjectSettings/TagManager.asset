@@ -6,6 +6,11 @@ TagManager:
   tags:
   - Enemy
   - SphereSurface
+  - Ceiling
+  - Wall
+  - Ground
+  - Sphere
+  - Pipe
   layers:
   - Default
   - TransparentFX
@@ -18,7 +23,7 @@ TagManager:
   - Player
   - Enemy
   - Weapon
-  - 
+  - TraversableSurface
   - 
   - 
   - 

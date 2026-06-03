@@ -29,6 +29,6 @@ MonoBehaviour:
   weaponVisualConfig: {fileID: 11400000, guid: 6646eabcccaa9594c82327b598b835a8, type: 2}
   hitMask:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 2624
   usesSpread: 1
   bulletSpread: {x: 0.2, y: 0.2, z: 0.2}

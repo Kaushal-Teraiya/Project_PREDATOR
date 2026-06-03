@@ -46,10 +46,11 @@ public class EnemyMovement : MonoBehaviour
 
     public enum MovementSurface
     {
+        None,
         Ground,
         Wall,
         Ceiling,
-        Sphere
+        GenericSurface
     }
 
     public enum RotationPriority
@@ -63,7 +64,6 @@ public class EnemyMovement : MonoBehaviour
     public enum TraversalPhase
     {
         None,
-        MovingToGeometry,
         Mounting,
         Traversing,
         Transitioning,
@@ -77,13 +77,25 @@ public class EnemyMovement : MonoBehaviour
         Outside
     }
 
+    public enum CrawlIntent
+    {
+        None,
+        Random,
+        SurfaceUp,
+        SurfaceDown,
+        SurfaceLeft,
+        SurfaceRight
+    }
+
     #endregion State Enums
 
     #region Core Movement States
 
+    [SerializeField] private CrawlIntent crawlIntent;
     private TraversalContext currentTraversalContext;
     private TraversalPhase currentTraversalPhase;
     private MovementSurface currentMovementSurface;
+    public MovementSurface CurrentMovementSurface => currentMovementSurface;
     private MovementSurface detectedGeometry;
     private MovementSurface currentGeometryIdentity;
     private MovementMode currentMovementMode;
@@ -92,6 +104,7 @@ public class EnemyMovement : MonoBehaviour
     private Vector3 lastMovementDir;
     private float currentSpeed;
     private bool canRotate;
+
 
     #endregion Core Movement States
 
@@ -131,23 +144,24 @@ public class EnemyMovement : MonoBehaviour
 
     #endregion
 
-
     #region Traversal State
 
-    private WallInfo currentSurface;
-    private WallInfo detectedSurface;
+    private SurfaceInfo currentSurface;
+    private SurfaceInfo detectedSurface;
     private Vector3 targetPosition;
 
     private Quaternion targetRotation;
-    private WallCrawlAbility wallCrawlAbility;
+    private SurfaceCrawlAbility surfaceCrawlAbility;
 
     private Vector3 crawlTarget;
     private Vector3 crawlTargetSphere;
 
     private bool isChangingSurface;
     private bool isTransitionLocked;
+    [SerializeField] private bool isTransitionAllowed;
 
     private Vector3 currentSphereNormal;
+    private Vector3 currentSurfaceNormal;
     private float sphereRadius;
 
     #endregion Traversal State
@@ -173,8 +187,7 @@ public class EnemyMovement : MonoBehaviour
 
     [Header("Traversal Layers")]
 
-    [SerializeField] private LayerMask WallSurfaceMask;
-    [SerializeField] private LayerMask CeilingSurfaceMask;
+    [SerializeField] private LayerMask TraversableSurfaceMask;
 
 
     [Header("Traversal Detection")]
@@ -251,16 +264,18 @@ public class EnemyMovement : MonoBehaviour
         //Debug.Log(currentTraversalPhase);
         if (IsCurrentTraversalPhase(TraversalPhase.Mounting))
         {
-            SmoothMount();
+            AlignToSurface();
             return;
         }
 
+        UpdateSurfaceNormal();
+        Debug.Log("currentSurfaceNormal : " + currentSurfaceNormal);
         ResetAnimationIntent();
         ResolveSpeed();
         //  Debug.Log("BEFORE ROT: " + transform.rotation.eulerAngles);
         ApplyRotation(); //  Debug.Log("AFTER ROT: " + transform.rotation.eulerAngles);
         ExecuteLunge();
-
+        Debug.Log("CURRENT MOVEMENT SURFACE === " + currentMovementSurface);
         currentSpeed = Mathf.MoveTowards(currentSpeed, enemySpeed, acceleration * Time.deltaTime);
         agent.nextPosition = transform.position;
         // Debug.Log("FINAL ROT: " + transform.rotation.eulerAngles);
@@ -284,12 +299,13 @@ public class EnemyMovement : MonoBehaviour
             case MovementSurface.Ground:
                 HandleGroundMovement(destination);
                 break;
-            case MovementSurface.Wall:
-                HandleWallMovement(destination);
+            default:
+                HandleSurfaceTraversal(destination);
                 break;
-            case MovementSurface.Sphere:
-                HandleSphereMovement(destination);
-                break;
+                // case MovementSurface.Wall:
+                // case MovementSurface.Ceiling:
+                //     HandleSurfaceTraversal(destination);
+                //break;
         }
 
     }
@@ -334,21 +350,25 @@ public class EnemyMovement : MonoBehaviour
     {
         currentTraversalContext = wallAhead ? TraversalContext.Inside : TraversalContext.Outside;
     }
-    private void DetectNewSurface()
+    private void ProbeNewSurface()
     {
         if (isTransitionLocked)
         {
             return;
         }
-        Vector3 eyePosition =
-            transform.position +
-            transform.forward * offsetForNewSurface;
+
+        if (!isTransitionAllowed)
+        {
+            return;
+        }
+
+        Debug.Log("DETECT NEW SURFACE CALLED");
+
+        Vector3 eyePosition = transform.position + transform.forward * offsetForNewSurface;
 
         debugEyePosition = eyePosition;
 
-        Vector3 probeOrigin =
-            eyePosition +
-            (-transform.up * sphereCenterOffsetFromEye);
+        Vector3 probeOrigin = eyePosition + (-transform.up * sphereCenterOffsetFromEye);
 
         debugProbeOrigin = probeOrigin;
 
@@ -358,23 +378,14 @@ public class EnemyMovement : MonoBehaviour
 
         debugDidHit = false;
 
-        if (Physics.Raycast(
-            probeOrigin,
-            rayDirection,
-            out RaycastHit hit,
-            5f,
-            WallSurfaceMask))
+        if (Physics.Raycast(probeOrigin, rayDirection, out RaycastHit hit, 5f, surfaceCrawlAbility.TraversableSurfaceMask))
         {
             debugDidHit = true;
             isChangingSurface = true;
             debugHitPoint = hit.point;
             debugHitNormal = hit.normal;
 
-            float dotProduct =
-                Vector3.Dot(
-                    currentSurface.wallHitNormal,
-                    hit.normal
-                );
+            float dotProduct = Vector3.Dot(currentSurface.surfaceHitNormal, hit.normal);
 
             Debug.Log($"DOT : {dotProduct}");
 
@@ -382,12 +393,20 @@ public class EnemyMovement : MonoBehaviour
             {
                 isTransitionLocked = true;
                 RequestAnimation(new AnimationIntent(AnimationType.CrawlJump, 300));
-                ComputeSurfaceAlignment(
-                    hit.normal,
-                    hit.point
-                );
+
+                SurfaceInfo newSurface;
+                newSurface.surfaceHitNormal = hit.normal;
+                newSurface.surfaceHitPoint = hit.point;
+                newSurface.hitCollider = hit.collider;
+                newSurface.surfaceTag = hit.collider.tag;
+
+                Debug.Log("reached Probe function");
+                SetDetectedGeometry(DetermineMovementSurface(hit));
+
+                ComputeSurfaceAlignment(newSurface);
+                Debug.Log("THIS SHIT IS CAUSING THE ISSUE");
                 isChangingSurface = false;
-                PickNewCrawlTarget_Wall(numberOfAttempts, wallCrawlAbility.roamDistance);
+                PickNewCrawlTarget(numberOfAttempts, surfaceCrawlAbility.roamDistance);
                 Invoke(nameof(UnlockTransition), unlockAfterTime);
                 return;
             }
@@ -395,50 +414,18 @@ public class EnemyMovement : MonoBehaviour
 
         else
         {
-            PickNewCrawlTarget_Wall(numberOfAttempts, wallCrawlAbility.roamDistance * 0.5f);
+            PickNewCrawlTarget(numberOfAttempts, surfaceCrawlAbility.roamDistance * 0.5f);
         }
     }
-    Vector3 GetProjectableVector(Vector3 surfaceNormal)
+    private Vector3 GetProjectableVector(Vector3 surfaceNormal)
     {
         /*This function calculates which world axis is pointing into the current surface that the enemy AI is On ,
         it returns the opposite of that world axis which can be used to project onto the new plane for perfect / correct body alignment on the new surface 
         after transition*/
 
-        Vector3[] worldAxes =
-        {
-        Vector3.right,
-        Vector3.left,
-        Vector3.forward,
-        Vector3.back,
-        Vector3.up,
-        Vector3.down
-    };
-
         if (IsCurrentTraversalContext(TraversalContext.Inside))
         {
-            Vector3 inwardAxis = Vector3.right;
-
-            float lowestDot = Mathf.Infinity;
-
-            foreach (var axis in worldAxes)
-            {
-                float dot = Vector3.Dot(surfaceNormal, axis);
-
-                Debug.Log($"Axis : {axis} | Dot : {dot}");
-
-                // MOST NEGATIVE DOT
-                // axis points MOST INTO wall
-                if (dot < lowestDot)
-                {
-                    lowestDot = dot;
-                    inwardAxis = axis;
-                }
-            }
-
-            Debug.Log($"INWARD AXIS : {inwardAxis}");
-
-            // Return opposite of inward axis
-            Vector3 projectable = -inwardAxis;
+            Vector3 projectable = surfaceNormal;  //That's it 
 
             Debug.Log($"PROJECTABLE VECTOR : {projectable}");
 
@@ -453,29 +440,83 @@ public class EnemyMovement : MonoBehaviour
 
         return Vector3.down;
 
+        /* 30th May 2026 With Heavy Heart I had to comment this section out because it is a bit too lengthy solution
+         to find a projectable vector for new surface , Now we simply use surface Normals which are also defined
+         using vector3.xyz 🥲. 
+         */
+        //  {//jkhk} //
+        //{//} //  Vector3[] worldAxes =
+        //     {
+        //     Vector3.right,
+        //     Vector3.left,
+        //     Vector3.forward,
+        //     Vector3.back,
+        //     Vector3.up,
+        //     Vector3.down
+        // };
+        // Vector3 inwardAxis = Vector3.right;
+
+        // float lowestDot = Mathf.Infinity;
+
+        // foreach (var axis in worldAxes)
+        // {
+        //     float dot = Vector3.Dot(surfaceNormal, axis);
+
+        //     Debug.Log($"Axis : {axis} | Dot : {dot}");
+
+        //     // MOST NEGATIVE DOT
+        //     // axis points MOST INTO wall
+        //     if (dot < lowestDot)
+        //     {
+        //         lowestDot = dot;
+        //         inwardAxis = axis;
+        //     }
+        // }
+
+        // Debug.Log($"INWARD AXIS : {inwardAxis}");
+
+        // Return opposite of inward axis
+        // Vector3 projectable = -inwardAxis;
+
+    }
+
+    private void UpdateSurfaceNormal()
+    {
+        var origin = transform.position + transform.up * 1f;
+        var direction = -transform.up;
+
+        if (Physics.Raycast(origin, direction, out RaycastHit hit, 3f, TraversableSurfaceMask))
+        {
+            currentSurfaceNormal = hit.normal;
+            Debug.Log("This is the current Surface normal" + currentSurfaceNormal);
+        }
     }
     #endregion Surface Detection & Traversal Context
 
     #region Surface Alignment & Orientation
 
-    private void ComputeSurfaceAlignment(Vector3 surfaceNormal, Vector3 surfacePoint)
+    private void ComputeSurfaceAlignment(SurfaceInfo detectedSurface)
     {
-        Vector3 alignmentVector = GetProjectableVector(currentSurface.wallHitNormal);
+        Vector3 alignmentVector = GetProjectableVector(currentSurface.surfaceHitNormal);
 
         // storedWallPoint = surfacePoint;
         // storedWallNormal = surfaceNormal;
-        currentSurface.wallHitPoint = surfacePoint;
-        currentSurface.wallHitNormal = surfaceNormal;
+        // currentSurface.wallHitPoint = surfacePoint;
+        // currentSurface.wallHitNormal = surfaceNormal;
+        // currentSurface.SurfaceTag = "xyz";
 
-        var forward = Vector3.ProjectOnPlane(alignmentVector, surfaceNormal).normalized;
-        targetRotation = Quaternion.LookRotation(forward, surfaceNormal);
+        currentSurface = detectedSurface;
+        var forward = Vector3.ProjectOnPlane(alignmentVector, currentSurface.surfaceHitNormal).normalized;
+        targetRotation = Quaternion.LookRotation(forward, currentSurface.surfaceHitNormal);
         Debug.Log("wall to wall trnastion");
         // targetRotation *= Quaternion.Euler(0, -90f, 90f); //Very Important
-        targetPosition = currentSurface.wallHitPoint + currentSurface.wallHitNormal * wallCrawlAbility.wallOffset;
+        targetPosition = currentSurface.surfaceHitPoint + currentSurface.surfaceHitNormal * surfaceCrawlAbility.surfaceOffset;
+        Debug.Log("TARGET POSITION = " + targetPosition + "TARGET ROTATION = " + targetRotation.eulerAngles);
+
         //isMounting = true;
         currentTraversalPhase = TraversalPhase.Mounting;
         agent.enabled = false;
-        Debug.Log(currentSurface.wallHitPoint);
+        Debug.Log(currentSurface.surfaceHitPoint);
     }
 
     private bool RotateTowardsIntent()
@@ -552,20 +593,27 @@ public class EnemyMovement : MonoBehaviour
             Debug.Log("Cant rotate");
             return;
         }
-
-        if (IsCurrentSurface(MovementSurface.Wall))
+        /* 24th May 2026 THIS is place where this FUCKASS BUG ate my whole week !!  Bug: on transition to ceiling the zombie would flip onto the outer surface of the ceiling 
+        FIX: the flip was happening due to the fallback because when we set Current Movement surface to ceiling there was no ceiling related gate so it fellback on Ground rotation!!!!!
+        FUCK YOU!!!!!!!!I solved it !! HUHUHUHUAHAHHAHAHA 😤🤣😈*/
+        if (IsCurrentMovememntSurface(MovementSurface.Wall) || IsCurrentMovememntSurface(MovementSurface.Ceiling))
         {
             RotationOnWall();
             return;
         }
 
-        if (IsCurrentSurface(MovementSurface.Sphere))
+        if (IsCurrentMovememntSurface(MovementSurface.GenericSurface))
         {
             // WallRotation();
             return;
         }
+
+        if (IsCurrentMovememntSurface(MovementSurface.Ground))
+        {
+            GroundRotation();
+        }
         // normal ground
-        GroundRotation();
+
     }
 
     private void RotationOnWall()
@@ -616,6 +664,8 @@ public class EnemyMovement : MonoBehaviour
 
     private void HandleGroundMovement(Vector3 destination)
     {
+        Debug.Log("Agent status : " + agent.enabled);
+        Debug.Log(currentMovementSurface + " from ground movement fucntiin and context is " + currentTraversalContext);
         Debug.DrawRay(transform.position, transform.forward * 2f, Color.red);
         if (!agent.enabled)
             return;
@@ -702,99 +752,34 @@ public class EnemyMovement : MonoBehaviour
 
     }
 
-    private void HandleWallMovement(Vector3 destination)
+    private void HandleSurfaceTraversal(Vector3 destination)
     {
         if (!IsCurrentTraversalPhase(TraversalPhase.Traversing))
         {
             return;
         }
 
-        Vector3 directionToCrawlTarget = crawlTarget - transform.position;
+        Debug.Log(
+    $"SURFACE={currentMovementSurface} | CONTEXT={currentTraversalContext}"
+      );
 
+        Vector3 directionToCrawlTarget = crawlTarget - transform.position;
         CheckSurfaceContinuity();
         EvaluateNewSurfaceTransition(directionToCrawlTarget);
         UpdateCrawlTarget(directionToCrawlTarget);
-        ExecuteWallTraversal(directionToCrawlTarget);
-    }
-
-    private void HandleSphereMovement(Vector3 destination)
-    {
-        if (!IsCurrentTraversalPhase(TraversalPhase.Traversing))
-        {
-            return;
-        }
-
-        Vector3 moveDir = crawlTargetSphere - transform.position;
-
-        UpdateSphereTarget(moveDir);
-        ExecuteSphereTraversal(moveDir);
-        RotateOnSphere(moveDir);
-
-    }
-
-    private void RotateOnSphere(Vector3 moveDir)
-    {
-        Quaternion surfaceAlignment = Quaternion.FromToRotation(transform.up, currentSphereNormal);
-
-        transform.rotation = surfaceAlignment * transform.rotation;
-
-        Vector3 forward = Vector3.ProjectOnPlane(transform.forward, currentSphereNormal).normalized;
-
-        Quaternion targetRotation =
-            Quaternion.LookRotation(
-                moveDir,
-                currentSphereNormal
-            );
-
-        transform.rotation =
-            Quaternion.RotateTowards(
-                transform.rotation,
-                targetRotation,
-                wallCrawlAbility.turnSpeed * Time.deltaTime
-            );
-    }
-
-    private void UpdateSphereTarget(Vector3 moveDir)
-    {
-        currentSphereNormal = (transform.position - sphereCenter.position).normalized;
-
-        if (moveDir.magnitude < Sphere_targetReachDistance)
-        {
-            PickNewCrawlTarget_Sphere();
-            return;
-        }
-    }
-
-    private void ExecuteSphereTraversal(Vector3 moveDir)
-    {
-        moveDir.Normalize();
-
-        moveDir = Vector3.ProjectOnPlane(moveDir, currentSphereNormal).normalized;
-
-        if (moveDir.sqrMagnitude < 0.001f)
-        {
-            PickNewCrawlTarget_Sphere();
-            return;
-        }
-
-        Vector3 newPosition = transform.position + moveDir * wallCrawlAbility.crawlSpeed * Time.deltaTime;
-
-        Vector3 directionFromCenter = (newPosition - sphereCenter.position).normalized;
-
-        transform.position = sphereCenter.position + directionFromCenter * sphereRadius;
-
-        currentSphereNormal = (transform.position - sphereCenter.position).normalized;
+        ExecuteSurfaceTraversal(directionToCrawlTarget);
     }
 
     private void CheckSurfaceContinuity()
     {
-        var origin = transform.position + transform.forward * eyeOffset + transform.up * 1f;
+        var origin = transform.position + transform.forward * eyeOffset + currentSurfaceNormal * 1f;
         debugSurfaceCheckOrigin = origin;
-        debugSurfaceCheckDirection = -currentSurface.wallHitNormal * 3f;
+        debugSurfaceCheckDirection = -currentSurfaceNormal * 3f;
 
-        debugSurfaceCheckHit = Physics.Raycast(origin, -currentSurface.wallHitNormal, 3f, WallSurfaceMask);
 
-        if (!debugSurfaceCheckHit && !IsCurrentSurface(MovementSurface.Sphere))
+        debugSurfaceCheckHit = Physics.Raycast(origin, -currentSurfaceNormal, 3f, surfaceCrawlAbility.TraversableSurfaceMask);
+
+        if (!debugSurfaceCheckHit && isTransitionAllowed)
         {
             Debug.Log("The point is unreachable because the wall is not continuous.");
             //PickNewCrawlTarget(numberOfAttempts, wallCrawlAbility.roamDistance);
@@ -803,32 +788,79 @@ public class EnemyMovement : MonoBehaviour
             Debug.Log("we aint moving");
             //crawlTarget = Vector3.zero;
             UpdateTraversalContext(false);
-            DetectNewSurface();
+            ProbeNewSurface();
         }
 
     }
 
     private void EvaluateNewSurfaceTransition(Vector3 directionToCrawlTarget)
     {
-
-        if (IsCurrentSurface(MovementSurface.Wall))
+        if (!isTransitionAllowed)
         {
-            if (!IsCurrentTraversalPhase(TraversalPhase.Transitioning))
-            {
-                var startPoint = transform.position + transform.up * frontWallDetectionDistance;
-                if (Physics.Raycast(startPoint, directionToCrawlTarget.normalized, out RaycastHit hit, 5f, WallSurfaceMask))
-                {
-                    detectedSurface.wallHitNormal = hit.normal;
-                    detectedSurface.wallHitPoint = hit.point;
-                    detectedSurface.hitCollider = hit.collider;
+            return;
+        }
 
-                    //isTransitioningSurface = true;
-                    currentTraversalPhase = TraversalPhase.Transitioning;
-                    RequestAnimation(new AnimationIntent(AnimationType.CrawlJump, 300));
-                    UpdateTraversalContext(true);
-                    ComputeSurfaceAlignment(detectedSurface.wallHitNormal, detectedSurface.wallHitPoint);
-                }
+        if (!IsCurrentTraversalPhase(TraversalPhase.Transitioning))
+        {
+            //29th may 2026 
+            // To Disable surface transition and let the crawler stay on the current surface we will disable forward raycast that checks surface ahead for transition//
+            /*This Function is esentially for checking walls for TraversalContext.Inside ,
+            To Apply the same Transition Gate for TraversalContext.Outside we must gate Probing
+            inside DetectNewSurface() Function as well.*/
+
+            var startPoint = transform.position + transform.up * frontWallDetectionDistance;
+            if (Physics.Raycast(startPoint, directionToCrawlTarget.normalized, out RaycastHit hit, 5f, surfaceCrawlAbility.TraversableSurfaceMask))
+            {
+                detectedSurface.surfaceHitNormal = hit.normal;
+                detectedSurface.surfaceHitPoint = hit.point;
+                detectedSurface.hitCollider = hit.collider;
+                detectedSurface.surfaceTag = hit.collider.tag;
+                Debug.Log("Reacheddd");
+                SetDetectedGeometry(DetermineMovementSurface(hit));
+                //isTransitioningSurface = true;
+                currentTraversalPhase = TraversalPhase.Transitioning;
+                RequestAnimation(new AnimationIntent(AnimationType.CrawlJump, 300));
+                UpdateTraversalContext(true);
+                ComputeSurfaceAlignment(detectedSurface);
             }
+        }
+    }
+
+    private MovementSurface DetermineMovementSurface(RaycastHit hit)
+    {
+        if (hit.collider.CompareTag("Sphere"))
+        {
+            return MovementSurface.GenericSurface;
+        }
+        else
+        {
+            float upVectorDot = Vector3.Dot(hit.normal, Vector3.up);
+            if (upVectorDot > 0.7f)
+            {
+                Debug.Log("grounndddddd");
+                return MovementSurface.Ground;
+            }
+            else if (upVectorDot < -0.7f)
+            {
+                Debug.Log("ceilinggggggggg");
+                return MovementSurface.Ceiling;
+            }
+            else
+            {
+                Debug.Log("wallllllllllllll");
+                return MovementSurface.Wall;
+            }
+        }
+
+
+    }
+    private void StickToSurface()
+    {
+        Vector3 origin = transform.position + currentSurfaceNormal;
+
+        if (Physics.Raycast(origin, -currentSurfaceNormal, out RaycastHit hit, 3f, surfaceCrawlAbility.TraversableSurfaceMask))
+        {
+            transform.position = hit.point + hit.normal * surfaceCrawlAbility.surfaceOffset;
         }
     }
 
@@ -836,118 +868,136 @@ public class EnemyMovement : MonoBehaviour
     {
         if (directionToCrawlTarget.magnitude < 0.2f)
         {
-            PickNewCrawlTarget_Wall(numberOfAttempts, wallCrawlAbility.roamDistance);
+            PickNewCrawlTarget(numberOfAttempts, surfaceCrawlAbility.roamDistance);
             return;
         }
     }
 
-    private void ExecuteWallTraversal(Vector3 directionToCrawlTarget)
+    private void ExecuteSurfaceTraversal(Vector3 directionToCrawlTarget)
     {
         directionToCrawlTarget.Normalize();
 
         if (!isChangingSurface)
         {
             Debug.Log("we're moving again");
-            transform.position += directionToCrawlTarget * wallCrawlAbility.crawlSpeed * Time.deltaTime;
-            Vector3 forward = Vector3.ProjectOnPlane(directionToCrawlTarget, currentSurface.wallHitNormal).normalized;
-            Quaternion lookRotation = Quaternion.LookRotation(forward, currentSurface.wallHitNormal);
+            transform.position += directionToCrawlTarget * surfaceCrawlAbility.crawlSpeed * Time.deltaTime;
+            Vector3 forward = Vector3.ProjectOnPlane(directionToCrawlTarget, currentSurfaceNormal).normalized;
+            Quaternion lookRotation = Quaternion.LookRotation(forward, currentSurfaceNormal);
+
             transform.rotation = Quaternion.RotateTowards(
                 transform.rotation,
                 lookRotation,
-                wallCrawlAbility.turnSpeed * Time.deltaTime
+                surfaceCrawlAbility.turnSpeed * Time.deltaTime
             );
+
+            StickToSurface();
         }
     }
 
+    #endregion Traversal Movement
+
+    #region Getters
     public Vector3 GetMovementDirection()
     {
         return lastMovementDir;
     }
 
-    #endregion Traversal Movement
+    private Vector3 GetCrawlDirection(CrawlIntent crawlIntent)
+    {
+        switch (crawlIntent)
+        {
+            case CrawlIntent.None:
+                return transform.position;
+            case CrawlIntent.SurfaceUp:
+                return GetSurfaceUpDirection();
+            case CrawlIntent.SurfaceDown:
+                return GetSurfaceDownDirection();
+            case CrawlIntent.SurfaceLeft:
+                return GetSurfaceLeftDirection();
+            case CrawlIntent.SurfaceRight:
+                return GetSurfaceRightDirection();
+            case CrawlIntent.Random:
+            default:
+                return GetRandomDirection();
+
+        }
+    }
+
+    private Vector3 GetSurfaceLeftDirection()
+    {
+        return -GetSurfaceRightDirection();
+    }
+    private Vector3 GetSurfaceRightDirection()
+    {
+        Vector3 surfaceUpDir = Vector3.ProjectOnPlane(Vector3.up, currentSurfaceNormal).normalized;
+        Vector3 surfaceRight = Vector3.Cross(currentSurfaceNormal, surfaceUpDir).normalized;
+        return surfaceRight;
+    }
+    private Vector3 GetSurfaceDownDirection()
+    {
+        Vector3 surfaceDownDir = Vector3.ProjectOnPlane(Vector3.down, currentSurfaceNormal).normalized;
+        return surfaceDownDir;
+    }
+    private Vector3 GetSurfaceUpDirection()
+    {
+        Debug.Log("SURFACE UP CALLED");
+        // Debug.Log("Is on vertical surface , wall normal is " + currentSurface.wallHitNormal);
+        Vector3 surfaceUpDir = Vector3.ProjectOnPlane(Vector3.up, currentSurfaceNormal).normalized;
+        return surfaceUpDir;
+    }
+
+    private Vector3 GetRandomDirection()
+    {
+        Vector3 randomDir = UnityEngine.Random.insideUnitSphere;
+        randomDir = Vector3.ProjectOnPlane(randomDir, currentSurfaceNormal).normalized;
+        return randomDir;
+    }
+
+    #endregion
 
     #region Surface Mounting & Transitions
-    public void BeginWallMount(WallInfo wallInfo, WallCrawlAbility wallCrawlAbility)
+
+    public void BeginSurfaceMount(SurfaceInfo surfaceInfo, SurfaceCrawlAbility surfaceCrawlAbility, Vector3 projectionVector)
     {
         if (IsCurrentTraversalPhase(TraversalPhase.Mounting))
         {
             return;
         }
 
-        currentGeometryIdentity = MovementSurface.Wall;
         Debug.Log(currentTraversalPhase);
-        this.wallCrawlAbility = wallCrawlAbility;
-        currentSurface = wallInfo;
+        this.surfaceCrawlAbility = surfaceCrawlAbility;
+        currentSurface = surfaceInfo;
 
-        Vector3 forward = transform.forward;
-        forward = Vector3.ProjectOnPlane(Vector3.up, currentSurface.wallHitNormal).normalized;
+        Vector3 normal = surfaceInfo.surfaceHitNormal;
+        Vector3 forward = Vector3.ProjectOnPlane(projectionVector, normal).normalized;
+
         if (forward.sqrMagnitude < 0.001f)
         {
             Debug.Log("FALLBACKKKKKKKKKKKKKKKKKKKEIE");
-            forward = Vector3.Cross(transform.right, currentSurface.wallHitNormal).normalized;
+            // forward = Vector3.Cross(transform.right, currentSurfaceNormal).normalized;
+            forward = Vector3.ProjectOnPlane(Vector3.down, normal).normalized;
         }
 
-        targetRotation = Quaternion.LookRotation(forward, currentSurface.wallHitNormal);
-
-        targetPosition = currentSurface.wallHitPoint + currentSurface.wallHitNormal * wallCrawlAbility.wallOffset;
-        //isMounting = true;
+        targetRotation = Quaternion.LookRotation(forward, normal);
+        float offsetDirection = IsCurrentTraversalContext(TraversalContext.Inside) ? 1f : -1f;
+        targetPosition = surfaceInfo.surfaceHitPoint + normal * surfaceCrawlAbility.surfaceOffset * offsetDirection;
         currentTraversalPhase = TraversalPhase.Mounting;
         agent.enabled = false;
-        Debug.Log(currentSurface.wallHitPoint);
+
     }
 
-    public void BeginSphereMount(WallInfo wallInfo, WallCrawlAbility wallCrawlAbility)
-    {
-        if (IsCurrentTraversalPhase(TraversalPhase.Mounting))
-        {
-            return;
-        }
-
-        Debug.Log("Hit Point: " + wallInfo.wallHitPoint);
-        Debug.Log("Normal: " + wallInfo.wallHitNormal);
-
-        currentGeometryIdentity = MovementSurface.Sphere;
-
-        this.wallCrawlAbility = wallCrawlAbility;
-
-        currentSphereNormal = wallInfo.wallHitNormal;
-        currentSurface = wallInfo;
-
-        targetPosition =
-            wallInfo.wallHitPoint -
-            currentSphereNormal * surfaceOffset;
-
-        Vector3 forward =
-            Vector3.ProjectOnPlane(
-                Vector3.up,
-                currentSphereNormal
-            ).normalized;
-
-        targetRotation =
-            Quaternion.LookRotation(
-                forward,
-                currentSphereNormal
-            );
-        // SetCurrentMovementSurface(MovementSurface.Sphere);
-
-        //isCrawling = true;
-        Debug.Log("Target Position: " + targetPosition);
-        currentTraversalPhase = TraversalPhase.Mounting;
-        agent.enabled = false;
-    }
-
-    private void SmoothMount()
+    private void AlignToSurface()
     {
         transform.rotation = Quaternion.Slerp(
             transform.rotation,
             targetRotation,
-            wallCrawlAbility.rotationSpeed * Time.deltaTime
+            surfaceCrawlAbility.rotationSpeed * Time.deltaTime
         );
 
         transform.position = Vector3.Lerp(
             transform.position,
             targetPosition,
-            wallCrawlAbility.positionSpeed * Time.deltaTime
+            surfaceCrawlAbility.positionSpeed * Time.deltaTime
         );
 
         float rotationDifference = Quaternion.Angle(transform.rotation, targetRotation);
@@ -957,8 +1007,6 @@ public class EnemyMovement : MonoBehaviour
         {
             transform.rotation = targetRotation;
             transform.position = targetPosition;
-            //isMounting = false;
-            // isTransitioningSurface = false;
             InitializeTraversal();
         }
     }
@@ -966,26 +1014,30 @@ public class EnemyMovement : MonoBehaviour
     private void InitializeTraversal()
     {
         currentTraversalPhase = TraversalPhase.Traversing;
+        Debug.Log($"CURRENT = {currentMovementSurface} | DETECTED = {detectedGeometry} | INTENT = {crawlIntent}");
         SetCurrentMovementSurface(detectedGeometry);
+        Debug.Log($"CURRENT = {currentMovementSurface}");
 
-        if (IsDetectedGeometry(MovementSurface.Wall))
+        if (IsDetectedGeometry(MovementSurface.Wall) || IsDetectedGeometry(MovementSurface.GenericSurface))
         {
-            PickNewCrawlTarget_Wall(numberOfAttempts, wallCrawlAbility.roamDistance);
+            currentSurfaceNormal = currentSurface.surfaceHitNormal;
+            Debug.Log("Forced Normal : " + currentSurfaceNormal);
+            SetCrawlIntent(CrawlIntent.Random);
+            Debug.Log("Init Target Normal: " + currentSurfaceNormal);
+            PickNewCrawlTarget(numberOfAttempts, surfaceCrawlAbility.roamDistance);
         }
-        else if (IsDetectedGeometry(MovementSurface.Sphere))
+        else if (IsDetectedGeometry(MovementSurface.Ceiling) || IsDetectedGeometry(MovementSurface.Ground))
         {
-            currentSphereNormal = (transform.position - sphereCenter.position).normalized;
-
-            sphereRadius =
-                Vector3.Distance(
-                    transform.position,
-                    sphereCenter.position
-                );
-
-            PickNewCrawlTarget_Sphere();
+            currentSurfaceNormal = currentSurface.surfaceHitNormal;
+            SetCrawlIntent(CrawlIntent.Random);
+            PickNewCrawlTarget(numberOfAttempts, surfaceCrawlAbility.roamDistance);
+            if (IsCurrentMovememntSurface(MovementSurface.Ground))
+            {
+                agent.enabled = true;
+            }
         }
         ResetAnimationIntent();
-        RequestAnimation(new AnimationIntent(AnimationType.WallCrawl, 70));
+        RequestAnimation(new AnimationIntent(AnimationType.SurfaceCrawl, 70));
         //isCrawling = true;
         Debug.Log("Mount Complete :: Wall Mode");
     }
@@ -998,8 +1050,10 @@ public class EnemyMovement : MonoBehaviour
     #endregion Surface Mounting & Transitions
 
     #region Traversal Targets
-    private void PickNewCrawlTarget_Wall(int remainingAttempts, float currentRoamDistance)
+
+    private void PickNewCrawlTarget(int remainingAttempts, float currentRoamDistance)
     {
+
         if (remainingAttempts <= 0)
         {
             Debug.Log("NO TARGET FOUND!");
@@ -1007,38 +1061,73 @@ public class EnemyMovement : MonoBehaviour
             return;
         }
 
-        bool foundCrawlTarget = false;
 
         for (int i = 0; i < numberOfAttempts; i++)
         {
-            Vector3 randomDir = UnityEngine.Random.insideUnitSphere;
-            randomDir = Vector3.ProjectOnPlane(randomDir, currentSurface.wallHitNormal).normalized;
-            Vector3 rawTarget = transform.position + randomDir * currentRoamDistance;
-            debugRawTarget = rawTarget;
+            Vector3 crawlDir = GetCrawlDirection(crawlIntent);
+            Vector3 rawTarget = transform.position + crawlDir * currentRoamDistance;
 
-            Vector3 origin = rawTarget + currentSurface.wallHitNormal * 1f; // adding wall normal to do safe raycast check
+            debugRawTarget = rawTarget;
+            Debug.Log("Normal used" + currentSurfaceNormal);
+            Vector3 origin = rawTarget + currentSurfaceNormal * 1f; // adding wall normal to do safe raycast check
             debugRayOrigin = origin;
 
-            if (Physics.Raycast(origin, -currentSurface.wallHitNormal, out RaycastHit hit, 3f))
+            if (Physics.Raycast(origin, -currentSurfaceNormal, out RaycastHit hit, 3f, surfaceCrawlAbility.TraversableSurfaceMask))
             {
-                crawlTarget = hit.point + currentSurface.wallHitNormal * wallCrawlAbility.wallOffset;
+                crawlTarget = hit.point + hit.normal * surfaceCrawlAbility.surfaceOffset;
                 debugHitPoint = crawlTarget;
-                foundCrawlTarget = true;
-                break;
+                return;
             }
-        }
-
-        if (foundCrawlTarget)
-        {
-            return;
         }
 
         float shrunkRoamDistance = currentRoamDistance * 0.5f;
         Debug.Log("new roam distaance" + shrunkRoamDistance);
         // Debug.Log("Retrying with smaller roamDistance");
 
-        PickNewCrawlTarget_Wall(remainingAttempts - 1, shrunkRoamDistance);
+        PickNewCrawlTarget(remainingAttempts - 1, shrunkRoamDistance);
     }
+
+    // private void PickNewCrawlTarget_Wall(int remainingAttempts, float currentRoamDistance)
+    // {
+    //     if (remainingAttempts <= 0)
+    //     {
+    //         Debug.Log("NO TARGET FOUND!");
+    //         //SWITCH SURFACE to ground
+    //         return;
+    //     }
+
+    //     bool foundCrawlTarget = false;
+
+    //     for (int i = 0; i < numberOfAttempts; i++)
+    //     {
+    //         Vector3 crawlDir = GetCrawlDirection(crawlIntent);
+    //         Vector3 rawTarget = transform.position + crawlDir * currentRoamDistance;
+
+    //         debugRawTarget = rawTarget;
+
+    //         Vector3 origin = rawTarget + currentSurface.surfaceHitNormal * 1f; // adding wall normal to do safe raycast check
+    //         debugRayOrigin = origin;
+
+    //         if (Physics.Raycast(origin, -currentSurface.surfaceHitNormal, out RaycastHit hit, 3f , surfaceCrawlAbility.TraversableSurfaceMask))
+    //         {
+    //             crawlTarget = hit.point + currentSurface.surfaceHitNormal * surfaceCrawlAbility.surfaceOffset;
+    //             debugHitPoint = crawlTarget;
+    //             foundCrawlTarget = true;
+    //             break;
+    //         }
+    //     }
+
+    //     if (foundCrawlTarget)
+    //     {
+    //         return;
+    //     }
+
+    //     float shrunkRoamDistance = currentRoamDistance * 0.5f;
+    //     Debug.Log("new roam distaance" + shrunkRoamDistance);
+    //     // Debug.Log("Retrying with smaller roamDistance");
+
+    //     PickNewCrawlTarget_Wall(remainingAttempts - 1, shrunkRoamDistance);
+    // }
 
     void PickNewCrawlTarget_Sphere()
     {
@@ -1118,7 +1207,7 @@ public class EnemyMovement : MonoBehaviour
                 if (!animator.GetCurrentAnimatorStateInfo(0).IsName("ArmsBackRun"))
                     animator.SetTrigger("EnterReposition");
                 break;
-            case AnimationType.WallCrawl:
+            case AnimationType.SurfaceCrawl:
                 Animator_SetTrigger("WallCrawl");
                 break;
             case AnimationType.CrawlJump:
@@ -1205,6 +1294,16 @@ public class EnemyMovement : MonoBehaviour
         //this.isSphere = isSphere;
     }
 
+    private bool IsHorizontalSurface()
+    {
+        float dot = Mathf.Abs(Vector3.Dot(currentSurface.surfaceHitNormal, Vector3.up));
+        return dot > 0.9f;
+    }
+
+    private bool IsCurrentSurfaceTag(string surfaceTag)
+    {
+        return currentSurface.surfaceTag == surfaceTag;
+    }
     public bool IsMounting()
     {
         return IsCurrentTraversalPhase(TraversalPhase.Mounting);
@@ -1234,7 +1333,13 @@ public class EnemyMovement : MonoBehaviour
         this.detectedGeometry = detectedGeometry;
     }
 
-    public bool IsCurrentSurface(MovementSurface movementSurface)
+    public void SetCrawlIntent(CrawlIntent crawlIntent)
+    {
+        this.crawlIntent = crawlIntent;
+        PickNewCrawlTarget(numberOfAttempts, surfaceCrawlAbility.roamDistance);
+    }
+
+    public bool IsCurrentMovememntSurface(MovementSurface movementSurface)
     {
         return currentMovementSurface == movementSurface;
     }
@@ -1267,6 +1372,16 @@ public class EnemyMovement : MonoBehaviour
     public void Animator_SetBool(string boolName, bool value)
     {
         animator.SetBool(boolName, value);
+    }
+
+    public void SetSurfaceTransitionAllowed(bool _isTransitionAllowed)
+    {
+        isTransitionAllowed = _isTransitionAllowed;
+    }
+
+    public void DisableNavmeshAgent()
+    {
+        agent.enabled = false;
     }
     #endregion Boolean Setter Functions
 

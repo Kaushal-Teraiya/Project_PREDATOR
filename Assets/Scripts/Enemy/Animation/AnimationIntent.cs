@@ -4,7 +4,7 @@ public enum AnimationType
     Idle,
     Walk,
     Run,
-    WallCrawl,
+    SurfaceCrawl,
     CrawlJump,
     Reposition,
     Attack,

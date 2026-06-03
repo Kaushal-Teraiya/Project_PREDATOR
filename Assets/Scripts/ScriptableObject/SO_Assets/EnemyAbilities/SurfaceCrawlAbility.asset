@@ -10,20 +10,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9f955b778af335442845a3c25869991a, type: 3}
-  m_Name: WallCrawlAbility
+  m_Name: SurfaceCrawlAbility
   m_EditorClassIdentifier: Assembly-CSharp::WallCrawlAbility
   rayDistance: 50
   headHeight: 1.5
   maxTiltAngle: 135
   minTiltAngle: 45
-  WallMask:
+  TraversableSurfaceMask:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 2048
   turnSpeed: 300
   attachDistance: 3
   tweakTiming: 0.3
   rotationSpeed: 3
   positionSpeed: 5
-  wallOffset: -0.1
+  surfaceOffset: 0.3
   crawlSpeed: 5
-  roamDistance: 15
+  roamDistance: 10

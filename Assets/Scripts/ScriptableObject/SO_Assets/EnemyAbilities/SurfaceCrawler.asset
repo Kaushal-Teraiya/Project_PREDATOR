@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 68e99b71efd1ff24dae0f697b9e3a73c, type: 3}
-  m_Name: WallCrawler
+  m_Name: SurfaceCrawler
   m_EditorClassIdentifier: Assembly-CSharp::EnemyArchetype
   enemyAbilities:
   - {fileID: 11400000, guid: c6c920e4167050f4f8997997aacb9835, type: 2}

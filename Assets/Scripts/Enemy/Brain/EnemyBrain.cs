@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using NUnit.Framework;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -19,10 +20,10 @@ public class EnemyBrain : MonoBehaviour
         Walker,
         Runner,
         Hopper,
-        WallCrawler
+        SurfaceCrawler
     }
 
-    private EnemyMovement.MovementSurface preferredMovementSurface;
+    [SerializeField] private EnemyMovement.MovementSurface preferredMovementSurface;
     // private bool canClimbWalls;
     // private bool canLunge;
 
@@ -183,7 +184,7 @@ public class EnemyBrain : MonoBehaviour
     [Header("Combat Band Gizmos")]
     [SerializeField] private bool drawBandGizmos = true;
 
-    [Range(8, 128)]
+    [UnityEngine.Range(8, 128)]
     [SerializeField] private int circleSegments = 48;
 
     public Vector3 Debug_RepositionTarget;
@@ -195,9 +196,23 @@ public class EnemyBrain : MonoBehaviour
 
     [Header("Archetypes")]
     [SerializeField] private EnemyArchetype enemyArchetype;
-    private WallInfo currentWallInfo;
+    private SurfaceCrawlAbility surfaceCrawlAbility;
+    private SurfaceInfo currentSurfaceInfo;
     private bool isWaitingToMount;
     private float mountTimer;
+    public enum Goal
+    {
+        None,
+        Top,
+        Middle,
+        Bottom,
+        FreeMove
+    }
+
+    [SerializeField] private Goal goal;
+
+    // [Header("MovementData")]
+    // [SerializeField] private EnemyMovement.MovementSurface preferredMovementSurface;
 
     //============================================Functions============================================//
 
@@ -249,7 +264,8 @@ public class EnemyBrain : MonoBehaviour
         playerHealth.playerDead += HandleEnemyStateOnPlayerDeath;
         soundSensor.OnSoundHeard += HandleSoundStimulus;
         visionSensor.OnPeripheralGlimpse += HandlePeripheralStimulus;
-        preferredMovementSurface = EnemyMovement.MovementSurface.Sphere;
+        // preferredMovementSurface = EnemyMovement.MovementSurface.Ceiling;
+        //SetPreferredMovementSurface(EnemyMovement.MovementSurface.Ground);
     }
 
     void Update()
@@ -258,7 +274,8 @@ public class EnemyBrain : MonoBehaviour
         enemyMovement.ResetAnimationIntent();
         CheckPerception();
         CheckStateChange();
-        EvaluateWall();
+        //EvaluateWall();
+        ExecutePreferredSurfaceIntent();
         currentState.Tick();
         enemyMovement.ApplyAnimationIntent();
     }
@@ -386,6 +403,11 @@ public class EnemyBrain : MonoBehaviour
         LastHitForce = force;
     }
 
+    private EnemyMovement.MovementSurface GetCurrentMovementSurface()
+    {
+        return enemyMovement.CurrentMovementSurface;
+    }
+
     #endregion
 
     #region State Decesions
@@ -399,10 +421,10 @@ public class EnemyBrain : MonoBehaviour
     }
     private void CheckStateChange()
     {
-        if (true)
-        {
-            return;
-        }
+        // if (true)
+        // {
+        //     return;
+        // }
 
         if (IsInState(deadState))
         {
@@ -761,17 +783,59 @@ public class EnemyBrain : MonoBehaviour
     #endregion
 
     #region Geometry Detection & Initialization
-    private bool TryFindNearbyWall(out WallInfo wallHitInfo)
+
+    private void ExecutePreferredSurfaceIntent()
     {
-        var wallCrawlAbility = GetAbility<WallCrawlAbility>();
-        if (wallCrawlAbility == null)
+        if (HasReachedGoal())
         {
-            wallHitInfo = default;
+            CompleteGoal();
+            return;
+        }
+
+        switch (goal)
+        {
+            case Goal.Top:
+                SetSurfaceTransitionAllowed(true);
+                ExecuteCeilingGoal();
+                break;
+
+            case Goal.Bottom:
+                SetSurfaceTransitionAllowed(true);
+                ExecuteGroundGoal();
+                break;
+
+            case Goal.Middle:
+                SetSurfaceTransitionAllowed(true);
+                ExecuteWallGoal();
+                break;
+
+            case Goal.FreeMove:
+                SetSurfaceTransitionAllowed(true);
+                ExecuteGenericSurfaceGoal();
+                break;
+
+            case Goal.None:
+                SetSurfaceTransitionAllowed(false);
+                break;
+
+            default:
+                Debug.Log("Default FallBack");
+                // ExecuteGroundGoal();
+                break;
+        }
+    }
+
+    private bool TryAscendNearbySurface(out SurfaceInfo surfaceHitInfo)
+    {
+        var surfaceCrawlAbility = GetAbility<SurfaceCrawlAbility>();
+        if (surfaceCrawlAbility == null)
+        {
+            surfaceHitInfo = default;
             return false;
         }
 
         float bestDistance = float.MaxValue;
-        WallInfo bestWall = default;
+        SurfaceInfo bestWall = default;
 
         Vector3[] directions =
         {
@@ -789,29 +853,30 @@ public class EnemyBrain : MonoBehaviour
         foreach (var direction in directions)
         {
             Debug.DrawRay(transform.position, direction * 10f, Color.cyan);
-            var origin = transform.position + Vector3.up * wallCrawlAbility.headHeight;
-            if (Physics.Raycast(origin, direction, out RaycastHit hitSurface, wallCrawlAbility.rayDistance, wallCrawlAbility.WallMask, QueryTriggerInteraction.Ignore))
+            var origin = transform.position + transform.up * surfaceCrawlAbility.headHeight;
+            if (Physics.Raycast(origin, direction, out RaycastHit hitSurface, surfaceCrawlAbility.rayDistance, surfaceCrawlAbility.TraversableSurfaceMask, QueryTriggerInteraction.Ignore))
             {
                 float angle = Vector3.Angle(hitSurface.normal, Vector3.up);
 
-                if (angle > wallCrawlAbility.minTiltAngle && angle < wallCrawlAbility.maxTiltAngle)
+                if (angle > surfaceCrawlAbility.minTiltAngle && angle < surfaceCrawlAbility.maxTiltAngle)
                 {
                     float distance = hitSurface.distance;
 
                     if (distance < bestDistance)
                     {
                         bestDistance = distance;
-                        bestWall.wallHitPoint = hitSurface.point;
-                        bestWall.wallHitNormal = hitSurface.normal;
-                        if (hitSurface.collider.CompareTag("SphereSurface"))
-                        {
-                            enemyMovement.SetDetectedGeometry(EnemyMovement.MovementSurface.Sphere);
-                        }
-                        else
+                        bestWall.surfaceHitPoint = hitSurface.point;
+                        bestWall.surfaceHitNormal = hitSurface.normal;
+                        if (hitSurface.collider.CompareTag("Wall"))
                         {
                             enemyMovement.SetDetectedGeometry(EnemyMovement.MovementSurface.Wall);
                         }
-                        StoreWallInfo(bestWall);
+                        else
+                        {
+                            enemyMovement.SetDetectedGeometry(EnemyMovement.MovementSurface.GenericSurface);
+                        }
+
+                        StoreSurfaceInfo(bestWall);
                     }
                 }
             }
@@ -819,18 +884,113 @@ public class EnemyBrain : MonoBehaviour
 
         if (bestDistance < float.MaxValue)
         {
-            wallHitInfo = bestWall;
+            surfaceHitInfo = bestWall;
             return true;
         }
 
-        wallHitInfo = default;
+        surfaceHitInfo = default;
         return false;
     }
 
-    private void EvaluateWall()
+    private bool TryDescendNearbySurface(out SurfaceInfo surfaceHitInfo)
     {
-        var wallCrawlAbility = GetAbility<WallCrawlAbility>();
-        if (wallCrawlAbility == null)
+        surfaceHitInfo = default;
+
+        var surfaceCrawlAbility = GetAbility<SurfaceCrawlAbility>();
+        if (surfaceCrawlAbility == null)
+        {
+            return false;
+        }
+
+        float bestDistance = float.MaxValue;
+        SurfaceInfo bestWall = default;
+
+        Vector3[] directions =
+        {
+            transform.forward,
+            -transform.forward,
+            transform.right,
+            -transform.right,
+
+            (transform.forward + transform.right).normalized,
+            (transform.forward - transform.right).normalized,
+            (-transform.forward + transform.right).normalized,
+            (-transform.forward - transform.right).normalized
+        };
+
+        foreach (var direction in directions)
+        {
+            // Step outward from zombie
+            Vector3 edgePoint = transform.position + direction * surfaceCrawlAbility.rayDistance;
+
+            Debug.DrawRay(transform.position, direction * surfaceCrawlAbility.rayDistance, Color.cyan);
+
+            // Check if there is still floor below
+            if (Physics.Raycast(edgePoint, Vector3.down, out RaycastHit groundHit, 5f, surfaceCrawlAbility.TraversableSurfaceMask, QueryTriggerInteraction.Ignore))
+            {
+                continue;
+            }
+
+
+            Vector3 probeOrigin = edgePoint + Vector3.down * 2f;
+            Debug.DrawRay(edgePoint, Vector3.down * 2f, Color.yellow);
+
+
+            if (Physics.Raycast(probeOrigin, -direction, out RaycastHit hitSurface, surfaceCrawlAbility.rayDistance, surfaceCrawlAbility.TraversableSurfaceMask, QueryTriggerInteraction.Ignore))
+            {
+                Debug.DrawLine(probeOrigin, hitSurface.point, Color.green);
+
+                float angle = Vector3.Angle(hitSurface.normal, Vector3.up);
+
+                if (angle > surfaceCrawlAbility.minTiltAngle && angle < surfaceCrawlAbility.maxTiltAngle)
+                {
+                    float distance = Vector3.Distance(transform.position, hitSurface.point);
+
+                    if (distance < bestDistance)
+                    {
+                        bestDistance = distance;
+
+                        bestWall.surfaceHitPoint = hitSurface.point;
+                        bestWall.surfaceHitNormal = hitSurface.normal;
+                        bestWall.hitCollider = hitSurface.collider;
+                        bestWall.surfaceTag = hitSurface.collider.tag;
+
+                        if (hitSurface.collider.CompareTag("Wall"))
+                        {
+                            enemyMovement.SetDetectedGeometry(EnemyMovement.MovementSurface.Wall);
+                        }
+                        else
+                        {
+                            enemyMovement.SetDetectedGeometry(EnemyMovement.MovementSurface.GenericSurface);
+                        }
+
+                        StoreSurfaceInfo(bestWall);
+                    }
+                }
+            }
+        }
+
+        if (bestDistance < float.MaxValue)
+        {
+            surfaceHitInfo = bestWall;
+
+            Debug.DrawLine(
+                transform.position,
+                bestWall.surfaceHitPoint,
+                Color.magenta
+            );
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private void EvaluateSurface()
+    {
+        surfaceCrawlAbility = GetAbility<SurfaceCrawlAbility>();
+
+        if (surfaceCrawlAbility == null)
         {
             return;
         }
@@ -838,70 +998,119 @@ public class EnemyBrain : MonoBehaviour
         {
             return;
         }
-        if (enemyMovement.IsCurrentSurface(EnemyMovement.MovementSurface.Wall) || enemyMovement.IsCurrentSurface(EnemyMovement.MovementSurface.Sphere))
+        if (enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Wall) /*|| enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.GenericSurface)*/)
         {
             enemyMovement.MoveTo(Vector3.zero);
             return;
         }
 
-        if (TryFindNearbyWall(out WallInfo wallInfo))
+        if (TryAscendNearbySurface(out SurfaceInfo surfaceInfo))
         {
-            // Debug.Log("");
-            var distanceToWall = Vector3.Distance(transform.position, wallInfo.wallHitPoint);
-            if (distanceToWall <= wallCrawlAbility.attachDistance)
+            InitializeMounting(surfaceCrawlAbility, surfaceInfo, Vector3.up);
+        }
+        else if (TryDescendNearbySurface(out SurfaceInfo surfaceHitInfo) && enemyMovement.IsCurrentTraversalContext(EnemyMovement.TraversalContext.Outside) && enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Ground))
+        {
+            InitializeMounting(surfaceCrawlAbility, surfaceHitInfo, Vector3.down);
+            Debug.Log("On a Higher surface :: Now Using Probing!");
+        }
+    }
+
+    private void InitializeMounting(SurfaceCrawlAbility surfaceCrawlAbility, SurfaceInfo surfaceInfo, Vector3 projectionVector)
+    {
+        var distanceToWall = Vector3.Distance(transform.position, surfaceInfo.surfaceHitPoint);
+        if (distanceToWall <= surfaceCrawlAbility.attachDistance)
+        {
+            if (enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Wall) || enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.GenericSurface))
             {
-                if (enemyMovement.IsCurrentSurface(EnemyMovement.MovementSurface.Wall) || enemyMovement.IsCurrentSurface(EnemyMovement.MovementSurface.Sphere))
-                {
-                    return;
-                }
+                return;
+            }
 
-                if (!isWaitingToMount)
-                {
-                    enemyMovement.RequestAnimation(new AnimationIntent(AnimationType.CrawlJump, 200));
-                    enemyMovement.Stop();
-                    Debug.Log("Movement STOPPED , Mount Started!");
-                    isWaitingToMount = true;
-                    mountTimer = 0f;
-
-                    return;
-                }
-
-                mountTimer += Time.deltaTime;
-                if (mountTimer >= wallCrawlAbility.tweakTiming)
-                {
-                    if (enemyMovement.IsDetectedGeometry(EnemyMovement.MovementSurface.Sphere))
-                    {
-                        enemyMovement.BeginSphereMount(wallInfo, wallCrawlAbility);
-                    }
-                    else
-                    {
-                        enemyMovement.BeginWallMount(wallInfo, wallCrawlAbility);
-                    }
-
-                    isWaitingToMount = false;
-                    Debug.Log("MOUNT Complete");
-                }
+            if (!isWaitingToMount)
+            {
+                enemyMovement.RequestAnimation(new AnimationIntent(AnimationType.CrawlJump, 200));
+                enemyMovement.Stop();
+                Debug.Log("Movement STOPPED , Mount Started!");
+                isWaitingToMount = true;
+                mountTimer = 0f;
 
                 return;
             }
 
-            enemyMovement.RequestAnimation(new AnimationIntent(AnimationType.WallCrawl, 58));
-            enemyMovement.SetMovementMode(EnemyMovement.MovementMode.Chase);
-            enemyMovement.MoveTo(wallInfo.wallHitPoint);
+            mountTimer += Time.deltaTime;
+            if (mountTimer >= surfaceCrawlAbility.tweakTiming)
+            {
+                enemyMovement.BeginSurfaceMount(surfaceInfo, surfaceCrawlAbility, projectionVector);
 
+                isWaitingToMount = false;
+                Debug.Log("MOUNT Complete");
+            }
 
+            return;
         }
-        else
+
+        enemyMovement.RequestAnimation(new AnimationIntent(AnimationType.SurfaceCrawl, 58));
+        enemyMovement.SetMovementMode(EnemyMovement.MovementMode.Chase);
+        enemyMovement.MoveTo(surfaceInfo.surfaceHitPoint);
+    }
+    private void ExecuteGenericSurfaceGoal()
+    {
+        ChooseSurface();
+
+        if (enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.GenericSurface))
         {
-            Debug.Log("WALL NOT FOUND!");
+            enemyMovement.SetCrawlIntent(EnemyMovement.CrawlIntent.Random);
+            return;
         }
     }
 
-    private void StoreWallInfo(WallInfo wallInfo)
+    private void ExecuteCeilingGoal()
     {
-        // currentWallPoint = wallInfo.wallHitPoint;
-        // currentWallNormal = wallInfo.wallHitNormal;
-        currentWallInfo = wallInfo;
+        ChooseSurface();
+
+        if (enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Wall) || enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.GenericSurface))
+        {
+            enemyMovement.SetCrawlIntent(EnemyMovement.CrawlIntent.SurfaceUp);
+            return;
+        }
+    }
+
+    private void ExecuteGroundGoal()
+    {
+        ChooseSurface();
+
+        if (enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Wall) || enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.GenericSurface))
+        {
+            enemyMovement.SetCrawlIntent(EnemyMovement.CrawlIntent.SurfaceDown);
+            return;
+        }
+    }
+
+    private void ExecuteWallGoal()
+    {
+        ChooseSurface();
+
+        if (enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Wall))
+        {
+            enemyMovement.SetCrawlIntent(EnemyMovement.CrawlIntent.Random);
+            return;
+        }
+    }
+
+    private void ChooseSurface()
+    {
+        if (enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Ceiling) || enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Ground))
+        {
+            //enemyMovement.SetSurfaceTransitionAllowed(true);
+            EvaluateSurface();
+            return;
+        }
+    }
+
+
+
+    private void StoreSurfaceInfo(SurfaceInfo _surfaceInfo)
+    {
+        currentSurfaceInfo = _surfaceInfo;
     }
 
     #endregion
@@ -1063,14 +1272,84 @@ public class EnemyBrain : MonoBehaviour
     {
         return lungeAttackPredictionDistance;
     }
+
+    private void SetSurfaceTransitionAllowed(bool allowed)
+    {
+        enemyMovement.SetSurfaceTransitionAllowed(allowed);
+    }
+
+    private void SetPreferredMovementSurface(EnemyMovement.MovementSurface _prefferedMovementSurface)
+    {
+        preferredMovementSurface = _prefferedMovementSurface;
+        SetSurfaceTransitionAllowed(true);
+    }
     #endregion
 
     #region DebugGizmos
-    private void OnDrawGizmosSelected()
+
+    #region Boolean Functions
+    private bool IsAtTop()
     {
-        Gizmos.color = Color.purple;
-        Gizmos.DrawSphere(currentWallInfo.wallHitPoint, 0.2f);
+        if (enemyMovement.IsCurrentTraversalContext(
+            EnemyMovement.TraversalContext.Outside))
+        {
+            return enemyMovement.IsCurrentMovememntSurface(
+                EnemyMovement.MovementSurface.Ground);
+        }
+
+        return enemyMovement.IsCurrentMovememntSurface(
+            EnemyMovement.MovementSurface.Ceiling);
     }
+
+    private bool IsInMiddle()
+    {
+        return !IsAtBottom() && !IsAtTop();
+    }
+
+    private bool IsAtBottom()
+    {
+        if (enemyMovement.IsCurrentTraversalContext(EnemyMovement.TraversalContext.None))
+        {
+            return enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Ground);
+        }
+        return enemyMovement.IsCurrentTraversalContext(
+            EnemyMovement.TraversalContext.Inside)
+            &&
+            enemyMovement.IsCurrentMovememntSurface(
+                EnemyMovement.MovementSurface.Ground);
+    }
+
+    private bool HasReachedGoal()
+    {
+        switch (goal)
+        {
+            case Goal.Top:
+                return IsAtTop();
+            case Goal.Bottom:
+                return IsAtBottom();
+            case Goal.Middle:
+                return IsInMiddle();
+            case Goal.FreeMove:
+                return false;
+            case Goal.None:
+                return true;
+
+            default:
+                Debug.Log(":Check you HasReachedGoal() Function. ERROR");
+                break;
+        }
+
+        return false;
+    }
+
+    private void CompleteGoal()
+    {
+        goal = Goal.None;
+        SetSurfaceTransitionAllowed(false);
+        Debug.Log("Goal Reached!V2");
+    }
+
+    #endregion
     void OnDrawGizmos()
     {
         DrawCircle(transform.position, proximityRadius, 40);
