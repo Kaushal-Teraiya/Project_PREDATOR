@@ -20,9 +20,9 @@ MonoBehaviour:
   - {fileID: 7400000, guid: e03c32ace1e606448aae52407758ff55, type: 2}
   cooldown: 2
   retreat: 1
-  usesLunge: 1
-  lungeArcHeight: 3
-  lungeDelay: 0.5
-  lungeDuration: 1
+  usesLeap: 1
+  leapArcHeight: 3
+  leapDelay: 0.5
+  leapDuration: 1
   attackRange: 10
   attackRegisterDistance: 4

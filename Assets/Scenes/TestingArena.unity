@@ -2130,27 +2130,24 @@ MonoBehaviour:
   rotationSpeed: 280
   rotationThreshold: 2
   separationWeight: 0.8
-  WallSurfaceMask:
-    serializedVersion: 2
-    m_Bits: 0
-  CeilingSurfaceMask:
-    serializedVersion: 2
-    m_Bits: 0
+  crawlIntent: 0
   repathInterval: 0.5
   acceleration: 10
-  OnWallMask:
+  isTransitionAllowed: 0
+  TraversableSurfaceMask:
     serializedVersion: 2
     m_Bits: 0
-  numberOftries: 0
-  shrinkCoeff: 0
-  numberOfAttempts: 0
   offsetForNewSurface: 0
   sphereCenterOffsetFromEye: 0
-  overlapRadius: 0
+  eyeOffset: 0
+  frontWallDetectionDistance: 0
   surfaceTransitionThreshold: 0
   unlockAfterTime: 0
-  eyeOffsetf: 0
-  frontWallDetectionDistance: 0
+  surfaceOffset: 0
+  numberOfAttempts: 0
+  sphereCenter: {fileID: 0}
+  Sphere_targetReachDistance: 0
+  targetDistance: 0
 --- !u!114 &63388001
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2163,6 +2160,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1422926dcbe6c44f9c3ef0380d28faa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyBrain
+  preferredMovementSurface: 0
   wayPointManager: {fileID: 1562593277}
   searchPointLayer:
     serializedVersion: 2
@@ -2180,9 +2178,6 @@ MonoBehaviour:
   midAttacksAsset: {fileID: 0}
   farAttacksAsset: {fileID: 0}
   currentCombatBand: 0
-  farBandAttackDistance: 0
-  midBandAttackDistance: 0
-  closeBandAttackDistance: 0
   bandDistanceTolerance: 0.5
   attackCooldown: 1.5
   lungeAttackPredictionDistance: 1.5
@@ -2223,6 +2218,9 @@ MonoBehaviour:
   circleSegments: 48
   Debug_RepositionTarget: {x: 0, y: 0, z: 0}
   enemyArchetype: {fileID: 0}
+  goal: 0
+  activeGoal: 0
+  overrideGoal: 0
 --- !u!114 &63388002
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8695,7 +8693,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3216579825125446628, guid: fc5a676d2c90b3d4f8a22e369c35950d, type: 3}
       propertyPath: m_Layer
-      value: 0
+      value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: 3216579825125446628, guid: fc5a676d2c90b3d4f8a22e369c35950d, type: 3}
+      propertyPath: m_TagString
+      value: Ground
       objectReference: {fileID: 0}
     - target: {fileID: 3794954169302928909, guid: fc5a676d2c90b3d4f8a22e369c35950d, type: 3}
       propertyPath: m_Name
@@ -8744,6 +8746,14 @@ PrefabInstance:
     - target: {fileID: 6755084027253256115, guid: fc5a676d2c90b3d4f8a22e369c35950d, type: 3}
       propertyPath: m_Layer
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7725550455073907413, guid: fc5a676d2c90b3d4f8a22e369c35950d, type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: 7725550455073907413, guid: fc5a676d2c90b3d4f8a22e369c35950d, type: 3}
+      propertyPath: m_TagString
+      value: Wall
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -13981,27 +13991,24 @@ MonoBehaviour:
   rotationSpeed: 280
   rotationThreshold: 2
   separationWeight: 0.8
-  WallSurfaceMask:
-    serializedVersion: 2
-    m_Bits: 0
-  CeilingSurfaceMask:
-    serializedVersion: 2
-    m_Bits: 0
+  crawlIntent: 0
   repathInterval: 1
   acceleration: 10
-  OnWallMask:
+  isTransitionAllowed: 0
+  TraversableSurfaceMask:
     serializedVersion: 2
     m_Bits: 0
-  numberOftries: 0
-  shrinkCoeff: 0
-  numberOfAttempts: 0
   offsetForNewSurface: 0
   sphereCenterOffsetFromEye: 0
-  overlapRadius: 0
+  eyeOffset: 0
+  frontWallDetectionDistance: 0
   surfaceTransitionThreshold: 0
   unlockAfterTime: 0
-  eyeOffsetf: 0
-  frontWallDetectionDistance: 0
+  surfaceOffset: 0
+  numberOfAttempts: 0
+  sphereCenter: {fileID: 0}
+  Sphere_targetReachDistance: 0
+  targetDistance: 0
 --- !u!114 &516933291
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14014,6 +14021,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1422926dcbe6c44f9c3ef0380d28faa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyBrain
+  preferredMovementSurface: 0
   wayPointManager: {fileID: 1562593277}
   searchPointLayer:
     serializedVersion: 2
@@ -14031,9 +14039,6 @@ MonoBehaviour:
   midAttacksAsset: {fileID: 0}
   farAttacksAsset: {fileID: 0}
   currentCombatBand: 0
-  farBandAttackDistance: 0
-  midBandAttackDistance: 0
-  closeBandAttackDistance: 0
   bandDistanceTolerance: 0.5
   attackCooldown: 1.5
   lungeAttackPredictionDistance: 1.5
@@ -14074,6 +14079,9 @@ MonoBehaviour:
   circleSegments: 48
   Debug_RepositionTarget: {x: 0, y: 0, z: 0}
   enemyArchetype: {fileID: 0}
+  goal: 0
+  activeGoal: 0
+  overrideGoal: 0
 --- !u!114 &516933292
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -22636,27 +22644,24 @@ MonoBehaviour:
   rotationSpeed: 280
   rotationThreshold: 2
   separationWeight: 0.8
-  WallSurfaceMask:
-    serializedVersion: 2
-    m_Bits: 0
-  CeilingSurfaceMask:
-    serializedVersion: 2
-    m_Bits: 0
+  crawlIntent: 0
   repathInterval: 1
   acceleration: 10
-  OnWallMask:
+  isTransitionAllowed: 0
+  TraversableSurfaceMask:
     serializedVersion: 2
     m_Bits: 0
-  numberOftries: 0
-  shrinkCoeff: 0
-  numberOfAttempts: 0
   offsetForNewSurface: 0
   sphereCenterOffsetFromEye: 0
-  overlapRadius: 0
+  eyeOffset: 0
+  frontWallDetectionDistance: 0
   surfaceTransitionThreshold: 0
   unlockAfterTime: 0
-  eyeOffsetf: 0
-  frontWallDetectionDistance: 0
+  surfaceOffset: 0
+  numberOfAttempts: 0
+  sphereCenter: {fileID: 0}
+  Sphere_targetReachDistance: 0
+  targetDistance: 0
 --- !u!114 &765992255
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -22669,6 +22674,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1422926dcbe6c44f9c3ef0380d28faa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyBrain
+  preferredMovementSurface: 0
   wayPointManager: {fileID: 1562593277}
   searchPointLayer:
     serializedVersion: 2
@@ -22686,9 +22692,6 @@ MonoBehaviour:
   midAttacksAsset: {fileID: 0}
   farAttacksAsset: {fileID: 0}
   currentCombatBand: 0
-  farBandAttackDistance: 0
-  midBandAttackDistance: 0
-  closeBandAttackDistance: 0
   bandDistanceTolerance: 0.5
   attackCooldown: 1.5
   lungeAttackPredictionDistance: 1.5
@@ -22729,6 +22732,9 @@ MonoBehaviour:
   circleSegments: 48
   Debug_RepositionTarget: {x: 0, y: 0, z: 0}
   enemyArchetype: {fileID: 0}
+  goal: 0
+  activeGoal: 0
+  overrideGoal: 0
 --- !u!114 &765992256
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -35507,27 +35513,24 @@ MonoBehaviour:
   rotationSpeed: 280
   rotationThreshold: 2
   separationWeight: 0.8
-  WallSurfaceMask:
-    serializedVersion: 2
-    m_Bits: 0
-  CeilingSurfaceMask:
-    serializedVersion: 2
-    m_Bits: 0
+  crawlIntent: 0
   repathInterval: 1
   acceleration: 10
-  OnWallMask:
+  isTransitionAllowed: 0
+  TraversableSurfaceMask:
     serializedVersion: 2
     m_Bits: 0
-  numberOftries: 0
-  shrinkCoeff: 0
-  numberOfAttempts: 0
   offsetForNewSurface: 0
   sphereCenterOffsetFromEye: 0
-  overlapRadius: 0
+  eyeOffset: 0
+  frontWallDetectionDistance: 0
   surfaceTransitionThreshold: 0
   unlockAfterTime: 0
-  eyeOffsetf: 0
-  frontWallDetectionDistance: 0
+  surfaceOffset: 0
+  numberOfAttempts: 0
+  sphereCenter: {fileID: 0}
+  Sphere_targetReachDistance: 0
+  targetDistance: 0
 --- !u!114 &1331646824
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -35540,6 +35543,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1422926dcbe6c44f9c3ef0380d28faa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyBrain
+  preferredMovementSurface: 0
   wayPointManager: {fileID: 1562593277}
   searchPointLayer:
     serializedVersion: 2
@@ -35557,9 +35561,6 @@ MonoBehaviour:
   midAttacksAsset: {fileID: 0}
   farAttacksAsset: {fileID: 0}
   currentCombatBand: 0
-  farBandAttackDistance: 0
-  midBandAttackDistance: 0
-  closeBandAttackDistance: 0
   bandDistanceTolerance: 0.5
   attackCooldown: 1.5
   lungeAttackPredictionDistance: 1.5
@@ -35600,6 +35601,9 @@ MonoBehaviour:
   circleSegments: 48
   Debug_RepositionTarget: {x: 0, y: 0, z: 0}
   enemyArchetype: {fileID: 0}
+  goal: 0
+  activeGoal: 0
+  overrideGoal: 0
 --- !u!114 &1331646825
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -37861,27 +37865,24 @@ MonoBehaviour:
   rotationSpeed: 280
   rotationThreshold: 2
   separationWeight: 0.8
-  WallSurfaceMask:
-    serializedVersion: 2
-    m_Bits: 0
-  CeilingSurfaceMask:
-    serializedVersion: 2
-    m_Bits: 0
+  crawlIntent: 0
   repathInterval: 1
   acceleration: 10
-  OnWallMask:
+  isTransitionAllowed: 0
+  TraversableSurfaceMask:
     serializedVersion: 2
     m_Bits: 0
-  numberOftries: 0
-  shrinkCoeff: 0
-  numberOfAttempts: 0
   offsetForNewSurface: 0
   sphereCenterOffsetFromEye: 0
-  overlapRadius: 0
+  eyeOffset: 0
+  frontWallDetectionDistance: 0
   surfaceTransitionThreshold: 0
   unlockAfterTime: 0
-  eyeOffsetf: 0
-  frontWallDetectionDistance: 0
+  surfaceOffset: 0
+  numberOfAttempts: 0
+  sphereCenter: {fileID: 0}
+  Sphere_targetReachDistance: 0
+  targetDistance: 0
 --- !u!114 &1415654184
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -37894,6 +37895,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1422926dcbe6c44f9c3ef0380d28faa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyBrain
+  preferredMovementSurface: 0
   wayPointManager: {fileID: 1562593277}
   searchPointLayer:
     serializedVersion: 2
@@ -37911,9 +37913,6 @@ MonoBehaviour:
   midAttacksAsset: {fileID: 0}
   farAttacksAsset: {fileID: 0}
   currentCombatBand: 0
-  farBandAttackDistance: 0
-  midBandAttackDistance: 0
-  closeBandAttackDistance: 0
   bandDistanceTolerance: 0.5
   attackCooldown: 1.5
   lungeAttackPredictionDistance: 1.5
@@ -37954,6 +37953,9 @@ MonoBehaviour:
   circleSegments: 48
   Debug_RepositionTarget: {x: 0, y: 0, z: 0}
   enemyArchetype: {fileID: 0}
+  goal: 0
+  activeGoal: 0
+  overrideGoal: 0
 --- !u!114 &1415654185
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -40385,9 +40387,9 @@ GameObject:
   - component: {fileID: 1459958274}
   - component: {fileID: 1459958273}
   - component: {fileID: 1459958272}
-  m_Layer: 6
+  m_Layer: 11
   m_Name: TestWall
-  m_TagString: Untagged
+  m_TagString: Ceiling
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -50429,27 +50431,24 @@ MonoBehaviour:
   rotationSpeed: 280
   rotationThreshold: 2
   separationWeight: 0.8
-  WallSurfaceMask:
-    serializedVersion: 2
-    m_Bits: 0
-  CeilingSurfaceMask:
-    serializedVersion: 2
-    m_Bits: 0
+  crawlIntent: 0
   repathInterval: 1
   acceleration: 10
-  OnWallMask:
+  isTransitionAllowed: 0
+  TraversableSurfaceMask:
     serializedVersion: 2
     m_Bits: 0
-  numberOftries: 0
-  shrinkCoeff: 0
-  numberOfAttempts: 0
   offsetForNewSurface: 0
   sphereCenterOffsetFromEye: 0
-  overlapRadius: 0
+  eyeOffset: 0
+  frontWallDetectionDistance: 0
   surfaceTransitionThreshold: 0
   unlockAfterTime: 0
-  eyeOffsetf: 0
-  frontWallDetectionDistance: 0
+  surfaceOffset: 0
+  numberOfAttempts: 0
+  sphereCenter: {fileID: 0}
+  Sphere_targetReachDistance: 0
+  targetDistance: 0
 --- !u!114 &1871191729
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -50462,6 +50461,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1422926dcbe6c44f9c3ef0380d28faa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyBrain
+  preferredMovementSurface: 0
   wayPointManager: {fileID: 1562593277}
   searchPointLayer:
     serializedVersion: 2
@@ -50479,9 +50479,6 @@ MonoBehaviour:
   midAttacksAsset: {fileID: 0}
   farAttacksAsset: {fileID: 0}
   currentCombatBand: 0
-  farBandAttackDistance: 0
-  midBandAttackDistance: 0
-  closeBandAttackDistance: 0
   bandDistanceTolerance: 0.5
   attackCooldown: 1.5
   lungeAttackPredictionDistance: 1.5
@@ -50522,6 +50519,9 @@ MonoBehaviour:
   circleSegments: 48
   Debug_RepositionTarget: {x: 0, y: 0, z: 0}
   enemyArchetype: {fileID: 0}
+  goal: 0
+  activeGoal: 0
+  overrideGoal: 0
 --- !u!114 &1871191730
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -58452,6 +58452,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 972058019107842670, guid: 63cc82c7a272c0a40b37c57e42a0072e, type: 3}
+      propertyPath: m_CullingMask.m_Bits
+      value: 3071
+      objectReference: {fileID: 0}
     - target: {fileID: 3240690407180083767, guid: 63cc82c7a272c0a40b37c57e42a0072e, type: 3}
       propertyPath: m_LocalPosition.x
       value: -2.3
@@ -59331,6 +59335,10 @@ PrefabInstance:
       propertyPath: player
       value: 
       objectReference: {fileID: 1584050596}
+    - target: {fileID: 3186572725680893476, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      propertyPath: goal
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3186572725680893476, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
       propertyPath: wayPointManager
       value: 

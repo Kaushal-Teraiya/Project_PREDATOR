@@ -21,15 +21,15 @@ public class InvestigateState : IEnemyState
 
     public void OnEnter()
     {
-        brain.enemyMovement.SetMovementMode(EnemyMovement.MovementMode.Investigate);
+        brain.EnemyMovement.SetMovementMode(EnemyMovement.MovementMode.Investigate);
         hasReachedDestination = false;
-        Debug.Log("investigation starts");
-        brain.enemyMovement.RotationIntent(EnemyMovement.RotationPriority.State, areaCenter);
+//        Debug.Log("investigation starts");
+        brain.EnemyMovement.RotationIntent(EnemyMovement.RotationPriority.State, areaCenter);
     }
 
     public void Tick()
     {
-        var Enemy = brain.enemyMovement;
+        var Enemy = brain.EnemyMovement;
         Enemy.MoveTo(areaCenter);
         Vector3 moveDir = Enemy.GetMovementDirection();
 
@@ -47,8 +47,8 @@ public class InvestigateState : IEnemyState
     }
     public void OnExit()
     {
-        Debug.Log("investigation exits");
-        brain.enemyMovement.ClearRotationIntent();
+//        Debug.Log("investigation exits");
+        brain.EnemyMovement.ClearRotationIntent();
         // brain.enemyMovement.Stop();
     }
 }

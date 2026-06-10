@@ -12,7 +12,7 @@ public class AttackState : IEnemyState
     }
     public void OnEnter()
     {
-        var Enemy = brain.enemyMovement;
+        var Enemy = brain.EnemyMovement;
         brain.SetAttackRegisterDistance(brain.CurrentAttackProfile);
         Enemy.Stop();
         Enemy.RotationIntent(EnemyMovement.RotationPriority.State, brain.player.transform.position);
@@ -50,10 +50,9 @@ public class AttackState : IEnemyState
         }
 
 
-        if (brain.CurrentAttackProfile.usesLunge)
+        if (brain.CurrentAttackProfile.usesLeap)
         {
-
-            var predictionTime = brain.CurrentAttackProfile.lungeDelay + brain.CurrentAttackProfile.lungeDuration;
+            var predictionTime = brain.CurrentAttackProfile.leapDelay + brain.CurrentAttackProfile.leapDuration;
             var predictionDistance = brain.GetPredictionDistance();
             var predictedPosition = brain.PredictPlayerPosition(predictionTime, predictionDistance);
             var direction = (predictedPosition - brain.transform.position).normalized;
@@ -65,7 +64,7 @@ public class AttackState : IEnemyState
             {
                 targetPosition = navHit.position;
             }
-            Enemy.StartLunge(targetPosition, brain.CurrentAttackProfile.lungeDelay, brain.CurrentAttackProfile.lungeDuration, brain.CurrentAttackProfile.lungeArcHeight);
+            Enemy.StartLeap(targetPosition, brain.CurrentAttackProfile.leapDelay, brain.CurrentAttackProfile.leapDuration, brain.CurrentAttackProfile.leapArcHeight);
         }
         // brain.ApplyRootMotion(true);
         // Enemy.SyncHipsTracker();
@@ -77,17 +76,17 @@ public class AttackState : IEnemyState
     }
     public void Tick()
     {
-        var Enemy = brain.enemyMovement;
+        var Enemy = brain.EnemyMovement;
         Enemy.RequestAnimation(new AnimationIntent(AnimationType.Attack, 100));
 
     }
     public void OnExit()
     {
-        brain.enemyMovement.SetRotationPermission(true);
+        brain.EnemyMovement.SetRotationPermission(true);
         //brain.ApplyRootMotion(false);
-        brain.enemyMovement.EnableProximity();
-        brain.enemyMovement.Animator_ResetTrigger("Attack");
-        brain.enemyMovement.Animator_SetBool("canExitAttack", true);
+        brain.EnemyMovement.EnableProximity();
+        brain.EnemyMovement.Animator_ResetTrigger("Attack");
+        brain.EnemyMovement.Animator_SetBool("canExitAttack", true);
     }
 
     public void HandleAttackHit()
@@ -150,9 +149,9 @@ public class AttackState : IEnemyState
 
     private void StartNewAttack()
     {
-        brain.enemyMovement.Animator_ResetTrigger("Attack");
+        brain.EnemyMovement.Animator_ResetTrigger("Attack");
         SetupAnimation();
-        brain.enemyMovement.RequestAnimation(new AnimationIntent(AnimationType.Attack, 30));
+        brain.EnemyMovement.RequestAnimation(new AnimationIntent(AnimationType.Attack, 30));
     }
 
     private void SetupAnimation()

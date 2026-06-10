@@ -80,6 +80,7 @@ public class EnemyMovement : MonoBehaviour
     public enum CrawlIntent
     {
         None,
+        DesiredDirection,
         Random,
         SurfaceUp,
         SurfaceDown,
@@ -129,8 +130,8 @@ public class EnemyMovement : MonoBehaviour
 
     #region Leap Data
 
-    [Header("Lunge Data")]
-    private bool isLunging;
+    [Header("Leap Data")]
+    private bool isLeaping;
     //private bool isRunning;
     private bool hasCapturedArcStart;
     private float delayTimer;
@@ -138,7 +139,7 @@ public class EnemyMovement : MonoBehaviour
     private float delayDuration;
     private float arcDuration;
     private float arcHeight;
-    private Vector3 lungeDirection;
+    private Vector3 leapDirection;
     private Vector3 arcStartPosition;
     private Vector3 arcEndPosition;
 
@@ -155,13 +156,16 @@ public class EnemyMovement : MonoBehaviour
 
     private Vector3 crawlTarget;
     private Vector3 crawlTargetSphere;
+    private Vector3 desiredSurfaceDirection;
 
     private bool isChangingSurface;
     private bool isTransitionLocked;
+    public event Action OnTransitionComplete;
+    public event Action OnEdgeDetected;
     [SerializeField] private bool isTransitionAllowed;
 
     private Vector3 currentSphereNormal;
-    private Vector3 currentSurfaceNormal;
+    public Vector3 currentSurfaceNormal { get; private set; }
     private float sphereRadius;
 
     #endregion Traversal State
@@ -176,7 +180,7 @@ public class EnemyMovement : MonoBehaviour
     private bool debugDidHit;
     private Vector3 debugSurfaceCheckOrigin;
     private Vector3 debugSurfaceCheckDirection;
-    private bool debugSurfaceCheckHit;
+    private bool debugSurfaceCheckEdge;
     private Vector3 debugRawTarget;
     private Vector3 debugRayOrigin;
     private Vector3 debugHitPoint;
@@ -215,6 +219,7 @@ public class EnemyMovement : MonoBehaviour
     [SerializeField] private Transform sphereCenter;
     [SerializeField] private float Sphere_targetReachDistance;
     [SerializeField] private float targetDistance;
+    private bool disableSurfaceContinuityCheck;
 
     #endregion
 
@@ -269,13 +274,13 @@ public class EnemyMovement : MonoBehaviour
         }
 
         UpdateSurfaceNormal();
-        Debug.Log("currentSurfaceNormal : " + currentSurfaceNormal);
+        //        Debug.Log("currentSurfaceNormal : " + currentSurfaceNormal);
         ResetAnimationIntent();
         ResolveSpeed();
         //  Debug.Log("BEFORE ROT: " + transform.rotation.eulerAngles);
         ApplyRotation(); //  Debug.Log("AFTER ROT: " + transform.rotation.eulerAngles);
-        ExecuteLunge();
-        Debug.Log("CURRENT MOVEMENT SURFACE === " + currentMovementSurface);
+        ExecuteLeap();
+        //        Debug.Log("CURRENT MOVEMENT SURFACE === " + currentMovementSurface);
         currentSpeed = Mathf.MoveTowards(currentSpeed, enemySpeed, acceleration * Time.deltaTime);
         agent.nextPosition = transform.position;
         // Debug.Log("FINAL ROT: " + transform.rotation.eulerAngles);
@@ -357,11 +362,6 @@ public class EnemyMovement : MonoBehaviour
             return;
         }
 
-        if (!isTransitionAllowed)
-        {
-            return;
-        }
-
         Debug.Log("DETECT NEW SURFACE CALLED");
 
         Vector3 eyePosition = transform.position + transform.forward * offsetForNewSurface;
@@ -384,7 +384,13 @@ public class EnemyMovement : MonoBehaviour
             isChangingSurface = true;
             debugHitPoint = hit.point;
             debugHitNormal = hit.normal;
+            var targetSurface = DetermineMovementSurface(hit);
 
+            if (!CanTransitionTo(targetSurface))
+            {
+                Debug.Log($"Transition blocked : {targetSurface}");
+                return;
+            }
             float dotProduct = Vector3.Dot(currentSurface.surfaceHitNormal, hit.normal);
 
             Debug.Log($"DOT : {dotProduct}");
@@ -488,7 +494,7 @@ public class EnemyMovement : MonoBehaviour
         if (Physics.Raycast(origin, direction, out RaycastHit hit, 3f, TraversableSurfaceMask))
         {
             currentSurfaceNormal = hit.normal;
-            Debug.Log("This is the current Surface normal" + currentSurfaceNormal);
+            //            Debug.Log("This is the current Surface normal" + currentSurfaceNormal);
         }
     }
     #endregion Surface Detection & Traversal Context
@@ -610,6 +616,7 @@ public class EnemyMovement : MonoBehaviour
 
         if (IsCurrentMovememntSurface(MovementSurface.Ground))
         {
+            //            Debug.Log("Ground rotation influencing");
             GroundRotation();
         }
         // normal ground
@@ -664,8 +671,8 @@ public class EnemyMovement : MonoBehaviour
 
     private void HandleGroundMovement(Vector3 destination)
     {
-        Debug.Log("Agent status : " + agent.enabled);
-        Debug.Log(currentMovementSurface + " from ground movement fucntiin and context is " + currentTraversalContext);
+        //        Debug.Log("Agent status : " + agent.enabled);
+        //        Debug.Log(currentMovementSurface + " from ground movement fucntiin and context is " + currentTraversalContext);
         Debug.DrawRay(transform.position, transform.forward * 2f, Color.red);
         if (!agent.enabled)
             return;
@@ -759,13 +766,15 @@ public class EnemyMovement : MonoBehaviour
             return;
         }
 
-        Debug.Log(
-    $"SURFACE={currentMovementSurface} | CONTEXT={currentTraversalContext}"
-      );
+        //  Debug.Log(
+        // $"SURFACE={currentMovementSurface} | CONTEXT={currentTraversalContext}"
+        // );
 
         Vector3 directionToCrawlTarget = crawlTarget - transform.position;
-        CheckSurfaceContinuity();
+
         EvaluateNewSurfaceTransition(directionToCrawlTarget);
+
+        CheckSurfaceContinuity();
         UpdateCrawlTarget(directionToCrawlTarget);
         ExecuteSurfaceTraversal(directionToCrawlTarget);
     }
@@ -777,29 +786,25 @@ public class EnemyMovement : MonoBehaviour
         debugSurfaceCheckDirection = -currentSurfaceNormal * 3f;
 
 
-        debugSurfaceCheckHit = Physics.Raycast(origin, -currentSurfaceNormal, 3f, surfaceCrawlAbility.TraversableSurfaceMask);
+        debugSurfaceCheckEdge = Physics.Raycast(origin, -currentSurfaceNormal, 3f, surfaceCrawlAbility.TraversableSurfaceMask);
 
-        if (!debugSurfaceCheckHit && isTransitionAllowed)
+        if (!debugSurfaceCheckEdge )
         {
             Debug.Log("The point is unreachable because the wall is not continuous.");
-            //PickNewCrawlTarget(numberOfAttempts, wallCrawlAbility.roamDistance);
-            //crawlTarget = transform.position;
-
+            OnEdgeDetected?.Invoke();
             Debug.Log("we aint moving");
             //crawlTarget = Vector3.zero;
-            UpdateTraversalContext(false);
-            ProbeNewSurface();
+            if (isTransitionAllowed)
+            {
+                UpdateTraversalContext(false);
+                ProbeNewSurface();
+            }
         }
 
     }
 
     private void EvaluateNewSurfaceTransition(Vector3 directionToCrawlTarget)
     {
-        if (!isTransitionAllowed)
-        {
-            return;
-        }
-
         if (!IsCurrentTraversalPhase(TraversalPhase.Transitioning))
         {
             //29th may 2026 
@@ -811,6 +816,15 @@ public class EnemyMovement : MonoBehaviour
             var startPoint = transform.position + transform.up * frontWallDetectionDistance;
             if (Physics.Raycast(startPoint, directionToCrawlTarget.normalized, out RaycastHit hit, 5f, surfaceCrawlAbility.TraversableSurfaceMask))
             {
+                var targetSurface = DetermineMovementSurface(hit);
+                if (!CanTransitionTo(targetSurface))
+                {
+                    if (targetSurface == MovementSurface.Ground)
+                    {
+                       PickNewCrawlTarget(numberOfAttempts , surfaceCrawlAbility.roamDistance);
+                    }
+                    return;
+                }
                 detectedSurface.surfaceHitNormal = hit.normal;
                 detectedSurface.surfaceHitPoint = hit.point;
                 detectedSurface.hitCollider = hit.collider;
@@ -879,7 +893,7 @@ public class EnemyMovement : MonoBehaviour
 
         if (!isChangingSurface)
         {
-            Debug.Log("we're moving again");
+            // Debug.Log("we're moving again");
             transform.position += directionToCrawlTarget * surfaceCrawlAbility.crawlSpeed * Time.deltaTime;
             Vector3 forward = Vector3.ProjectOnPlane(directionToCrawlTarget, currentSurfaceNormal).normalized;
             Quaternion lookRotation = Quaternion.LookRotation(forward, currentSurfaceNormal);
@@ -916,6 +930,8 @@ public class EnemyMovement : MonoBehaviour
                 return GetSurfaceLeftDirection();
             case CrawlIntent.SurfaceRight:
                 return GetSurfaceRightDirection();
+            case CrawlIntent.DesiredDirection:
+                return desiredSurfaceDirection;
             case CrawlIntent.Random:
             default:
                 return GetRandomDirection();
@@ -953,6 +969,20 @@ public class EnemyMovement : MonoBehaviour
         return randomDir;
     }
 
+    public void SetDesiredSurfaceDirection(Vector3 destination)
+    {
+        desiredSurfaceDirection = destination;
+    }
+
+    public CrawlIntent GetContinuationDirection(Vector3 toPlayer)
+    {
+        float leftDot = Vector3.Dot(toPlayer.normalized, GetSurfaceLeftDirection());
+        float rightDot = Vector3.Dot(toPlayer.normalized, GetSurfaceRightDirection());
+        Debug.Log($"LeftDot : {leftDot}");
+        Debug.Log($"RightDot : {rightDot}");
+        return leftDot > rightDot ? CrawlIntent.SurfaceLeft : CrawlIntent.SurfaceRight;
+    }
+
     #endregion
 
     #region Surface Mounting & Transitions
@@ -964,7 +994,7 @@ public class EnemyMovement : MonoBehaviour
             return;
         }
 
-        Debug.Log(currentTraversalPhase);
+        //        Debug.Log(currentTraversalPhase);
         this.surfaceCrawlAbility = surfaceCrawlAbility;
         currentSurface = surfaceInfo;
 
@@ -1007,6 +1037,7 @@ public class EnemyMovement : MonoBehaviour
         {
             transform.rotation = targetRotation;
             transform.position = targetPosition;
+            OnTransitionComplete?.Invoke();
             InitializeTraversal();
         }
     }
@@ -1014,22 +1045,24 @@ public class EnemyMovement : MonoBehaviour
     private void InitializeTraversal()
     {
         currentTraversalPhase = TraversalPhase.Traversing;
-        Debug.Log($"CURRENT = {currentMovementSurface} | DETECTED = {detectedGeometry} | INTENT = {crawlIntent}");
+        //        Debug.Log($"CURRENT = {currentMovementSurface} | DETECTED = {detectedGeometry} | INTENT = {crawlIntent}");
         SetCurrentMovementSurface(detectedGeometry);
-        Debug.Log($"CURRENT = {currentMovementSurface}");
+        //        Debug.Log($"CURRENT = {currentMovementSurface}");
 
         if (IsDetectedGeometry(MovementSurface.Wall) || IsDetectedGeometry(MovementSurface.GenericSurface))
         {
             currentSurfaceNormal = currentSurface.surfaceHitNormal;
-            Debug.Log("Forced Normal : " + currentSurfaceNormal);
+            //            Debug.Log("Forced Normal : " + currentSurfaceNormal);
             SetCrawlIntent(CrawlIntent.Random);
-            Debug.Log("Init Target Normal: " + currentSurfaceNormal);
+            //SetCrawlIntent(crawlIntent);
+            //            Debug.Log("Init Target Normal: " + currentSurfaceNormal);
             PickNewCrawlTarget(numberOfAttempts, surfaceCrawlAbility.roamDistance);
         }
         else if (IsDetectedGeometry(MovementSurface.Ceiling) || IsDetectedGeometry(MovementSurface.Ground))
         {
             currentSurfaceNormal = currentSurface.surfaceHitNormal;
             SetCrawlIntent(CrawlIntent.Random);
+            // SetCrawlIntent(crawlIntent);
             PickNewCrawlTarget(numberOfAttempts, surfaceCrawlAbility.roamDistance);
             if (IsCurrentMovememntSurface(MovementSurface.Ground))
             {
@@ -1039,7 +1072,7 @@ public class EnemyMovement : MonoBehaviour
         ResetAnimationIntent();
         RequestAnimation(new AnimationIntent(AnimationType.SurfaceCrawl, 70));
         //isCrawling = true;
-        Debug.Log("Mount Complete :: Wall Mode");
+        //        Debug.Log("Mount Complete :: Wall Mode");
     }
     private void UnlockTransition()
     {
@@ -1068,7 +1101,7 @@ public class EnemyMovement : MonoBehaviour
             Vector3 rawTarget = transform.position + crawlDir * currentRoamDistance;
 
             debugRawTarget = rawTarget;
-            Debug.Log("Normal used" + currentSurfaceNormal);
+            //Debug.Log("Normal used" + currentSurfaceNormal);
             Vector3 origin = rawTarget + currentSurfaceNormal * 1f; // adding wall normal to do safe raycast check
             debugRayOrigin = origin;
 
@@ -1081,7 +1114,7 @@ public class EnemyMovement : MonoBehaviour
         }
 
         float shrunkRoamDistance = currentRoamDistance * 0.5f;
-        Debug.Log("new roam distaance" + shrunkRoamDistance);
+        //        Debug.Log("new roam distaance" + shrunkRoamDistance);
         // Debug.Log("Retrying with smaller roamDistance");
 
         PickNewCrawlTarget(remainingAttempts - 1, shrunkRoamDistance);
@@ -1237,24 +1270,24 @@ public class EnemyMovement : MonoBehaviour
     #endregion Animation Control System
 
     #region Leap
-    public void StartLunge(Vector3 targetPosition, float delayDuration, float arcDuration, float arcHeight)
+    public void StartLeap(Vector3 targetPosition, float delayDuration, float arcDuration, float arcHeight)
     {
         hasCapturedArcStart = false;
         DisableProximity();
-        isLunging = true;
+        isLeaping = true;
         delayTimer = 0f;
         arcTimer = 0f;
-        arcEndPosition = targetPosition;
+        arcEndPosition = targetPosition;//instead of using player's position , instead the position on the ground corresponding to player should be used.
         this.delayDuration = delayDuration;
         this.arcDuration = arcDuration;
         this.arcHeight = arcHeight;
-        lungeDirection = (targetPosition - transform.position).normalized;
+        leapDirection = (targetPosition - transform.position).normalized;
         RotationIntent(RotationPriority.State, targetPosition);
     }
 
-    private void ExecuteLunge()
+    private void ExecuteLeap()
     {
-        if (!isLunging) return;
+        if (!isLeaping) return;
 
         if (delayTimer < delayDuration)
         {
@@ -1279,8 +1312,8 @@ public class EnemyMovement : MonoBehaviour
         transform.position = horizontal;
         if (arcTimer >= arcDuration)
         {
-            RotationIntent(RotationPriority.State, transform.position + lungeDirection);
-            isLunging = false;
+            RotationIntent(RotationPriority.State, transform.position + leapDirection);
+            isLeaping = false;
             arcTimer = 0f;
             delayTimer = 0f;
             // EnableProximity();
@@ -1289,20 +1322,10 @@ public class EnemyMovement : MonoBehaviour
     #endregion Leap
 
     #region Boolean Setter Functions
-    public void SetIsSphere(bool isSphere)
-    {
-        //this.isSphere = isSphere;
-    }
 
-    private bool IsHorizontalSurface()
+    public void ResetCrawlIntent()
     {
-        float dot = Mathf.Abs(Vector3.Dot(currentSurface.surfaceHitNormal, Vector3.up));
-        return dot > 0.9f;
-    }
-
-    private bool IsCurrentSurfaceTag(string surfaceTag)
-    {
-        return currentSurface.surfaceTag == surfaceTag;
+        crawlIntent = CrawlIntent.None;
     }
     public bool IsMounting()
     {
@@ -1383,6 +1406,16 @@ public class EnemyMovement : MonoBehaviour
     {
         agent.enabled = false;
     }
+    private bool CanTransitionTo(MovementSurface targetSurface)
+    {
+        if (IsCurrentMovememntSurface(MovementSurface.Wall) && targetSurface == MovementSurface.Wall)
+        {
+            return true;
+        }
+
+        return isTransitionAllowed;
+    }
+
     #endregion Boolean Setter Functions
 
     #region GizmosDebug
@@ -1408,7 +1441,7 @@ public class EnemyMovement : MonoBehaviour
         Gizmos.color = Color.magenta;
         Gizmos.DrawSphere(crawlTarget, 0.15f);
 
-        Gizmos.color = debugSurfaceCheckHit ? Color.pink : Color.hotPink;
+        Gizmos.color = debugSurfaceCheckEdge ? Color.pink : Color.hotPink;
 
         Gizmos.DrawLine(
             debugSurfaceCheckOrigin,
@@ -1449,6 +1482,8 @@ public class EnemyMovement : MonoBehaviour
                 debugHitNormal * 2f
             );
         }
+
+        
     }
     #endregion GizmosDebug
 }

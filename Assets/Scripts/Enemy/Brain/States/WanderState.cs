@@ -20,15 +20,15 @@ public class WanderState : IEnemyState
     }
     public void OnEnter()
     {
-        Debug.Log("[WanderState] Entered Wander State.");
-        brain.enemyMovement.SetMovementMode(EnemyMovement.MovementMode.Wander);
+//        Debug.Log("[WanderState] Entered Wander State.");
+        brain.EnemyMovement.SetMovementMode(EnemyMovement.MovementMode.Wander);
 
         PickNewTarget();
 
     }
     public void Tick()
     {
-        var Enemy = brain.enemyMovement;
+        var Enemy = brain.EnemyMovement;
         Enemy.RequestAnimation(new AnimationIntent(AnimationType.Walk, 20));
 
         if (currentTarget == null)
@@ -47,7 +47,7 @@ public class WanderState : IEnemyState
         if (isWaiting)   //pause for a while then increment index
         {
             waitTimer += Time.deltaTime;
-            brain.enemyMovement.RequestAnimation(new AnimationIntent(AnimationType.Idle, 60));
+            brain.EnemyMovement.RequestAnimation(new AnimationIntent(AnimationType.Idle, 60));
             if (waitTimer >= waitDuration)
             {
                 isWaiting = false;
@@ -65,7 +65,7 @@ public class WanderState : IEnemyState
 
         if (currentTarget != null)
         {
-            brain.enemyMovement.MoveTo(currentTarget.transform.position);
+            brain.EnemyMovement.MoveTo(currentTarget.transform.position);
         }
 
         if (HasReachedWaypoint(currentTarget))
@@ -89,7 +89,7 @@ public class WanderState : IEnemyState
         if (currentTarget != null)
         {
             currentTarget.ReleaseWayPoint(brain);
-            brain.enemyMovement.ResetAnimationIntent();
+            brain.EnemyMovement.ResetAnimationIntent();
             currentTarget = null;
         }
     }

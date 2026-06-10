@@ -20,7 +20,7 @@ public class RepositionState : IEnemyState
     }
     public void OnEnter()
     {
-        brain.enemyMovement.Animator_SetBool("canExitReposition", false);
+        brain.EnemyMovement.Animator_SetBool("canExitReposition", false);
         brain.SelectNextBand();
         // if (!BandPositionCoordinator.Instance.TryReserveBand(brain.GetCurrentCombatBand()))
         // {
@@ -31,7 +31,7 @@ public class RepositionState : IEnemyState
         brain.SetIsCommitedToReposition(true);
         SetFoundValidPosition(false);
         //   brain.enemyMovement.RequestAnimation(new AnimationIntent(AnimationType.Reposition, 100));
-        brain.enemyMovement.SetMovementMode(EnemyMovement.MovementMode.Reposition);
+        brain.EnemyMovement.SetMovementMode(EnemyMovement.MovementMode.Reposition);
 
         var band = brain.GetEffectiveBandRange(brain.CurrentAttackProfile);
         float minRange = band.x;
@@ -57,7 +57,7 @@ public class RepositionState : IEnemyState
         repositionTimer += Time.deltaTime;
         //brain.enemyMovement.ResetAnimationIntent();
         hasAlmostReached = false;
-        brain.enemyMovement.RequestAnimation(new AnimationIntent(AnimationType.Reposition, 500));
+        brain.EnemyMovement.RequestAnimation(new AnimationIntent(AnimationType.Reposition, 500));
 
         var movingCenter = brain.player.transform.position;
         target = movingCenter + offsetDirection * offsetRadius;
@@ -71,14 +71,14 @@ public class RepositionState : IEnemyState
         }
 
         brain.Debug_RepositionTarget = desiredPosition;
-        brain.enemyMovement.MoveTo(desiredPosition);
-        brain.enemyMovement.ClearRotationIntent();
+        brain.EnemyMovement.MoveTo(desiredPosition);
+        brain.EnemyMovement.ClearRotationIntent();
 
         if (brain.HasReachedThePosition(desiredPosition, brain.RepositionArrivalRadius))
         {
             hasAlmostReached = true;
             //brain.enemyMovement.SetMovementMode(EnemyMovement.MovementMode.Idle);
-            brain.enemyMovement.RotationIntent(EnemyMovement.RotationPriority.State, brain.player.transform.position);
+            brain.EnemyMovement.RotationIntent(EnemyMovement.RotationPriority.State, brain.player.transform.position);
             brain.SwitchState(brain.AttackState);
         }
 
@@ -90,16 +90,16 @@ public class RepositionState : IEnemyState
     }
     public void OnExit()
     {
-        brain.enemyMovement.Animator_ResetTrigger("EnterReposition");
-        brain.enemyMovement.ClearRotationIntent();
-        brain.enemyMovement.ResetAnimationIntent();
-        brain.enemyMovement.Animator_SetBool("EnterReposition", false);
-        brain.enemyMovement.Animator_SetBool("canExitReposition", true);
+        brain.EnemyMovement.Animator_ResetTrigger("EnterReposition");
+        brain.EnemyMovement.ClearRotationIntent();
+        brain.EnemyMovement.ResetAnimationIntent();
+        brain.EnemyMovement.Animator_SetBool("EnterReposition", false);
+        brain.EnemyMovement.Animator_SetBool("canExitReposition", true);
         repositionTimer = 0f;
         if (hasAlmostReached)
         {
             desiredPosition = lastTargetPosition;
-            brain.enemyMovement.MoveTo(desiredPosition);
+            brain.EnemyMovement.MoveTo(desiredPosition);
         }
         //isCommitedToReposition bool is set inside the attackState HandleAttackEnd() function.
     }

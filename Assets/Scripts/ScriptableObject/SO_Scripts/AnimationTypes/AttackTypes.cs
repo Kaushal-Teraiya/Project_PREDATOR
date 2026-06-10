@@ -10,10 +10,10 @@ public class AttackTypes : ScriptableObject
     public List<AnimationClip> attackAnimations;
     public float cooldown;
     public bool retreat;
-    public bool usesLunge;
-    public float lungeArcHeight;
-    public float lungeDelay;
-    public float lungeDuration;
+    public bool usesLeap;
+    public float leapArcHeight;
+    public float leapDelay;
+    public float leapDuration;
     public float attackRange;
     public float attackRegisterDistance;
 }

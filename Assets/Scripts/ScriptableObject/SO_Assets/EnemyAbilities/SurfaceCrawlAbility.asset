@@ -25,5 +25,5 @@ MonoBehaviour:
   rotationSpeed: 3
   positionSpeed: 5
   surfaceOffset: 0.3
-  crawlSpeed: 5
+  crawlSpeed: 7
   roamDistance: 10

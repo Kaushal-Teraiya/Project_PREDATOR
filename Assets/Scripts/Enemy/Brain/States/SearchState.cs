@@ -38,7 +38,7 @@ public class SearchState : IEnemyState
     }
     public void OnEnter()
     {
-        brain.enemyMovement.SetMovementMode(EnemyMovement.MovementMode.Search);
+        brain.EnemyMovement.SetMovementMode(EnemyMovement.MovementMode.Search);
         currentTarget = null;
         targetPosition = Vector3.positiveInfinity;
         brain.InitializeSearch();
@@ -58,7 +58,7 @@ public class SearchState : IEnemyState
     public void Tick()
     {
 
-        var Enemy = brain.enemyMovement;
+        var Enemy = brain.EnemyMovement;
         allowMove = allowRotate = false;
 
         if (currentPhase == SearchPhase.Moving)

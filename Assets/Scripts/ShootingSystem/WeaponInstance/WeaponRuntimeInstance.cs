@@ -82,7 +82,7 @@ public class WeaponRuntimeInstance
             }
             else
             {
-                Debug.Log("[WeaponRuntimeInstance] damageable is NUll");
+//                Debug.Log("[WeaponRuntimeInstance] damageable is NUll");
             }
         }
         SpawnTrail(hitResult, spreadDirection, fireOrigin, trailMarker);

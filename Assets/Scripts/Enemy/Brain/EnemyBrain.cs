@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Unity.VisualScripting;
+using UnityEditor.Timeline;
 using UnityEngine;
 
 
@@ -15,14 +16,6 @@ public class EnemyBrain : MonoBehaviour
     // [Header("Archetype")]
 
     // public Archetype enemyArchetype;
-    public enum Archetype
-    {
-        Walker,
-        Runner,
-        Hopper,
-        SurfaceCrawler
-    }
-
     [SerializeField] private EnemyMovement.MovementSurface preferredMovementSurface;
     // private bool canClimbWalls;
     // private bool canLunge;
@@ -46,8 +39,8 @@ public class EnemyBrain : MonoBehaviour
     public IEnemyState BufferState => bufferState;
 
     [Header("Object & Script References")]
-    private EnemyMovement Movement_Enemy;
-    public EnemyMovement enemyMovement => Movement_Enemy;
+    private EnemyMovement enemyMovement;
+    public EnemyMovement EnemyMovement => enemyMovement;
     private Vector3 currentInvestigationCenter;
     private float currentInvestigationRadius;
     public GameObject player { get; private set; }
@@ -95,6 +88,7 @@ public class EnemyBrain : MonoBehaviour
     private bool postChase;
     public bool shouldPauseOnChase { get; private set; }
     public bool hasSeenFirstTime = true;
+    public IPursuitBehaviour pursuitBehaviour { get; private set; }
 
     [Header("AttackState Data")]
     [SerializeField] private float attackDistance; //creats a spacioing between Enemy and Player.
@@ -123,10 +117,6 @@ public class EnemyBrain : MonoBehaviour
         Close
     }
     [SerializeField] private CombatBand currentCombatBand;
-
-    [SerializeField] private float farBandAttackDistance;
-    [SerializeField] private float midBandAttackDistance;
-    [SerializeField] private float closeBandAttackDistance;
     [SerializeField] private float bandDistanceTolerance = 0.5f;
 
     [SerializeField] private float attackCooldown = 1.5f;
@@ -206,10 +196,30 @@ public class EnemyBrain : MonoBehaviour
         Top,
         Middle,
         Bottom,
-        FreeMove
+        FreeMove,
+        ReachPlayer,
+        ResolveProjectionCollapse
     }
 
+    private EnemyMovement.CrawlIntent continuationDirection = EnemyMovement.CrawlIntent.SurfaceRight;
+
+    [Header("Goal")]
     [SerializeField] private Goal goal;
+    [SerializeField] private Goal activeGoal;
+    [SerializeField] private Goal overrideGoal;
+    [SerializeField] private float playerVicinityThreshold;
+    private Vector3 lastValidCrawlDirection;
+    [SerializeField] private LayerMask ObstacleMask;
+    [SerializeField] private float progressCheckInterval = 1f;
+    [SerializeField] private float minimumProgressDistance = 0.25f;
+    [SerializeField] private float maxReachPlayerDuration = 10f;
+    private float progressTimer;
+    private float previousDistanceToPlayer;
+    private float progressCheckTimer;
+    private int stagnantChecks;
+    private int increasingDistanceChecks;
+    [SerializeField] private float collapseThreshold;
+
 
     // [Header("MovementData")]
     // [SerializeField] private EnemyMovement.MovementSurface preferredMovementSurface;
@@ -221,7 +231,7 @@ public class EnemyBrain : MonoBehaviour
     {
         soundSensor = GetComponent<SoundSensor>();
         visionSensor = GetComponentInChildren<VisionSensor>();
-        Movement_Enemy = GetComponent<EnemyMovement>();
+        enemyMovement = GetComponent<EnemyMovement>();
         enemyHealth = GetComponent<EnemyHealth>();
         animator = GetComponent<Animator>();
         ragdollController = GetComponent<RagdollController>();
@@ -245,6 +255,9 @@ public class EnemyBrain : MonoBehaviour
         animatorOverrideController["Death_"] = deathVariant;
         animator.runtimeAnimatorController = animatorOverrideController;
 
+        InitializePursuitBehaviour();
+        enemyMovement.OnTransitionComplete += HandleTransitionComplete;
+        enemyMovement.OnEdgeDetected += HandleEdgeDetected;
     }
     void Start()
     {
@@ -324,12 +337,32 @@ public class EnemyBrain : MonoBehaviour
             }
         }
         currentSearchIndex = 0;
-        Debug.Log($"Selected Search Points Count: {selectedSearchPoints.Count}");
+        //        Debug.Log($"Selected Search Points Count: {selectedSearchPoints.Count}");
     }
 
     public void InitializeChase()
     {
         chaseTargetPosition = lastConfirmedPosition;
+    }
+
+    private void InitializePursuitBehaviour()
+    {
+        if (GetAbility<SurfaceCrawlAbility>() != null)
+        {
+            pursuitBehaviour = new CrawlerPursuitBehaviour();
+        }
+        else
+        {
+            pursuitBehaviour = new GroundPursuitBehaviour();
+        }
+    }
+
+    private void InitializePursuitMonitoring()
+    {
+        previousDistanceToPlayer = Vector3.Distance(transform.position, player.transform.position);
+        stagnantChecks = 0;
+        increasingDistanceChecks = 0;
+        progressCheckTimer = 0;
     }
 
     #endregion
@@ -403,11 +436,6 @@ public class EnemyBrain : MonoBehaviour
         LastHitForce = force;
     }
 
-    private EnemyMovement.MovementSurface GetCurrentMovementSurface()
-    {
-        return enemyMovement.CurrentMovementSurface;
-    }
-
     #endregion
 
     #region State Decesions
@@ -469,8 +497,12 @@ public class EnemyBrain : MonoBehaviour
         {
             if (CheckVisibilityResult(VisionSensor.visibilityResult.Chase))
             {
+                if (GetAbility<SurfaceCrawlAbility>() != null)
+                {
+                    goal = Goal.ReachPlayer;
+                }
                 SelectNextBand();
-                Debug.Log("[EnemyBrain] current combat band is " + GetCurrentCombatBand());
+                //                Debug.Log("[EnemyBrain] current combat band is " + GetCurrentCombatBand());
                 SwitchState(chaseState);
                 return;
             }
@@ -598,6 +630,43 @@ public class EnemyBrain : MonoBehaviour
 
     #region State Control Functions
 
+    private void UpdateReachPlayerTimer()
+    {
+        progressTimer += Time.deltaTime;
+    }
+    private void UpdatePursuitProgress()
+    {
+        progressCheckTimer += Time.deltaTime;
+
+        if (progressCheckTimer < progressCheckInterval)
+        {
+            return;
+        }
+
+        progressCheckTimer = 0f;
+
+        float currentDistance = Vector3.Distance(transform.position, player.transform.position);
+        float distanceDelta = previousDistanceToPlayer - currentDistance;
+
+        if (distanceDelta > minimumProgressDistance)
+        {
+            stagnantChecks = 0;
+            increasingDistanceChecks = 0;
+            Debug.Log("Progressing towards the player.");
+        }
+        else if (distanceDelta < 0f)
+        {
+            increasingDistanceChecks++;
+            Debug.Log("Moving Away from the player : " + increasingDistanceChecks);
+        }
+        else
+        {
+            stagnantChecks++;
+            Debug.Log("No Progress agent stuck OR circling" + stagnantChecks);
+        }
+
+        previousDistanceToPlayer = currentDistance;
+    }
     public void NotifySearchPointReleased(SearchPoint point)
     {
         lastReleasedPoint = point;
@@ -786,13 +855,23 @@ public class EnemyBrain : MonoBehaviour
 
     private void ExecutePreferredSurfaceIntent()
     {
-        if (HasReachedGoal())
+        if (overrideGoal != Goal.None)
+        {
+            if (HasReachedGoal(overrideGoal))
+            {
+                overrideGoal = Goal.None;
+            }
+        }
+
+        activeGoal = overrideGoal != Goal.None ? overrideGoal : goal;
+
+        if (HasReachedGoal(activeGoal))
         {
             CompleteGoal();
             return;
         }
 
-        switch (goal)
+        switch (activeGoal)
         {
             case Goal.Top:
                 SetSurfaceTransitionAllowed(true);
@@ -818,6 +897,13 @@ public class EnemyBrain : MonoBehaviour
                 SetSurfaceTransitionAllowed(false);
                 break;
 
+            case Goal.ReachPlayer:
+                SetSurfaceTransitionAllowed(false);
+                ExecuteReachPlayerGoal();
+                break;
+            case Goal.ResolveProjectionCollapse:
+                ExecuteProjectionCollapseGoal();
+                break;
             default:
                 Debug.Log("Default FallBack");
                 // ExecuteGroundGoal();
@@ -825,7 +911,149 @@ public class EnemyBrain : MonoBehaviour
         }
     }
 
-    private bool TryAscendNearbySurface(out SurfaceInfo surfaceHitInfo)
+    private void ExecuteGenericSurfaceGoal()
+    {
+        ChooseSurface();
+
+        if (enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.GenericSurface))
+        {
+            enemyMovement.SetCrawlIntent(EnemyMovement.CrawlIntent.Random);
+            return;
+        }
+    }
+
+    private void ExecuteCeilingGoal()
+    {
+        ChooseSurface();
+
+        if (enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Wall) || enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.GenericSurface))
+        {
+            enemyMovement.SetCrawlIntent(EnemyMovement.CrawlIntent.SurfaceUp);
+            return;
+        }
+    }
+
+    private void ExecuteGroundGoal()
+    {
+        ChooseSurface();
+
+        if (enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Wall) || enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.GenericSurface))
+        {
+            enemyMovement.SetCrawlIntent(EnemyMovement.CrawlIntent.SurfaceDown);
+            return;
+        }
+    }
+
+    private void ExecuteWallGoal()
+    {
+        ChooseSurface();
+
+        if (enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Wall))
+        {
+            enemyMovement.SetCrawlIntent(EnemyMovement.CrawlIntent.Random);
+            return;
+        }
+    }
+
+    private void ExecuteProjectionCollapseGoal()
+    {
+        enemyMovement.SetCrawlIntent(continuationDirection);
+    }
+
+    private void ExecuteFallBackRoute()
+    {
+        Debug.Log("Fallback Route.");
+        overrideGoal = UnityEngine.Random.value < 0.5f ? Goal.Top : Goal.Bottom;
+
+        stagnantChecks = 0;
+        increasingDistanceChecks = 0;
+    }
+
+    private void ExecuteReachPlayerGoal()
+    {
+        if (!IsOnWallOrCeiling())
+        {
+            return;
+        }
+
+        UpdatePursuitProgress();
+        UpdateReachPlayerTimer();
+
+        if (HasTimedOut())
+        {
+            Debug.Log("ReachPlayer timed Out No progress was made ");
+            ExecuteFallBackRoute();
+            progressTimer = 0f;
+            return;
+        }
+
+        if (HasReachedPlayer())
+        {
+            Debug.Log("Near Player!!");
+            //Attack player or somting.
+            return;
+        }
+
+        if (SurfaceTraversal_IsMovingAwayFromPlayer())
+        {
+            Debug.Log("Wrong Route" + increasingDistanceChecks);
+            ExecuteFallBackRoute();
+            return;
+        }
+
+        if (SurfaceTraversal_HasMadeNoProgress())
+        {
+            Debug.Log("No Progress" + stagnantChecks);
+            ExecuteFallBackRoute();
+            return;
+        }
+
+        Vector3 toPlayer = player.transform.position - transform.position;
+        Vector3 surfaceDirection = Vector3.ProjectOnPlane(toPlayer, enemyMovement.currentSurfaceNormal);
+
+        if (ProjectionCollapsed(toPlayer, surfaceDirection))
+        {
+            // Debug.Log($"COLLAPSED | Mag={surfaceDirection.magnitude}");
+            ResolveCollapse();
+            return;
+        }
+
+        ExecuteNormalPursuit(surfaceDirection);
+        // Debug.Log("ExecutePlayerGoal:: Running");
+    }
+
+    private void ResolveCollapse()
+    {
+        if (enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Ceiling))
+        {
+            Debug.Log("Not using Collapse resolver on ceiling");
+            return;
+        }
+        //projection collapsed try different paths before fallingback onto the ground.
+        Debug.Log("Projection direction Collapsed.");
+        continuationDirection = enemyMovement.GetContinuationDirection(playerMovement.GetLastPlayerMovementDirection());
+        overrideGoal = Goal.ResolveProjectionCollapse;
+        Debug.Log("received crawl intent :: " + continuationDirection);
+    }
+
+    private void ExecuteNormalPursuit(Vector3 surfaceDirection)
+    {
+        lastValidCrawlDirection = surfaceDirection.normalized;
+        enemyMovement.SetDesiredSurfaceDirection(lastValidCrawlDirection);
+        enemyMovement.SetCrawlIntent(EnemyMovement.CrawlIntent.DesiredDirection);
+    }
+
+    private void ChooseSurface()
+    {
+        if (enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Ceiling) || enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Ground))
+        {
+            //enemyMovement.SetSurfaceTransitionAllowed(true);
+            EvaluateSurface();
+            return;
+        }
+    }
+
+    private bool TryNearbySurface(out SurfaceInfo surfaceHitInfo)
     {
         var surfaceCrawlAbility = GetAbility<SurfaceCrawlAbility>();
         if (surfaceCrawlAbility == null)
@@ -852,11 +1080,11 @@ public class EnemyBrain : MonoBehaviour
 
         foreach (var direction in directions)
         {
-            Debug.DrawRay(transform.position, direction * 10f, Color.cyan);
+            Debug.DrawRay(transform.position, direction * surfaceCrawlAbility.rayDistance, Color.cyan);
             var origin = transform.position + transform.up * surfaceCrawlAbility.headHeight;
             if (Physics.Raycast(origin, direction, out RaycastHit hitSurface, surfaceCrawlAbility.rayDistance, surfaceCrawlAbility.TraversableSurfaceMask, QueryTriggerInteraction.Ignore))
             {
-                float angle = Vector3.Angle(hitSurface.normal, Vector3.up);
+                float angle = Vector3.Angle(hitSurface.normal, Vector3.down);
 
                 if (angle > surfaceCrawlAbility.minTiltAngle && angle < surfaceCrawlAbility.maxTiltAngle)
                 {
@@ -988,6 +1216,11 @@ public class EnemyBrain : MonoBehaviour
 
     private void EvaluateSurface()
     {
+        if (goal == Goal.FreeMove)
+        {
+            return;
+        }
+
         surfaceCrawlAbility = GetAbility<SurfaceCrawlAbility>();
 
         if (surfaceCrawlAbility == null)
@@ -998,14 +1231,23 @@ public class EnemyBrain : MonoBehaviour
         {
             return;
         }
+
         if (enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Wall) /*|| enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.GenericSurface)*/)
         {
-            enemyMovement.MoveTo(Vector3.zero);
+            // enemyMovement.MoveTo(Vector3.zero);
             return;
         }
 
-        if (TryAscendNearbySurface(out SurfaceInfo surfaceInfo))
+        if (TryNearbySurface(out SurfaceInfo surfaceInfo))
         {
+            if (enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Ceiling))
+            {
+                var toWall = surfaceInfo.surfaceHitPoint - transform.position;
+                var desiredDirection = Vector3.ProjectOnPlane(toWall, enemyMovement.currentSurfaceNormal).normalized;
+                enemyMovement.SetDesiredSurfaceDirection(desiredDirection);
+                enemyMovement.SetCrawlIntent(EnemyMovement.CrawlIntent.DesiredDirection);
+                return;
+            }
             InitializeMounting(surfaceCrawlAbility, surfaceInfo, Vector3.up);
         }
         else if (TryDescendNearbySurface(out SurfaceInfo surfaceHitInfo) && enemyMovement.IsCurrentTraversalContext(EnemyMovement.TraversalContext.Outside) && enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Ground))
@@ -1029,7 +1271,7 @@ public class EnemyBrain : MonoBehaviour
             {
                 enemyMovement.RequestAnimation(new AnimationIntent(AnimationType.CrawlJump, 200));
                 enemyMovement.Stop();
-                Debug.Log("Movement STOPPED , Mount Started!");
+                //                Debug.Log("Movement STOPPED , Mount Started!");
                 isWaitingToMount = true;
                 mountTimer = 0f;
 
@@ -1042,7 +1284,7 @@ public class EnemyBrain : MonoBehaviour
                 enemyMovement.BeginSurfaceMount(surfaceInfo, surfaceCrawlAbility, projectionVector);
 
                 isWaitingToMount = false;
-                Debug.Log("MOUNT Complete");
+                //                Debug.Log("MOUNT Complete");
             }
 
             return;
@@ -1052,61 +1294,6 @@ public class EnemyBrain : MonoBehaviour
         enemyMovement.SetMovementMode(EnemyMovement.MovementMode.Chase);
         enemyMovement.MoveTo(surfaceInfo.surfaceHitPoint);
     }
-    private void ExecuteGenericSurfaceGoal()
-    {
-        ChooseSurface();
-
-        if (enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.GenericSurface))
-        {
-            enemyMovement.SetCrawlIntent(EnemyMovement.CrawlIntent.Random);
-            return;
-        }
-    }
-
-    private void ExecuteCeilingGoal()
-    {
-        ChooseSurface();
-
-        if (enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Wall) || enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.GenericSurface))
-        {
-            enemyMovement.SetCrawlIntent(EnemyMovement.CrawlIntent.SurfaceUp);
-            return;
-        }
-    }
-
-    private void ExecuteGroundGoal()
-    {
-        ChooseSurface();
-
-        if (enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Wall) || enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.GenericSurface))
-        {
-            enemyMovement.SetCrawlIntent(EnemyMovement.CrawlIntent.SurfaceDown);
-            return;
-        }
-    }
-
-    private void ExecuteWallGoal()
-    {
-        ChooseSurface();
-
-        if (enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Wall))
-        {
-            enemyMovement.SetCrawlIntent(EnemyMovement.CrawlIntent.Random);
-            return;
-        }
-    }
-
-    private void ChooseSurface()
-    {
-        if (enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Ceiling) || enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Ground))
-        {
-            //enemyMovement.SetSurfaceTransitionAllowed(true);
-            EvaluateSurface();
-            return;
-        }
-    }
-
-
 
     private void StoreSurfaceInfo(SurfaceInfo _surfaceInfo)
     {
@@ -1116,6 +1303,30 @@ public class EnemyBrain : MonoBehaviour
     #endregion
 
     #region State Queries & Control
+
+    private void HandleTransitionComplete()
+    {
+        if (overrideGoal == Goal.ResolveProjectionCollapse)
+        {
+            overrideGoal = Goal.None;
+        }
+    }
+
+    private void HandleEdgeDetected()
+    {
+        switch (overrideGoal)
+        {
+            case Goal.ResolveProjectionCollapse:
+                overrideGoal = UnityEngine.Random.value < 0.5f ? Goal.Top : Goal.Bottom;
+                Debug.Log("OverrideTrynaSet " + overrideGoal);
+                break;
+
+                // case Goal.Top:
+                //     Debug.Log("TOp set it to bottom immideatly");
+                //     overrideGoal = Goal.Bottom;
+                //     break;
+        }
+    }
     private bool IsInCombatBand()
     {
         float distanceToPlayer = Vector3.Distance(transform.position, player.transform.position);
@@ -1278,11 +1489,6 @@ public class EnemyBrain : MonoBehaviour
         enemyMovement.SetSurfaceTransitionAllowed(allowed);
     }
 
-    private void SetPreferredMovementSurface(EnemyMovement.MovementSurface _prefferedMovementSurface)
-    {
-        preferredMovementSurface = _prefferedMovementSurface;
-        SetSurfaceTransitionAllowed(true);
-    }
     #endregion
 
     #region DebugGizmos
@@ -1319,7 +1525,7 @@ public class EnemyBrain : MonoBehaviour
                 EnemyMovement.MovementSurface.Ground);
     }
 
-    private bool HasReachedGoal()
+    private bool HasReachedGoal(Goal goal)
     {
         switch (goal)
         {
@@ -1333,9 +1539,12 @@ public class EnemyBrain : MonoBehaviour
                 return false;
             case Goal.None:
                 return true;
-
+            case Goal.ReachPlayer:
+                return false;
+            case Goal.ResolveProjectionCollapse:
+                return false;
             default:
-                Debug.Log(":Check you HasReachedGoal() Function. ERROR");
+                Debug.Log(":Check your HasReachedGoal() Function. ERROR");
                 break;
         }
 
@@ -1345,8 +1554,58 @@ public class EnemyBrain : MonoBehaviour
     private void CompleteGoal()
     {
         goal = Goal.None;
+        //overrideGoal = Goal.None;
         SetSurfaceTransitionAllowed(false);
-        Debug.Log("Goal Reached!V2");
+        //        Debug.Log("Goal Reached!V2");
+    }
+
+    private bool ProjectionCollapsed(Vector3 toPlayer, Vector3 surfaceDirection)
+    {
+        bool projectionCollapsed = surfaceDirection.magnitude < collapseThreshold;
+        bool playerStillFar = toPlayer.magnitude > playerVicinityThreshold;
+        return projectionCollapsed && playerStillFar;
+    }
+
+    private bool IsOnWallOrCeiling()
+    {
+        return enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Wall) || enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Ceiling);
+    }
+
+    private bool HasReachedPlayer()
+    {
+        float distanceToPlayer = Vector3.Distance(transform.position, player.transform.position);
+        bool playerClose = distanceToPlayer <= playerVicinityThreshold;
+        if (!playerClose)
+        {
+            return false;
+        }
+        return HasClearance();
+    }
+
+    private bool HasClearance()
+    {
+        Vector3 directionToPlayer = player.transform.position - transform.position;
+        float distance = directionToPlayer.magnitude;
+        if (Physics.Raycast(transform.position, directionToPlayer.normalized, out RaycastHit hit, distance, ObstacleMask))
+        {
+            return false;
+        }
+        return true;
+    }
+
+    private bool SurfaceTraversal_HasMadeNoProgress()
+    {
+        return stagnantChecks >= 5;
+    }
+
+    private bool SurfaceTraversal_IsMovingAwayFromPlayer()
+    {
+        return increasingDistanceChecks >= 5;
+    }
+
+    private bool HasTimedOut()
+    {
+        return progressTimer >= maxReachPlayerDuration;
     }
 
     #endregion
@@ -1429,8 +1688,8 @@ public class EnemyBrain : MonoBehaviour
         if (player != null && farAttacksAsset != null && playerMovement != null)
         {
             float predictionTime =
-                farAttacksAsset.lungeDelay +
-                farAttacksAsset.lungeDuration;
+                farAttacksAsset.leapDelay +
+                farAttacksAsset.leapDuration;
 
             float maxPredictionDistance = 2.5f; // tweak later per enemy type
 
@@ -1633,3 +1892,4 @@ public class EnemyBrain : MonoBehaviour
     }
     #endregion DebugGizmos
 }
+

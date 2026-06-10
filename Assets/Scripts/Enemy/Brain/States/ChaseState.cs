@@ -5,7 +5,6 @@ public class ChaseState : IEnemyState
 {
     private EnemyBrain brain;
     private float chasePauseTime = 2f;
-    private Vector3 lockedChasePoint;
     public ChaseState(EnemyBrain brain)
     {
         this.brain = brain;
@@ -15,11 +14,11 @@ public class ChaseState : IEnemyState
 
     public void OnEnter()
     {
-        brain.enemyMovement.SetPlayerAvoidance(false);
+        brain.EnemyMovement.SetPlayerAvoidance(false);
         //        Debug.Log("Entered Chase");
         brain.SetCurrentlyChasing(true);
         //  lockedChasePoint = brain.chaseTargetPosition;
-        brain.enemyMovement.SetMovementMode(EnemyMovement.MovementMode.Chase);
+        brain.EnemyMovement.SetMovementMode(EnemyMovement.MovementMode.Chase);
         if (brain.shouldPauseOnChase)
         {
             chasePauseTime = 2f;
@@ -34,7 +33,7 @@ public class ChaseState : IEnemyState
     }
     public void Tick()
     {
-        var Enemy = brain.enemyMovement;
+        var Enemy = brain.EnemyMovement;
         chasePauseTime -= Time.deltaTime;
 
         if (chasePauseTime > 0)
@@ -42,10 +41,8 @@ public class ChaseState : IEnemyState
             Enemy.RotationIntent(EnemyMovement.RotationPriority.State, brain.player.transform.position);
             return;
         }
-        var dir = brain.transform.position - brain.player.transform.position;
-        dir.Normalize();
-        var offset = brain.AttackDistance - brain.AttackOffset;
-        var desiredPoint = brain.player.transform.position + dir * offset;
+
+        var desiredPoint = brain.pursuitBehaviour.GetPursuitTarget(brain);
 
         var distanceToPlayer = Vector3.Distance(brain.transform.position, brain.player.transform.position);
         var directionToPlayer = brain.player.transform.position - brain.transform.position;
@@ -70,13 +67,13 @@ public class ChaseState : IEnemyState
                 brain.EndChase(brain.chaseTargetPosition);
             }
         }
-     
+
         Enemy.RequestAnimation(new AnimationIntent(AnimationType.Run, 40));
     }
 
     public void OnExit()
     {
         brain.SetCurrentlyChasing(false);
-        brain.enemyMovement.SetPlayerAvoidance(true);
+        brain.EnemyMovement.SetPlayerAvoidance(true);
     }
 }

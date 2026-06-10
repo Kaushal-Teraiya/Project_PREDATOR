@@ -10,7 +10,7 @@ public class DeadState : IEnemyState
     }
     public void OnEnter()
     {
-        var Enemy = brain.enemyMovement;
+        var Enemy = brain.EnemyMovement;
         Enemy.Stop();
         Enemy.ClearRotationIntent();
         Enemy.SetRotationPermission(false);
@@ -36,7 +36,7 @@ public class DeadState : IEnemyState
         if (brain.ragdollController == null)
         {
             Debug.Log("[DeadState] Ragdoll controller is null");
-            brain.enemyMovement.Animator_SetTrigger("IsDead");
+            brain.EnemyMovement.Animator_SetTrigger("IsDead");
             return;
         }
           Vector3 testDirection =

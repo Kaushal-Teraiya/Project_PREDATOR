@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Assertions.Must;
 using UnityEngine.InputSystem;
 
 public class PlayerMovement : MonoBehaviour
@@ -26,11 +27,20 @@ public class PlayerMovement : MonoBehaviour
     public InputActionReference moveAction;
     public InputActionReference jumpAction;
     public InputActionReference runAction;
+    private Vector3 lastPlayerMovementDirection;
+
     public bool isPerformingAction { get; private set; }
+    [SerializeField]
+    private float significantMovementDistance = 2f;
+
+    private Vector3 lastPlayerPosition;
+    private Vector3 accumulatedMovement;
+    //private Vector3 lastPlayerMovementDirection;
 
     void Start()
     {
         emitter = GetComponent<SoundEmitter>();
+        lastPlayerPosition = transform.position;
     }
 
     void Update()
@@ -85,6 +95,7 @@ public class PlayerMovement : MonoBehaviour
         }
 
         SetPerformingAction(isMoving || jumpAction.action.WasPressedThisFrame());
+        UpdateReliableMovementDirection();
     }
 
     private void SetPerformingAction(bool status)
@@ -101,7 +112,29 @@ public class PlayerMovement : MonoBehaviour
 
     public Vector3 GetPlayerVelocity()
     {
+        // Debug.Log($"Velocity: {player.velocity}");
         return player.velocity;
+    }
+
+    public Vector3 GetLastPlayerMovementDirection()
+    {
+        return lastPlayerMovementDirection;
+    }
+
+    private void UpdateReliableMovementDirection()
+    {
+        Vector3 frameMovement = transform.position - lastPlayerPosition;
+
+        accumulatedMovement += frameMovement;
+
+        if (accumulatedMovement.magnitude >= significantMovementDistance)
+        {
+            lastPlayerMovementDirection = accumulatedMovement.normalized;
+
+            accumulatedMovement = Vector3.zero;
+        }
+
+        lastPlayerPosition = transform.position;
     }
 
 }
