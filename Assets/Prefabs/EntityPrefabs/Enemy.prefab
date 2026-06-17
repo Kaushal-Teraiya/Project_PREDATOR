@@ -230,7 +230,7 @@ MonoBehaviour:
   dotProductThreshold: 0.5
   obstacleMask:
     serializedVersion: 2
-    m_Bits: 320
+    m_Bits: 2368
   chaseThreshold: 0.45
   chaseDistanceThresholdInDarkness: 15
   investigateThreshold: 0.2
@@ -271,8 +271,8 @@ RectTransform:
   m_GameObject: {fileID: 7396628185523005442}
   m_LocalRotation: {x: 0, y: -0.72379255, z: 0, w: 0.69001764}
   m_LocalPosition: {x: 0, y: 0, z: -13.04}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 1.2882179, y: 1.2882179, z: 1.2882179}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 4570527094295870295}
   - {fileID: 2923873249319052582}
@@ -312,6 +312,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1422926dcbe6c44f9c3ef0380d28faa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyBrain
+  preferredMovementSurface: 3
   wayPointManager: {fileID: 0}
   searchPointLayer:
     serializedVersion: 2
@@ -329,9 +330,6 @@ MonoBehaviour:
   midAttacksAsset: {fileID: 11400000, guid: e8ba48ab214fa484ca1d3751638b8b0d, type: 2}
   farAttacksAsset: {fileID: 11400000, guid: b32d36cd3bb58b74cb2e25407c483532, type: 2}
   currentCombatBand: 0
-  farBandAttackDistance: 10
-  midBandAttackDistance: 4.5
-  closeBandAttackDistance: 2
   bandDistanceTolerance: 0.5
   attackCooldown: 0.001
   lungeAttackPredictionDistance: 5
@@ -361,7 +359,7 @@ MonoBehaviour:
   visionGraceDuration: 3
   obstacleMaskForReposition:
     serializedVersion: 2
-    m_Bits: 576
+    m_Bits: 2624
   midBandCompression: 1
   farBandCompression: 1
   repositionArrivalRadius: 2
@@ -374,6 +372,9 @@ MonoBehaviour:
   circleSegments: 48
   Debug_RepositionTarget: {x: 0, y: 0, z: 0}
   enemyArchetype: {fileID: 11400000, guid: 6f54888bdbae1ff4ea0cb3aff651b3b1, type: 2}
+  goal: 0
+  activeGoal: 0
+  overrideGoal: 0
 --- !u!114 &8114743750698512363
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -390,14 +391,24 @@ MonoBehaviour:
   rotationSpeed: 280
   rotationThreshold: 2
   separationWeight: -5.29
-  WallSurfaceMask:
-    serializedVersion: 2
-    m_Bits: 64
-  CeilingSurfaceMask:
-    serializedVersion: 2
-    m_Bits: 0
+  crawlIntent: 2
   repathInterval: 0.4
   acceleration: 10
+  isTransitionAllowed: 0
+  TraversableSurfaceMask:
+    serializedVersion: 2
+    m_Bits: 2048
+  offsetForNewSurface: 3
+  sphereCenterOffsetFromEye: 1
+  eyeOffset: 2.5
+  frontWallDetectionDistance: 1.5
+  surfaceTransitionThreshold: 0.7
+  unlockAfterTime: 0.2
+  surfaceOffset: 0
+  numberOfAttempts: 10
+  sphereCenter: {fileID: 0}
+  Sphere_targetReachDistance: 0.1
+  targetDistance: 10
 --- !u!54 &7223692388561108505
 Rigidbody:
   m_ObjectHideFlags: 0
