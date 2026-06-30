@@ -618,10 +618,9 @@ public class EnemyMovement : MonoBehaviour
         {
             //            Debug.Log("Ground rotation influencing");
             GroundRotation();
-            return;
+
         }
         // normal ground
-
     }
 
     private void RotationOnWall()
@@ -675,8 +674,10 @@ public class EnemyMovement : MonoBehaviour
         //        Debug.Log("Agent status : " + agent.enabled);
         //        Debug.Log(currentMovementSurface + " from ground movement fucntiin and context is " + currentTraversalContext);
         Debug.DrawRay(transform.position, transform.forward * 2f, Color.red);
+
         if (!agent.enabled)
             return;
+
         repathTimer -= Time.deltaTime;
 
         NavMeshHit hit;
@@ -718,6 +719,7 @@ public class EnemyMovement : MonoBehaviour
 
         if (avoidance != null)
         {
+            Debug.Log("can rotate " + canRotate);
             avoidance.SetRotationPermission(canRotate);
         }
 
@@ -725,11 +727,13 @@ public class EnemyMovement : MonoBehaviour
 
         if (avoidance != null && avoidance.HasOverrideDirection(out Vector3 overrideDir))
         {
+            Debug.Log("override dir" + overrideDir);
             movementDir = overrideDir;
 
         }
         else
         {
+            Debug.Log("No override dir");
             movementDir = normalizedDirection;
         }
 
@@ -740,6 +744,12 @@ public class EnemyMovement : MonoBehaviour
             Vector3 separationVector = proximitySensor.GetSeparationDirection();
             separationVector.y = 0f;
             movementDir += separationVector * separationWeight;
+            Debug.Log("Separation Vector is "+ separationVector);
+            Debug.Log("Proximity sensor is NOT NULL");
+        }
+        else
+        {
+            Debug.Log("Proximity sensor is NULL BITCH");
         }
 
         if (movementDir.sqrMagnitude > 0.0001f)
@@ -789,7 +799,7 @@ public class EnemyMovement : MonoBehaviour
 
         debugSurfaceCheckEdge = Physics.Raycast(origin, -currentSurfaceNormal, 3f, surfaceCrawlAbility.TraversableSurfaceMask);
 
-        if (!debugSurfaceCheckEdge )
+        if (!debugSurfaceCheckEdge)
         {
             Debug.Log("The point is unreachable because the wall is not continuous.");
             OnEdgeDetected?.Invoke();
@@ -822,7 +832,7 @@ public class EnemyMovement : MonoBehaviour
                 {
                     if (targetSurface == MovementSurface.Ground)
                     {
-                       PickNewCrawlTarget(numberOfAttempts , surfaceCrawlAbility.roamDistance);
+                        PickNewCrawlTarget(numberOfAttempts, surfaceCrawlAbility.roamDistance);
                     }
                     return;
                 }
@@ -1484,7 +1494,7 @@ public class EnemyMovement : MonoBehaviour
             );
         }
 
-        
+
     }
     #endregion GizmosDebug
 }

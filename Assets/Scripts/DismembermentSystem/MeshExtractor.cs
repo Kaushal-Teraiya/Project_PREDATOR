@@ -6,7 +6,7 @@ public class MeshExtractor : MonoBehaviour
     [SerializeField] private SkinnedMeshRenderer originalSkinnedMeshRenderer;
     private Transform clonedRoot;
     private Transform latestDismemberedBone;
-    [SerializeField] private string DismemberBoneName = "mixamorig:LeftLeg";
+    [SerializeField] private string DismemberBoneNamee;
     private Transform[] DismemberedBones;
 
 
@@ -21,7 +21,7 @@ public class MeshExtractor : MonoBehaviour
 
         foreach (Transform bone in originalSkinnedMeshRenderer.bones)
         {
-            if (bone.name == DismemberBoneName)
+            if (bone.name == DismemberBoneNamee)
             {
                 currentBoneToDismember = bone;
                 break;
@@ -30,7 +30,7 @@ public class MeshExtractor : MonoBehaviour
 
         if (currentBoneToDismember == null)
         {
-            Debug.LogError($"Could not find bone: {DismemberBoneName}");
+            Debug.LogError($"Could not find bone: {DismemberBoneNamee}");
             return;
         }
 
@@ -249,6 +249,12 @@ public class MeshExtractor : MonoBehaviour
 
     }
 
+    public void DismemberBone(string boneName)
+    {
+        DismemberBoneNamee = boneName;
+        ExtractLimb();
+    }
+
     private void MarkSeveredHierarchy(Transform bone)
     {
         SeveredBoneRegistry.dismemberedBones.Add(bone);
@@ -262,7 +268,7 @@ public class MeshExtractor : MonoBehaviour
 
     private void SpawnExtractedMesh(Mesh extractedMesh)
     {
-        GameObject dismemberedLimb = new GameObject(DismemberBoneName + "_Dismembered");
+        GameObject dismemberedLimb = new GameObject(DismemberBoneNamee + "_Dismembered");
 
 
         Debug.Log($"Zombie Transform Scale: {transform.localScale}");
@@ -316,7 +322,7 @@ public class MeshExtractor : MonoBehaviour
 
         foreach (Transform bone in originalSkinnedMeshRenderer.bones)
         {
-            if (bone.name == DismemberBoneName)
+            if (bone.name == DismemberBoneNamee)
             {
                 startBone = bone;
                 break;
@@ -325,7 +331,7 @@ public class MeshExtractor : MonoBehaviour
 
         if (startBone == null)
         {
-            Debug.LogError($"Bone not found: {DismemberBoneName}");
+            Debug.LogError($"Bone not found: {DismemberBoneNamee}");
             return result;
         }
 

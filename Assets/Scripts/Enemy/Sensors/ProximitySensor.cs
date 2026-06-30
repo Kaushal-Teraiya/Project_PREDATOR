@@ -78,8 +78,13 @@ public class ProximitySensor : MonoBehaviour
         {
             Vector3 direction = myself.transform.position - zombie.transform.position;
             direction.y = 0f;
-            direction.Normalize();
-            separation += direction;
+            float distance = direction.magnitude;
+
+            if (distance > 0.001f)
+            {
+                separation += direction.normalized / distance;
+            }
+           // separation += direction;
         }
 
         if (separation == Vector3.zero)
