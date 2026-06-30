@@ -739,18 +739,18 @@ public class EnemyMovement : MonoBehaviour
 
         movementDir.Normalize();
 
-        if (proximitySensor != null)
-        {
-            Vector3 separationVector = proximitySensor.GetSeparationDirection();
-            separationVector.y = 0f;
-            movementDir += separationVector * separationWeight;
-            Debug.Log("Separation Vector is "+ separationVector);
-            Debug.Log("Proximity sensor is NOT NULL");
-        }
-        else
-        {
-            Debug.Log("Proximity sensor is NULL BITCH");
-        }
+        // if (proximitySensor != null)
+        // {
+        //     Vector3 separationVector = proximitySensor.GetSeparationDirection();
+        //     separationVector.y = 0f;
+        //     movementDir += separationVector * separationWeight;
+        //     Debug.Log("Separation Vector is "+ separationVector);
+        //     Debug.Log("Proximity sensor is NOT NULL");
+        // }
+        // else
+        // {
+        //     Debug.Log("Proximity sensor is NULL");
+        // }
 
         if (movementDir.sqrMagnitude > 0.0001f)
         {
@@ -900,6 +900,7 @@ public class EnemyMovement : MonoBehaviour
 
     private void ExecuteSurfaceTraversal(Vector3 directionToCrawlTarget)
     {
+        Debug.Log("Execute surface traversal fucntion runnig");
         directionToCrawlTarget.Normalize();
 
         if (!isChangingSurface)
