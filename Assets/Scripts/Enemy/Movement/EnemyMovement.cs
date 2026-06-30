@@ -618,6 +618,7 @@ public class EnemyMovement : MonoBehaviour
         {
             //            Debug.Log("Ground rotation influencing");
             GroundRotation();
+            return;
         }
         // normal ground
 
