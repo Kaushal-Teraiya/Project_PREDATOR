@@ -1,5 +1,8 @@
 using System;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class SoundEmitter : MonoBehaviour
 {
@@ -22,7 +25,7 @@ public class SoundEmitter : MonoBehaviour
       );
 
         // TEMP TEST: find all listeners
-        SoundSensor[] listeners = FindObjectsByType<SoundSensor>(0);
+        SoundSensor[] listeners = FindObjectsByType<SoundSensor>();
 
         foreach (SoundSensor listener in listeners)
         {
@@ -33,18 +36,16 @@ public class SoundEmitter : MonoBehaviour
 
     void OnDrawGizmos()
     {
-        Gizmos.color = Color.red;
         if (debugProfile == null)
-        {
             return;
-        }
-        float radiusToDraw = debugProfile.Radius; // or walkRadius for testing
 
-        DrawCircle(
-            transform.position,
-            radiusToDraw,
-            40
-        );
+#if UNITY_EDITOR
+        Handles.color = Color.red;
+#else
+    Gizmos.color = Color.red;
+#endif
+
+        DrawCircle(transform.position, debugProfile.Radius, 60);
     }
 
     void DrawCircle(Vector3 center, float radius, int segments)
@@ -61,7 +62,13 @@ public class SoundEmitter : MonoBehaviour
                 Mathf.Cos(angle * Mathf.Deg2Rad) * radius
             );
 
-            Gizmos.DrawLine(prevPoint, nextPoint);
+#if UNITY_EDITOR
+            Handles.color = Color.red;
+            Handles.DrawAAPolyLine(5f, prevPoint, nextPoint); // Thickness = 5
+#else
+        Gizmos.DrawLine(prevPoint, nextPoint);
+#endif
+
             prevPoint = nextPoint;
         }
     }

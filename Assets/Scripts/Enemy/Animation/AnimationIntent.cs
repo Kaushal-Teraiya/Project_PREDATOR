@@ -11,6 +11,7 @@ public enum AnimationType
     Death
 }
 
+[System.Serializable]
 public struct AnimationIntent
 {
     public AnimationType animationType;

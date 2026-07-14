@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Unity.VisualScripting;
-using UnityEditor.Timeline;
+
 using UnityEngine;
 
 
@@ -209,7 +209,7 @@ public class EnemyBrain : MonoBehaviour
     [SerializeField] private Goal overrideGoal;
     [SerializeField] private float playerVicinityThreshold;
     private Vector3 lastValidCrawlDirection;
-    [SerializeField] private LayerMask ObstacleMask;
+    [SerializeField] private LayerMask clearanceMask;
     [SerializeField] private float progressCheckInterval = 1f;
     [SerializeField] private float minimumProgressDistance = 0.25f;
     [SerializeField] private float maxReachPlayerDuration = 10f;
@@ -219,6 +219,7 @@ public class EnemyBrain : MonoBehaviour
     private int stagnantChecks;
     private int increasingDistanceChecks;
     [SerializeField] private float collapseThreshold;
+    private Goal lastEdgeHandledGoal;
 
 
     // [Header("MovementData")]
@@ -301,6 +302,15 @@ public class EnemyBrain : MonoBehaviour
         currentInvestigationCenter = lastKnownPosition;
         currentInvestigationRadius = radius;
         investigateState.SetAreaCenter_AreaRadius(currentInvestigationCenter, currentInvestigationRadius);
+
+        if (enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Wall))
+        {
+            if (GetAbility<SurfaceCrawlAbility>() != null)
+            {
+                goal = Goal.None; //temporary
+                overrideGoal = Goal.FreeMove;
+            }
+        }
     }
 
     public void InitializeSearch()
@@ -336,6 +346,16 @@ public class EnemyBrain : MonoBehaviour
 
             }
         }
+
+        if (enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Wall))
+        {
+            if (GetAbility<SurfaceCrawlAbility>() != null)
+            {
+                goal = Goal.None; //temporary
+                overrideGoal = Goal.FreeMove;
+            }
+
+        }
         currentSearchIndex = 0;
         //        Debug.Log($"Selected Search Points Count: {selectedSearchPoints.Count}");
     }
@@ -343,6 +363,11 @@ public class EnemyBrain : MonoBehaviour
     public void InitializeChase()
     {
         chaseTargetPosition = lastConfirmedPosition;
+        if (GetAbility<SurfaceCrawlAbility>() != null)
+        {
+            goal = Goal.ReachPlayer;
+            overrideGoal = Goal.ReachPlayer;
+        }
     }
 
     private void InitializePursuitBehaviour()
@@ -354,6 +379,15 @@ public class EnemyBrain : MonoBehaviour
         else
         {
             pursuitBehaviour = new GroundPursuitBehaviour();
+        }
+    }
+
+    public void InitializeWanderState()
+    {
+        if (GetAbility<SurfaceCrawlAbility>() != null)
+        {
+            goal = Goal.None;
+            overrideGoal = Goal.FreeMove;
         }
     }
 
@@ -462,7 +496,7 @@ public class EnemyBrain : MonoBehaviour
         if (playerHealth.playerisDead && IsInState(attackState))
         {
             enemyMovement.SetMovementMode(EnemyMovement.MovementMode.Idle);
-            enemyMovement.Stop();
+            //enemyMovement.Stop();
             enemyMovement.RequestAnimation(new AnimationIntent(AnimationType.Idle, 70)); //temporary idle , later we want multiple different behviour of zombies on player death
             return;
 
@@ -497,10 +531,6 @@ public class EnemyBrain : MonoBehaviour
         {
             if (CheckVisibilityResult(VisionSensor.visibilityResult.Chase))
             {
-                if (GetAbility<SurfaceCrawlAbility>() != null)
-                {
-                    goal = Goal.ReachPlayer;
-                }
                 SelectNextBand();
                 //                Debug.Log("[EnemyBrain] current combat band is " + GetCurrentCombatBand());
                 SwitchState(chaseState);
@@ -513,6 +543,7 @@ public class EnemyBrain : MonoBehaviour
             if (CheckVisibilityResult(VisionSensor.visibilityResult.Investigate))
             {
                 InitializeInvestigateState(snapShotPosition, 10f);
+                //overrideGoal = Goal.FreeMove;
                 SwitchState(investigateState);
                 return;
             }
@@ -573,9 +604,11 @@ public class EnemyBrain : MonoBehaviour
         {
             var oldResult = previousResult;
             currentResult = visionSensor.VisibilityResult;
-            //            Debug.Log("[EnemyBrain] current Result: " + currentResult);
-            if (!isEndingChase && oldResult == VisionSensor.visibilityResult.Chase && currentResult == VisionSensor.visibilityResult.None && currentlyChasing)
+            // Debug.Log("[EnemyBrain] current Result: " + currentResult + "Previous result: " + previousResult);
+
+            if (!isEndingChase && ((oldResult != currentResult) || (oldResult == currentResult)) && currentlyChasing)
             {
+                Debug.Log("[EnemyBrain] Trying to set chase end ==  true");
                 SetChaseEnd(true);
             }
 
@@ -855,6 +888,11 @@ public class EnemyBrain : MonoBehaviour
 
     private void ExecutePreferredSurfaceIntent()
     {
+        if (activeGoal != lastEdgeHandledGoal)
+        {
+            lastEdgeHandledGoal = Goal.None;
+        }
+
         if (overrideGoal != Goal.None)
         {
             if (HasReachedGoal(overrideGoal))
@@ -913,7 +951,7 @@ public class EnemyBrain : MonoBehaviour
 
     private void ExecuteGenericSurfaceGoal()
     {
-        ChooseSurface();
+        //ChooseSurface();
 
         if (enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.GenericSurface))
         {
@@ -957,7 +995,8 @@ public class EnemyBrain : MonoBehaviour
 
     private void ExecuteProjectionCollapseGoal()
     {
-        enemyMovement.SetCrawlIntent(continuationDirection);
+        //enemyMovement.SetCrawlIntent(continuationDirection);
+        ExecuteFallBackRoute();
     }
 
     private void ExecuteFallBackRoute()
@@ -987,10 +1026,12 @@ public class EnemyBrain : MonoBehaviour
             return;
         }
 
-        if (HasReachedPlayer())
+        if (HasReachedPlayer() && !IsInState(attackState))
         {
             Debug.Log("Near Player!!");
             //Attack player or somting.
+            //enemyMovement.SetCrawlIntent(EnemyMovement.CrawlIntent.None);
+            SwitchState(attackState);
             return;
         }
 
@@ -1021,6 +1062,7 @@ public class EnemyBrain : MonoBehaviour
         ExecuteNormalPursuit(surfaceDirection);
         // Debug.Log("ExecutePlayerGoal:: Running");
     }
+
 
     private void ResolveCollapse()
     {
@@ -1253,7 +1295,7 @@ public class EnemyBrain : MonoBehaviour
         else if (TryDescendNearbySurface(out SurfaceInfo surfaceHitInfo) && enemyMovement.IsCurrentTraversalContext(EnemyMovement.TraversalContext.Outside) && enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Ground))
         {
             InitializeMounting(surfaceCrawlAbility, surfaceHitInfo, Vector3.down);
-            Debug.Log("On a Higher surface :: Now Using Probing!");
+            //Debug.Log("On a Higher surface :: Now Using Probing!");
         }
     }
 
@@ -1314,17 +1356,29 @@ public class EnemyBrain : MonoBehaviour
 
     private void HandleEdgeDetected()
     {
-        switch (overrideGoal)
+        if (activeGoal == lastEdgeHandledGoal)
+            return;
+
+        lastEdgeHandledGoal = activeGoal;
+
+        switch (activeGoal)
         {
+            case Goal.ReachPlayer:
             case Goal.ResolveProjectionCollapse:
-                overrideGoal = UnityEngine.Random.value < 0.5f ? Goal.Top : Goal.Bottom;
-                Debug.Log("OverrideTrynaSet " + overrideGoal);
+                Debug.Log("TRYINGGGGGGGGGG");
+                if (IsAtTop())
+                {
+                    overrideGoal = Goal.Bottom;
+                }
+                else
+                {
+                    overrideGoal = UnityEngine.Random.value < 0.7f ? Goal.Top : Goal.Bottom;
+                }
                 break;
 
-                // case Goal.Top:
-                //     Debug.Log("TOp set it to bottom immideatly");
-                //     overrideGoal = Goal.Bottom;
-                //     break;
+            case Goal.Top:
+                overrideGoal = Goal.Bottom;
+                break;
         }
     }
     private bool IsInCombatBand()
@@ -1586,7 +1640,7 @@ public class EnemyBrain : MonoBehaviour
     {
         Vector3 directionToPlayer = player.transform.position - transform.position;
         float distance = directionToPlayer.magnitude;
-        if (Physics.Raycast(transform.position, directionToPlayer.normalized, out RaycastHit hit, distance, ObstacleMask))
+        if (Physics.Raycast(transform.position, directionToPlayer.normalized, out RaycastHit hit, distance, clearanceMask))
         {
             return false;
         }
@@ -1611,7 +1665,7 @@ public class EnemyBrain : MonoBehaviour
     #endregion
     void OnDrawGizmos()
     {
-        DrawCircle(transform.position, proximityRadius, 40);
+        // DrawCircle(transform.position, proximityRadius, 40);
         if (currentInvestigationRadius > 0f)
         {
             Gizmos.color = UnityEngine.Color.orange;

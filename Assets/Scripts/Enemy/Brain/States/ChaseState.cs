@@ -55,11 +55,13 @@ public class ChaseState : IEnemyState
         }
         else if (brain.WasRecentlyChasing() && !brain.CheckVisibilityResult(VisionSensor.visibilityResult.None))//visibility is not none => was the second condition
         {
+            Debug.Log("[ChaseState] Both conditions true");
             Enemy.MoveTo(brain.chaseTargetPosition);
             Enemy.ClearRotationIntent();
         }
         else if (brain.isEndingChase)
         {
+            //Debug.Log("is ending chaseeeeeee");
             Enemy.MoveTo(brain.chaseTargetPosition);
             Enemy.ClearRotationIntent();
             if (brain.HasReachedThePosition(brain.chaseTargetPosition, brain.ChaseTargetArrivalRadius))

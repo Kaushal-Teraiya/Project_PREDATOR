@@ -18,7 +18,7 @@ public class EnemyMovement : MonoBehaviour
     [SerializeField] private float enemySpeed;
     [SerializeField] private float rotationSpeed = 360f;
     [SerializeField] private float rotationThreshold = 2f;
-    [SerializeField] private float separationWeight = 0.5f;
+    //[SerializeField] private float separationWeight = 0.5f;
 
     public float MovementSpeed => enemySpeed;
 
@@ -140,6 +140,9 @@ public class EnemyMovement : MonoBehaviour
     private float arcDuration;
     private float arcHeight;
     private Vector3 leapDirection;
+    private Quaternion leapTargetRotation;
+    private bool blendRotationDuringLeap;
+    private Quaternion leapStartRotation;
     private Vector3 arcStartPosition;
     private Vector3 arcEndPosition;
 
@@ -220,6 +223,9 @@ public class EnemyMovement : MonoBehaviour
     [SerializeField] private float Sphere_targetReachDistance;
     [SerializeField] private float targetDistance;
     private bool disableSurfaceContinuityCheck;
+    private bool wasOnEdge;
+    private float edgeResetTimer;
+    [SerializeField] private float edgeResetDelay = 1f;
 
     #endregion
 
@@ -271,6 +277,16 @@ public class EnemyMovement : MonoBehaviour
         {
             AlignToSurface();
             return;
+        }
+
+        if (wasOnEdge)
+        {
+            edgeResetTimer -= Time.deltaTime;
+
+            if (edgeResetTimer <= 0f)
+            {
+                wasOnEdge = false;
+            }
         }
 
         UpdateSurfaceNormal();
@@ -362,7 +378,7 @@ public class EnemyMovement : MonoBehaviour
             return;
         }
 
-        Debug.Log("DETECT NEW SURFACE CALLED");
+        //Debug.Log("DETECT NEW SURFACE CALLED");
 
         Vector3 eyePosition = transform.position + transform.forward * offsetForNewSurface;
 
@@ -433,7 +449,7 @@ public class EnemyMovement : MonoBehaviour
         {
             Vector3 projectable = surfaceNormal;  //That's it 
 
-            Debug.Log($"PROJECTABLE VECTOR : {projectable}");
+            //Debug.Log($"PROJECTABLE VECTOR : {projectable}");
 
             return projectable;
         }
@@ -514,15 +530,15 @@ public class EnemyMovement : MonoBehaviour
         currentSurface = detectedSurface;
         var forward = Vector3.ProjectOnPlane(alignmentVector, currentSurface.surfaceHitNormal).normalized;
         targetRotation = Quaternion.LookRotation(forward, currentSurface.surfaceHitNormal);
-        Debug.Log("wall to wall trnastion");
+        //Debug.Log("wall to wall trnastion");
         // targetRotation *= Quaternion.Euler(0, -90f, 90f); //Very Important
         targetPosition = currentSurface.surfaceHitPoint + currentSurface.surfaceHitNormal * surfaceCrawlAbility.surfaceOffset;
-        Debug.Log("TARGET POSITION = " + targetPosition + "TARGET ROTATION = " + targetRotation.eulerAngles);
+        //Debug.Log("TARGET POSITION = " + targetPosition + "TARGET ROTATION = " + targetRotation.eulerAngles);
 
         //isMounting = true;
         currentTraversalPhase = TraversalPhase.Mounting;
         agent.enabled = false;
-        Debug.Log(currentSurface.surfaceHitPoint);
+        //Debug.Log(currentSurface.surfaceHitPoint);
     }
 
     private bool RotateTowardsIntent()
@@ -596,7 +612,7 @@ public class EnemyMovement : MonoBehaviour
     {
         if (!canRotate)
         {
-            Debug.Log("Cant rotate");
+            //Debug.Log("Cant rotate");
             return;
         }
         /* 24th May 2026 THIS is place where this FUCKASS BUG ate my whole week !!  Bug: on transition to ceiling the zombie would flip onto the outer surface of the ceiling 
@@ -669,6 +685,11 @@ public class EnemyMovement : MonoBehaviour
 
     #region Traversal Movement
 
+    public void SetAgentEnabled(bool enableAgent)
+    {
+        agent.enabled = enableAgent;
+
+    }
     private void HandleGroundMovement(Vector3 destination)
     {
         //        Debug.Log("Agent status : " + agent.enabled);
@@ -719,7 +740,7 @@ public class EnemyMovement : MonoBehaviour
 
         if (avoidance != null)
         {
-            Debug.Log("can rotate " + canRotate);
+            //Debug.Log("can rotate " + canRotate);
             avoidance.SetRotationPermission(canRotate);
         }
 
@@ -727,13 +748,13 @@ public class EnemyMovement : MonoBehaviour
 
         if (avoidance != null && avoidance.HasOverrideDirection(out Vector3 overrideDir))
         {
-            Debug.Log("override dir" + overrideDir);
+            //Debug.Log("override dir" + overrideDir);
             movementDir = overrideDir;
 
         }
         else
         {
-            Debug.Log("No override dir");
+            //Debug.Log("No override dir");
             movementDir = normalizedDirection;
         }
 
@@ -801,15 +822,25 @@ public class EnemyMovement : MonoBehaviour
 
         if (!debugSurfaceCheckEdge)
         {
-            Debug.Log("The point is unreachable because the wall is not continuous.");
-            OnEdgeDetected?.Invoke();
-            Debug.Log("we aint moving");
+            //Debug.Log("The point is unreachable because the wall is not continuous.");
+            if (!wasOnEdge)
+            {
+                wasOnEdge = true;
+                edgeResetTimer = edgeResetDelay;
+                OnEdgeDetected?.Invoke();
+            }
+
+            //Debug.Log("we aint moving");
             //crawlTarget = Vector3.zero;
             if (isTransitionAllowed)
             {
                 UpdateTraversalContext(false);
                 ProbeNewSurface();
             }
+        }
+        else
+        {
+            wasOnEdge = false;
         }
 
     }
@@ -840,7 +871,7 @@ public class EnemyMovement : MonoBehaviour
                 detectedSurface.surfaceHitPoint = hit.point;
                 detectedSurface.hitCollider = hit.collider;
                 detectedSurface.surfaceTag = hit.collider.tag;
-                Debug.Log("Reacheddd");
+                //Debug.Log("Reacheddd");
                 SetDetectedGeometry(DetermineMovementSurface(hit));
                 //isTransitioningSurface = true;
                 currentTraversalPhase = TraversalPhase.Transitioning;
@@ -862,17 +893,17 @@ public class EnemyMovement : MonoBehaviour
             float upVectorDot = Vector3.Dot(hit.normal, Vector3.up);
             if (upVectorDot > 0.7f)
             {
-                Debug.Log("grounndddddd");
+                //Debug.Log("grounndddddd");
                 return MovementSurface.Ground;
             }
             else if (upVectorDot < -0.7f)
             {
-                Debug.Log("ceilinggggggggg");
+                //Debug.Log("ceilinggggggggg");
                 return MovementSurface.Ceiling;
             }
             else
             {
-                Debug.Log("wallllllllllllll");
+                //Debug.Log("wallllllllllllll");
                 return MovementSurface.Wall;
             }
         }
@@ -900,7 +931,7 @@ public class EnemyMovement : MonoBehaviour
 
     private void ExecuteSurfaceTraversal(Vector3 directionToCrawlTarget)
     {
-        Debug.Log("Execute surface traversal fucntion runnig");
+        //Debug.Log("Execute surface traversal fucntion runnig");
         directionToCrawlTarget.Normalize();
 
         if (!isChangingSurface)
@@ -968,7 +999,7 @@ public class EnemyMovement : MonoBehaviour
     }
     private Vector3 GetSurfaceUpDirection()
     {
-        Debug.Log("SURFACE UP CALLED");
+        //Debug.Log("SURFACE UP CALLED");
         // Debug.Log("Is on vertical surface , wall normal is " + currentSurface.wallHitNormal);
         Vector3 surfaceUpDir = Vector3.ProjectOnPlane(Vector3.up, currentSurfaceNormal).normalized;
         return surfaceUpDir;
@@ -1101,7 +1132,7 @@ public class EnemyMovement : MonoBehaviour
 
         if (remainingAttempts <= 0)
         {
-            Debug.Log("NO TARGET FOUND!");
+            //Debug.Log("NO TARGET FOUND!");
             //SWITCH SURFACE to ground
             return;
         }
@@ -1282,7 +1313,7 @@ public class EnemyMovement : MonoBehaviour
     #endregion Animation Control System
 
     #region Leap
-    public void StartLeap(Vector3 targetPosition, float delayDuration, float arcDuration, float arcHeight)
+    public void StartLeap(Vector3 targetPosition, float delayDuration, float arcDuration, float arcHeight, Quaternion? targetRotation = null)
     {
         hasCapturedArcStart = false;
         DisableProximity();
@@ -1294,6 +1325,9 @@ public class EnemyMovement : MonoBehaviour
         this.arcDuration = arcDuration;
         this.arcHeight = arcHeight;
         leapDirection = (targetPosition - transform.position).normalized;
+        leapTargetRotation = targetRotation ?? transform.rotation;
+        blendRotationDuringLeap = targetRotation.HasValue;
+        leapStartRotation = transform.rotation;
         RotationIntent(RotationPriority.State, targetPosition);
     }
 
@@ -1315,9 +1349,19 @@ public class EnemyMovement : MonoBehaviour
             hasCapturedArcStart = true;
             //  isRunning = false;
         }
-
         arcTimer += Time.deltaTime;
         var t = Mathf.Clamp01(arcTimer / arcDuration);
+
+        if (blendRotationDuringLeap)
+        {
+            transform.rotation = Quaternion.Slerp(
+                leapStartRotation,
+                leapTargetRotation,
+                t);
+        }
+
+
+        // var t = Mathf.Clamp01(arcTimer / arcDuration);
         Vector3 horizontal = Vector3.Lerp(arcStartPosition, arcEndPosition, t);
         var height = arcHeight * 4 * t * (1 - t);
         horizontal.y += height;
@@ -1328,6 +1372,8 @@ public class EnemyMovement : MonoBehaviour
             isLeaping = false;
             arcTimer = 0f;
             delayTimer = 0f;
+            SetCurrentMovementSurface(MovementSurface.Ground);
+            SetAgentEnabled(true);
             // EnableProximity();
         }
     }

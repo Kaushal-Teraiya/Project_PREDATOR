@@ -76,7 +76,7 @@ public class WeaponRuntimeInstance
 
                 if (damageable != ownerDamageable)
                 {
-                    Debug.Log("[WeaponRuntimeInstance] Applying Damage to Enemies.");
+                    //Debug.Log("[WeaponRuntimeInstance] Applying Damage to Enemies.");
                     damageable.TakeDamage(hitResult, weaponFireConfig.damage);
                 }
             }

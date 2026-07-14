@@ -16,7 +16,7 @@ public class AttackState : IEnemyState
         brain.SetAttackRegisterDistance(brain.CurrentAttackProfile);
         Enemy.Stop();
         Enemy.RotationIntent(EnemyMovement.RotationPriority.State, brain.player.transform.position);
-        Enemy.SetMovementMode(EnemyMovement.MovementMode.Idle);
+        //Enemy.SetMovementMode(EnemyMovement.MovementMode.Idle);
         Enemy.DisableProximity();
         float distance = Vector3.Distance(brain.player.transform.position, brain.transform.position);
 
@@ -29,48 +29,44 @@ public class AttackState : IEnemyState
         var maxDistance = Vector3.Distance(brain.transform.position, brain.player.transform.position);
         var rayOrigin = brain.transform.position + Vector3.up * 1.5f;
         RaycastHit hit;
-        if (Physics.Raycast(rayOrigin, normalizedDirection, out hit, maxDistance, brain.ObstacleMaskForReposition))
+
+        if (Enemy.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Ground))
         {
-            if (hit.collider.transform.root != brain.player.transform)
+            if (Physics.Raycast(rayOrigin, normalizedDirection, out hit, maxDistance, brain.ObstacleMaskForReposition))
             {
-                Debug.Log("[AttackState] Hit Collider Name on attack start Raycast: " + hit.collider.name);
+                if (hit.collider.transform.root != brain.player.transform)
+                {
+                    Debug.Log("[AttackState] Hit Collider Name on attack start Raycast: " + hit.collider.name);
+                    brain.SwitchState(brain.RepositionState);
+                    return;
+                }
+
+            }
+
+            var band = brain.GetEffectiveBandRange(brain.CurrentAttackProfile);
+            tolerance = (float)(band.x - band.y) * 0.25;
+
+            if ((distance < brain.CurrentAttackProfile.minRange - tolerance || distance > brain.CurrentAttackProfile.maxRange + tolerance) && !brain.IsCommitedToReposition)
+            {
                 brain.SwitchState(brain.RepositionState);
                 return;
             }
-
         }
-
-        var band = brain.GetEffectiveBandRange(brain.CurrentAttackProfile);
-        tolerance = (float)(band.x - band.y) * 0.25;
-
-        if ((distance < brain.CurrentAttackProfile.minRange - tolerance || distance > brain.CurrentAttackProfile.maxRange + tolerance) && !brain.IsCommitedToReposition)
+        SetupAnimation();
+        // Surface attack
+        if (!Enemy.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Ground))
         {
-            brain.SwitchState(brain.RepositionState);
-            return;
+            SurfaceLeapAttack();
         }
-
-
-        if (brain.CurrentAttackProfile.usesLeap)
+        else if (brain.CurrentAttackProfile.usesLeap)
         {
-            var predictionTime = brain.CurrentAttackProfile.leapDelay + brain.CurrentAttackProfile.leapDuration;
-            var predictionDistance = brain.GetPredictionDistance();
-            var predictedPosition = brain.PredictPlayerPosition(predictionTime, predictionDistance);
-            var direction = (predictedPosition - brain.transform.position).normalized;
-            //Later use 50% chances of acting dumb by changing predicted position to simple player.transform.position
-            var targetPosition = predictedPosition - direction * (brain.CloseAttackAsset.minRange - 1.2f);
-            NavMeshHit navHit;
-
-            if (NavMesh.SamplePosition(targetPosition, out navHit, 2f, NavMesh.AllAreas))
-            {
-                targetPosition = navHit.position;
-            }
-            Enemy.StartLeap(targetPosition, brain.CurrentAttackProfile.leapDelay, brain.CurrentAttackProfile.leapDuration, brain.CurrentAttackProfile.leapArcHeight);
+            GroundLeapAttack();
         }
         // brain.ApplyRootMotion(true);
         // Enemy.SyncHipsTracker();
         Enemy.Animator_SetBool("canExitAttack", false);
         Enemy.ResetAnimationIntent();
-        SetupAnimation();
+
         Enemy.RequestAnimation(new AnimationIntent(AnimationType.Attack, 100));
         //Debug.Log("[Attack] In Attack..");
     }
@@ -156,6 +152,17 @@ public class AttackState : IEnemyState
 
     private void SetupAnimation()
     {
+        // if (!brain.EnemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Ground))
+        // {
+        //     var leapClip = brain.FarAttackAsset.attackAnimations;
+        //     if (leapClip.Count == 0)
+        //     {
+        //         Debug.Log("[AttackState]NO CLIPS FOUND!");
+        //     }
+        //     currentAnimationClip = leapClip[Random.Range(0, leapClip.Count)];
+        //     brain.OverrideAttackAnimation(currentAnimationClip);
+        //     return;
+        // }
         var clips = brain.CurrentAttackProfile.attackAnimations;
         if (clips.Count == 0)
         {
@@ -163,6 +170,8 @@ public class AttackState : IEnemyState
         }
         currentAnimationClip = clips[Random.Range(0, clips.Count)];
         brain.OverrideAttackAnimation(currentAnimationClip);
+
+
         //  Debug.Log("current Animation clip name :" + currentAnimationClip.name);
         // Debug.Log("current attack profile :" + brain.CurrentAttackProfile.name);
     }
@@ -171,5 +180,44 @@ public class AttackState : IEnemyState
     {
         var distance = Vector3.Distance(brain.transform.position, target.transform.position);
         return distance <= brain.AttackRegisterDistance;
+    }
+
+    private void GroundLeapAttack()
+    {
+        var predictionTime = brain.CurrentAttackProfile.leapDelay + brain.CurrentAttackProfile.leapDuration;
+        var predictionDistance = brain.GetPredictionDistance();
+        var predictedPosition = brain.PredictPlayerPosition(predictionTime, predictionDistance);
+        var direction = (predictedPosition - brain.transform.position).normalized;
+        //Later use 50% chances of acting dumb by changing predicted position to simple player.transform.position
+        var targetPosition = predictedPosition - direction * (brain.CloseAttackAsset.minRange - 1.2f);
+        NavMeshHit navHit;
+
+        if (NavMesh.SamplePosition(targetPosition, out navHit, 2f, NavMesh.AllAreas))
+        {
+            targetPosition = navHit.position;
+        }
+        brain.EnemyMovement.StartLeap(targetPosition, brain.CurrentAttackProfile.leapDelay, brain.CurrentAttackProfile.leapDuration, brain.CurrentAttackProfile.leapArcHeight);
+    }
+
+    private void SurfaceLeapAttack()
+    {
+        Vector3 direction = (brain.player.transform.position - brain.transform.position).normalized;
+        direction.y = 0;
+        Vector3 targetPosition = brain.player.transform.position - direction *3f;
+        NavMeshHit navHit;
+        if (NavMesh.SamplePosition(targetPosition, out navHit, 2f, NavMesh.AllAreas))
+        {
+            targetPosition = navHit.position;
+        }
+
+        Quaternion targetRotation = Quaternion.LookRotation(brain.transform.forward, Vector3.up);
+
+        brain.EnemyMovement.StartLeap(
+            targetPosition,
+            0f, // or brain.CurrentAttackProfile.leapDelay
+            1f, // or brain.CurrentAttackProfile.leapDuration
+            3f, targetRotation);
+
+        //brain.EnemyMovement.SetCurrentMovementSurface(EnemyMovement.MovementSurface.Ground);
     }
 }

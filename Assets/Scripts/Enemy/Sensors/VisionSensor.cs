@@ -1,5 +1,8 @@
 using System;
 using Unity.VisualScripting;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using UnityEngine;
 
 public class VisionSensor : MonoBehaviour
@@ -157,6 +160,7 @@ public class VisionSensor : MonoBehaviour
         if (hasLineOfSight)
         {
             visionClarity = playerVisiblity.GetVisiblity();
+            //Debug.Log("[VisionSensor] Vision clarity " + visionClarity);
             if (playerVisiblity.UseLightZone)
             {
                 if (distanceBtwEnemyNPlayer <= chaseDistanceThresholdInDarkness && hasLineOfSight)
@@ -201,6 +205,7 @@ public class VisionSensor : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
+
         DrawVisionGizmos();
     }
 
@@ -240,6 +245,25 @@ public class VisionSensor : MonoBehaviour
         Vector3 endPoint = origin + forwardDir * chaseDistanceThresholdInDarkness;
 
         Gizmos.DrawLine(origin, endPoint);
+#if UNITY_EDITOR
+        Handles.color = Color.blue;
+        Handles.DrawAAPolyLine(5f, origin, origin + leftBoundary * maxViewDistance);
+
+        Handles.color = Color.blue;
+        Handles.DrawAAPolyLine(5f, origin, origin + rightBoundary * maxViewDistance);
+#endif
+
+#if UNITY_EDITOR
+        Handles.color = hasLineOfSight ? Color.green : Color.red;
+        Handles.DrawAAPolyLine(10f, origin, origin + forward * maxViewDistance);
+#endif
+
+#if UNITY_EDITOR
+        Handles.color = Color.magenta;
+        Handles.DrawAAPolyLine(10f, origin, endPoint); // 6 pixels thick
+#else
+    Gizmos.DrawLine(origin, endPoint);
+#endif
 
     }
 

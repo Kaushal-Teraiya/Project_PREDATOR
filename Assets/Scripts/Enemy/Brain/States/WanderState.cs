@@ -22,7 +22,7 @@ public class WanderState : IEnemyState
     {
 //        Debug.Log("[WanderState] Entered Wander State.");
         brain.EnemyMovement.SetMovementMode(EnemyMovement.MovementMode.Wander);
-
+        brain.InitializeWanderState();
         PickNewTarget();
 
     }

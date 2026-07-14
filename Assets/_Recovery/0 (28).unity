@@ -61526,10 +61526,6 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1562593277}
     - target: {fileID: 3186572725680893476, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
-      propertyPath: currentCombatBand
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3186572725680893476, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
       propertyPath: clearanceMask.m_Bits
       value: 2048
       objectReference: {fileID: 0}

@@ -13,6 +13,8 @@ public static class FireModeExecutorFactory
             case FireMode.Burst:
                 return new FireMode_BurstExecutor();
 
+            //case new FireModes can be added :)
+
         }
 
         return null;

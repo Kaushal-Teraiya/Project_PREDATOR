@@ -82,7 +82,7 @@ public class SearchState : IEnemyState
                 if (currentTarget.TryClaimSearchPoint(brain)) // only the claimer executes animation
                 {
                     LogPhase($"CLAIMED {currentTarget.name} → Scanning");
-                    Enemy.Stop();
+                    //Enemy.Stop();
                     //snap to achor play animation and other stuff
                     currentPhase = SearchPhase.Scanning;
                     scanStartTime = Time.time;
@@ -133,7 +133,7 @@ public class SearchState : IEnemyState
             {
                 LogPhase($"Reached offset → Observing {currentTarget.name}");
 
-                Enemy.Stop();
+                //Enemy.Stop();
                 currentPhase = SearchPhase.Observing;
                 observeStartTime = Time.time;
                 bool isCurious = Random.value < 0.5f;

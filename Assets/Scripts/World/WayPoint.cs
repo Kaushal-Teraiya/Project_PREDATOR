@@ -8,7 +8,7 @@ public class WayPoint : MonoBehaviour
 
     void Awake()
     {
-        wayPointManager = FindFirstObjectByType<WayPointManager>();
+        wayPointManager = FindAnyObjectByType<WayPointManager>();
         if (wayPointManager != null)
         {
             wayPointManager.Register(this);

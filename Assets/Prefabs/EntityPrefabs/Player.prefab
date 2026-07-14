@@ -4852,6 +4852,7 @@ MonoBehaviour:
   moveAction: {fileID: -8666743256118024188, guid: 6d2de442c44ebe54f9ba18cef2336f7f, type: 3}
   jumpAction: {fileID: -5351950667269483389, guid: 6d2de442c44ebe54f9ba18cef2336f7f, type: 3}
   runAction: {fileID: 4583614773088473541, guid: 6d2de442c44ebe54f9ba18cef2336f7f, type: 3}
+  significantMovementDistance: 2
 --- !u!143 &3272269175635726886
 CharacterController:
   m_ObjectHideFlags: 0

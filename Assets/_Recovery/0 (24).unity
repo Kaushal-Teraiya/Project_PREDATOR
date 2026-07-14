@@ -2129,10 +2129,8 @@ MonoBehaviour:
   enemySpeed: 2
   rotationSpeed: 280
   rotationThreshold: 2
+  separationWeight: 0.8
   crawlIntent: 0
-  currentAnimationIntent:
-    animationType: 0
-    priority: 0
   repathInterval: 0.5
   acceleration: 10
   isTransitionAllowed: 0
@@ -2150,7 +2148,6 @@ MonoBehaviour:
   sphereCenter: {fileID: 0}
   Sphere_targetReachDistance: 0
   targetDistance: 0
-  edgeResetDelay: 2
 --- !u!114 &63388001
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2225,7 +2222,7 @@ MonoBehaviour:
   activeGoal: 0
   overrideGoal: 0
   playerVicinityThreshold: 0
-  clearanceMask:
+  ObstacleMask:
     serializedVersion: 2
     m_Bits: 0
   progressCheckInterval: 1
@@ -5719,14 +5716,13 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy (69)
       objectReference: {fileID: 0}
-    - target: {fileID: 7396628185523005442, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1232642496797770928, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
 --- !u!224 &207147541 stripped
 RectTransform:
@@ -14787,10 +14783,8 @@ MonoBehaviour:
   enemySpeed: 2
   rotationSpeed: 280
   rotationThreshold: 2
+  separationWeight: 0.8
   crawlIntent: 0
-  currentAnimationIntent:
-    animationType: 0
-    priority: 0
   repathInterval: 1
   acceleration: 10
   isTransitionAllowed: 0
@@ -14808,7 +14802,6 @@ MonoBehaviour:
   sphereCenter: {fileID: 0}
   Sphere_targetReachDistance: 0
   targetDistance: 0
-  edgeResetDelay: 2
 --- !u!114 &516933291
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14883,7 +14876,7 @@ MonoBehaviour:
   activeGoal: 0
   overrideGoal: 0
   playerVicinityThreshold: 0
-  clearanceMask:
+  ObstacleMask:
     serializedVersion: 2
     m_Bits: 0
   progressCheckInterval: 1
@@ -23115,10 +23108,8 @@ MonoBehaviour:
   enemySpeed: 2
   rotationSpeed: 280
   rotationThreshold: 2
+  separationWeight: 0.8
   crawlIntent: 0
-  currentAnimationIntent:
-    animationType: 0
-    priority: 0
   repathInterval: 1
   acceleration: 10
   isTransitionAllowed: 0
@@ -23136,7 +23127,6 @@ MonoBehaviour:
   sphereCenter: {fileID: 0}
   Sphere_targetReachDistance: 0
   targetDistance: 0
-  edgeResetDelay: 2
 --- !u!114 &765992255
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -23211,7 +23201,7 @@ MonoBehaviour:
   activeGoal: 0
   overrideGoal: 0
   playerVicinityThreshold: 0
-  clearanceMask:
+  ObstacleMask:
     serializedVersion: 2
     m_Bits: 0
   progressCheckInterval: 1
@@ -23359,14 +23349,13 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy (71)
       objectReference: {fileID: 0}
-    - target: {fileID: 7396628185523005442, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1232642496797770928, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
 --- !u!224 &773190230 stripped
 RectTransform:
@@ -37187,10 +37176,8 @@ MonoBehaviour:
   enemySpeed: 2
   rotationSpeed: 280
   rotationThreshold: 2
+  separationWeight: 0.8
   crawlIntent: 0
-  currentAnimationIntent:
-    animationType: 0
-    priority: 0
   repathInterval: 1
   acceleration: 10
   isTransitionAllowed: 0
@@ -37208,7 +37195,6 @@ MonoBehaviour:
   sphereCenter: {fileID: 0}
   Sphere_targetReachDistance: 0
   targetDistance: 0
-  edgeResetDelay: 2
 --- !u!114 &1331646824
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -37283,7 +37269,7 @@ MonoBehaviour:
   activeGoal: 0
   overrideGoal: 0
   playerVicinityThreshold: 0
-  clearanceMask:
+  ObstacleMask:
     serializedVersion: 2
     m_Bits: 0
   progressCheckInterval: 1
@@ -38381,14 +38367,13 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy (70)
       objectReference: {fileID: 0}
-    - target: {fileID: 7396628185523005442, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1232642496797770928, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
 --- !u!224 &1375737369 stripped
 RectTransform:
@@ -39667,10 +39652,8 @@ MonoBehaviour:
   enemySpeed: 2
   rotationSpeed: 280
   rotationThreshold: 2
+  separationWeight: 0.8
   crawlIntent: 0
-  currentAnimationIntent:
-    animationType: 0
-    priority: 0
   repathInterval: 1
   acceleration: 10
   isTransitionAllowed: 0
@@ -39688,7 +39671,6 @@ MonoBehaviour:
   sphereCenter: {fileID: 0}
   Sphere_targetReachDistance: 0
   targetDistance: 0
-  edgeResetDelay: 2
 --- !u!114 &1415654184
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -39763,7 +39745,7 @@ MonoBehaviour:
   activeGoal: 0
   overrideGoal: 0
   playerVicinityThreshold: 0
-  clearanceMask:
+  ObstacleMask:
     serializedVersion: 2
     m_Bits: 0
   progressCheckInterval: 1
@@ -42295,7 +42277,7 @@ Transform:
   m_GameObject: {fileID: 1459958271}
   serializedVersion: 2
   m_LocalRotation: {x: 0.5018158, y: -0.4981776, z: -0.5018157, w: 0.49817762}
-  m_LocalPosition: {x: 8.3, y: 10, z: 5.71}
+  m_LocalPosition: {x: 8.3, y: 10, z: 6.9}
   m_LocalScale: {x: 0.39, y: 19.12999, z: 95}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -52482,10 +52464,8 @@ MonoBehaviour:
   enemySpeed: 2
   rotationSpeed: 280
   rotationThreshold: 2
+  separationWeight: 0.8
   crawlIntent: 0
-  currentAnimationIntent:
-    animationType: 0
-    priority: 0
   repathInterval: 1
   acceleration: 10
   isTransitionAllowed: 0
@@ -52503,7 +52483,6 @@ MonoBehaviour:
   sphereCenter: {fileID: 0}
   Sphere_targetReachDistance: 0
   targetDistance: 0
-  edgeResetDelay: 2
 --- !u!114 &1871191729
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -52578,7 +52557,7 @@ MonoBehaviour:
   activeGoal: 0
   overrideGoal: 0
   playerVicinityThreshold: 0
-  clearanceMask:
+  ObstacleMask:
     serializedVersion: 2
     m_Bits: 0
   progressCheckInterval: 1
@@ -55435,14 +55414,13 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy (72)
       objectReference: {fileID: 0}
-    - target: {fileID: 7396628185523005442, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1232642496797770928, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
 --- !u!224 &1964602098 stripped
 RectTransform:
@@ -60656,7 +60634,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3240690407180083767, guid: 63cc82c7a272c0a40b37c57e42a0072e, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -4.49
+      value: 19.61
       objectReference: {fileID: 0}
     - target: {fileID: 3240690407180083767, guid: 63cc82c7a272c0a40b37c57e42a0072e, type: 3}
       propertyPath: m_LocalRotation.w
@@ -60701,10 +60679,6 @@ PrefabInstance:
     - target: {fileID: 6462491823532195136, guid: 63cc82c7a272c0a40b37c57e42a0072e, type: 3}
       propertyPath: m_Name
       value: Player
-      objectReference: {fileID: 0}
-    - target: {fileID: 6462491823532195136, guid: 63cc82c7a272c0a40b37c57e42a0072e, type: 3}
-      propertyPath: m_IsActive
-      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -61518,40 +61492,12 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3186572725680893476, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
-      propertyPath: attackDistance
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3186572725680893476, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
       propertyPath: wayPointManager
       value: 
       objectReference: {fileID: 1562593277}
-    - target: {fileID: 3186572725680893476, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
-      propertyPath: currentCombatBand
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3186572725680893476, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
-      propertyPath: clearanceMask.m_Bits
-      value: 2048
-      objectReference: {fileID: 0}
-    - target: {fileID: 3186572725680893476, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
-      propertyPath: playerVicinityThreshold
-      value: 10
-      objectReference: {fileID: 0}
     - target: {fileID: 7396628185523005442, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
       propertyPath: m_Name
       value: Enemy
-      objectReference: {fileID: 0}
-    - target: {fileID: 7396628185523005442, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8114743750698512363, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
-      propertyPath: eyeOffset
-      value: 1.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 8114743750698512363, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
-      propertyPath: edgeResetDelay
-      value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

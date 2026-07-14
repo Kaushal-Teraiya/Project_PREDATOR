@@ -26,7 +26,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         }
 
         currentHealth -= amount;
-        Debug.Log("[EnemyHealth] Enemy is taking Damage.");
+        //Debug.Log("[EnemyHealth] Enemy is taking Damage.");
 
         if (currentHealth <= 0)
         {
@@ -41,7 +41,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         brain.SetHitImpact(hitResult.hitDirection, hitResult.hitForce);
         brain.HandleDeath();
         //do other stuff on enemy death
-        Debug.Log("[EnemyHealth] Enemy is Dead.");
+        //Debug.Log("[EnemyHealth] Enemy is Dead.");
     }
 
     void OnDrawGizmos()
