@@ -347,7 +347,7 @@ public class EnemyBrain : MonoBehaviour
             }
         }
 
-        if (enemyMovement.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Wall))
+        if (IsInMiddle())
         {
             if (GetAbility<SurfaceCrawlAbility>() != null)
             {

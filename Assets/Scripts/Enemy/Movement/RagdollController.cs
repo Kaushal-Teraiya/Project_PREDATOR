@@ -65,9 +65,15 @@ public class RagdollController : MonoBehaviour
         animator.enabled = false;
         agent.enabled = false;
         mainCapsule.enabled = false;
-       // rootRigidbody.isKinematic = true;
+        // rootRigidbody.isKinematic = true;
         foreach (var col in ragdollColliders)
+        {
+            if (col == null)
+            { continue; }
+
             col.enabled = true;
+            col.isTrigger = false;
+        }
 
         foreach (var rb in ragdollRigidbodies)
             rb.isKinematic = false;
@@ -85,7 +91,10 @@ public class RagdollController : MonoBehaviour
             rb.isKinematic = true;
 
         foreach (var col in ragdollColliders)
-            col.enabled = false;
+        {
+            col.enabled = true;
+            col.isTrigger = true;
+        }
 
         animator.enabled = true;
         agent.enabled = true;

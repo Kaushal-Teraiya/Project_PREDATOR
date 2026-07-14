@@ -251,6 +251,7 @@ public class MeshExtractor : MonoBehaviour
 
     public void DismemberBone(string boneName)
     {
+        Debug.Log("Incoming bone: " + boneName);
         DismemberBoneNamee = boneName;
         ExtractLimb();
     }
@@ -311,7 +312,23 @@ public class MeshExtractor : MonoBehaviour
 
         newSkinnedMeshRenderer.material = new Material(originalSkinnedMeshRenderer.sharedMaterial);
         clonedRoot.SetParent(dismemberedLimb.transform, true);
-        dismemberedLimb.AddComponent<Limb>();
+        LimbRagdollSetup ragdoll = dismemberedLimb.AddComponent<LimbRagdollSetup>();
+        ragdoll.CreateRagdoll();
+
+        LimbHitBoxGenerator hitboxGenerator = dismemberedLimb.AddComponent<LimbHitBoxGenerator>();
+        hitboxGenerator.GenerateHitBoxes();
+        SetLayerRecursively(clonedRoot, gameObject.layer);
+
+        void SetLayerRecursively(Transform t, int layer)
+        {
+            t.gameObject.layer = layer;
+
+            foreach (Transform child in t)
+            {
+                SetLayerRecursively(child, layer);
+            }
+        }
+        //dismemberedLimb.AddComponent<Limb>();
     }
 
     private List<int> GetDismemberedLimbBoneIndices()
@@ -370,23 +387,29 @@ public class MeshExtractor : MonoBehaviour
         }
     }
 
-    private void RemovePhysicsHierarchy(Transform currentBoneToProcess) //Start bone means the bone from which a limb is dismembered.
+    private void RemovePhysicsHierarchy(Transform currentBoneToProcess)
     {
         CharacterJoint joint = currentBoneToProcess.GetComponent<CharacterJoint>();
 
-        if (joint) Destroy(joint);
+        if (joint)
+            Destroy(joint);
 
         Collider collider = currentBoneToProcess.GetComponent<Collider>();
 
-        if (collider) Destroy(collider);
+        if (collider)
+            collider.enabled = false;
 
         Rigidbody rigidBody = currentBoneToProcess.GetComponent<Rigidbody>();
 
-        if (rigidBody) Destroy(rigidBody);
-
-        foreach (Transform childBones in currentBoneToProcess)
+        if (rigidBody)
         {
-            RemovePhysicsHierarchy(childBones);
+            rigidBody.isKinematic = true;
+            rigidBody.detectCollisions = false;
+        }
+
+        foreach (Transform childBone in currentBoneToProcess)
+        {
+            RemovePhysicsHierarchy(childBone);
         }
     }
 

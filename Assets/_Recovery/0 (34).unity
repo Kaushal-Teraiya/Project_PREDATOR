@@ -5807,11 +5807,6 @@ CapsuleCollider:
   m_Height: 0.46000007
   m_Direction: 1
   m_Center: {x: 0, y: 0.23000003, z: 0}
---- !u!137 &1663383091 stripped
-SkinnedMeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 6745639066558894627, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
-  m_PrefabInstance: {fileID: 6485706664622549818}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1691735495
 GameObject:
   m_ObjectHideFlags: 0
@@ -9291,10 +9286,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 2160004984932110648, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
-      propertyPath: originalSkinnedMeshRenderer
-      value: 
-      objectReference: {fileID: 1663383091}
     - target: {fileID: 2588982911951620730, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
       propertyPath: player
       value: 

@@ -2,6 +2,7 @@ using System.Collections;
 using System.Net;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.InputSystem.XR;
 
 public class WeaponRuntimeInstance
 {
@@ -69,21 +70,40 @@ public class WeaponRuntimeInstance
         Vector3 spreadDirection = GetSpreadDirection(fireOrigin);
         if (weaponFireConfig.hitDetector.DetectHit(fireOrigin, spreadDirection, weaponFireConfig, out hitResult))
         {
+            Transform t = hitResult.hitObject.transform;
+
+            while (t != null)
+            {
+                Debug.Log(t.name);
+
+                if (t.GetComponent<EnemyHealth>() != null)
+                {
+                    Debug.Log("FOUND ENEMY HEALTH!");
+                }
+
+                t = t.parent;
+            }
+
+            LimbHitBox limbHitBox = hitResult.hitObject.GetComponent<LimbHitBox>();
+            if (limbHitBox != null)
+            {
+                if (limbHitBox.GetComponent<Dismembered>() == null)
+                {
+                    limbHitBox.dismemberment.DismemberBone(limbHitBox.bone.name);
+                }
+            }
+
             IDamageable damageable = hitResult.hitObject.GetComponentInParent<IDamageable>();
             if (damageable != null)
             {
-                var ownerDamageable = owner.GetComponentInParent<IDamageable>();
-
-                if (damageable != ownerDamageable)
+                var ownerDamagable = owner.GetComponentInParent<IDamageable>();
+                if (damageable != null)
                 {
-                    //Debug.Log("[WeaponRuntimeInstance] Applying Damage to Enemies.");
                     damageable.TakeDamage(hitResult, weaponFireConfig.damage);
                 }
             }
-            else
-            {
-//                Debug.Log("[WeaponRuntimeInstance] damageable is NUll");
-            }
+
+
         }
         SpawnTrail(hitResult, spreadDirection, fireOrigin, trailMarker);
         return true;

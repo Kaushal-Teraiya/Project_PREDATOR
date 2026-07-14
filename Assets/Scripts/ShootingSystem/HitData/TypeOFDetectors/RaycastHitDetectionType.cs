@@ -11,6 +11,8 @@ public class RaycastHitDetectionType : HitDetector
 
         if (Physics.Raycast(fireOrigin.position, spreadDirection, out hitInfo, weaponConfig.range, weaponConfig.hitMask))
         {
+            Debug.Log(hitInfo.collider.name);
+            Debug.Log(hitInfo.collider.transform.root.name);
             hitResult.success = true;
             hitResult.hitObject = hitInfo.collider.gameObject;
             hitResult.hitPosition = hitInfo.point;

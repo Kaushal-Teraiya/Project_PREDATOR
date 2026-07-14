@@ -1622,6 +1622,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 1237495239}
   - {fileID: 1115889184}
   - {fileID: 578425910}
   - {fileID: 1934617289}
@@ -3954,6 +3955,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RagdollController
   hips: {fileID: 441804868}
+--- !u!224 &1237495239 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
+  m_PrefabInstance: {fileID: 6485706664622549818}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1254739496
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5807,11 +5813,6 @@ CapsuleCollider:
   m_Height: 0.46000007
   m_Direction: 1
   m_Center: {x: 0, y: 0.23000003, z: 0}
---- !u!137 &1663383091 stripped
-SkinnedMeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 6745639066558894627, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
-  m_PrefabInstance: {fileID: 6485706664622549818}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1691735495
 GameObject:
   m_ObjectHideFlags: 0
@@ -9209,7 +9210,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 0}
+    m_TransformParent: {fileID: 507825057}
     m_Modifications:
     - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
       propertyPath: m_Pivot.x
@@ -9253,7 +9254,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 6.91376
+      value: 1.9
       objectReference: {fileID: 0}
     - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
       propertyPath: m_LocalRotation.w
@@ -9273,7 +9274,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 4.073218
+      value: 2.24
       objectReference: {fileID: 0}
     - target: {fileID: 1816759895957125464, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -9291,10 +9292,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 2160004984932110648, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
-      propertyPath: originalSkinnedMeshRenderer
-      value: 
-      objectReference: {fileID: 1663383091}
     - target: {fileID: 2588982911951620730, guid: 404abc72f70710b4ba5f11e7b21005be, type: 3}
       propertyPath: player
       value: 
@@ -9821,7 +9818,6 @@ SceneRoots:
   - {fileID: 312530195}
   - {fileID: 750125979386153531}
   - {fileID: 4471687444821843945}
-  - {fileID: 6485706664622549818}
   - {fileID: 507825057}
   - {fileID: 275882557873467848}
   - {fileID: 1629227128}
