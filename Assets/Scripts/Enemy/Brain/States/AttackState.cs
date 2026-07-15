@@ -28,19 +28,26 @@ public class AttackState : IEnemyState
         var normalizedDirection = (brain.player.transform.position - brain.transform.position).normalized;
         var maxDistance = Vector3.Distance(brain.transform.position, brain.player.transform.position);
         var rayOrigin = brain.transform.position + Vector3.up * 1.5f;
-        RaycastHit hit;
 
         if (Enemy.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Ground))
         {
-            if (Physics.Raycast(rayOrigin, normalizedDirection, out hit, maxDistance, brain.ObstacleMaskForReposition))
+            RaycastHit[] hits = Physics.RaycastAll(rayOrigin, normalizedDirection, maxDistance, brain.ObstacleMaskForReposition);
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+            foreach (var hit in hits)
             {
-                if (hit.collider.transform.root != brain.player.transform)
+                if (hit.collider.transform.root == brain.transform)
                 {
-                    Debug.Log("[AttackState] Hit Collider Name on attack start Raycast: " + hit.collider.name);
-                    brain.SwitchState(brain.RepositionState);
-                    return;
+                    continue;
                 }
 
+                if (hit.collider.transform.root == brain.player.transform)
+                {
+                    break;
+                }
+
+                Debug.Log("[AttackState] Hit Collider Name on attack start Raycast: " + hit.collider.name);
+                brain.SwitchState(brain.RepositionState);
+                return;
             }
 
             var band = brain.GetEffectiveBandRange(brain.CurrentAttackProfile);
@@ -147,6 +154,10 @@ public class AttackState : IEnemyState
     {
         brain.EnemyMovement.Animator_ResetTrigger("Attack");
         SetupAnimation();
+        if (brain.GetCurrentCombatBand() == EnemyBrain.CombatBand.Far)
+        {
+            brain.SwitchState(brain.RepositionState);
+        }
         brain.EnemyMovement.RequestAnimation(new AnimationIntent(AnimationType.Attack, 30));
     }
 
@@ -203,7 +214,7 @@ public class AttackState : IEnemyState
     {
         Vector3 direction = (brain.player.transform.position - brain.transform.position).normalized;
         direction.y = 0;
-        Vector3 targetPosition = brain.player.transform.position - direction *3f;
+        Vector3 targetPosition = brain.player.transform.position - direction * 3f;
         NavMeshHit navHit;
         if (NavMesh.SamplePosition(targetPosition, out navHit, 2f, NavMesh.AllAreas))
         {

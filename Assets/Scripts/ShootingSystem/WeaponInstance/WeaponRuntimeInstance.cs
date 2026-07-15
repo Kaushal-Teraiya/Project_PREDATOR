@@ -19,8 +19,9 @@ public class WeaponRuntimeInstance
     public int remainingMagazines { get; private set; }
     private PlayerLook playerLook;
     private Animator weaponAnimator;
+    private AudioSource weaponAudioSource;
 
-    public WeaponRuntimeInstance(WeaponFireConfig weaponFireConfig, Transform muzzleTransform, Transform trailMarker, MonoBehaviour coroutineRunner, PlayerLook playerLook, Animator weaponAnimator)
+    public WeaponRuntimeInstance(WeaponFireConfig weaponFireConfig, Transform muzzleTransform, Transform trailMarker, MonoBehaviour coroutineRunner, PlayerLook playerLook, Animator weaponAnimator, AudioSource weaponAudioSource)
     {
         this.weaponFireConfig = weaponFireConfig;
         this.muzzleTransform = muzzleTransform;
@@ -28,6 +29,7 @@ public class WeaponRuntimeInstance
         this.coroutineRunner = coroutineRunner;
         this.playerLook = playerLook;
         this.weaponAnimator = weaponAnimator;
+        this.weaponAudioSource = weaponAudioSource;
         currentAmmo = weaponFireConfig.maxAmmoCapacity;
         remainingMagazines = weaponFireConfig.maxMagazineCapacity;
 
@@ -59,6 +61,7 @@ public class WeaponRuntimeInstance
 
         var recoilConfig = weaponFireConfig.weaponVisualConfig.recoilConfig;
         owner.GetComponent<SoundEmitter>()?.EmitSound(weaponFireConfig.soundProfile);
+        weaponAudioSource.PlayOneShot(weaponFireConfig.weaponVisualConfig.weaponSoundConfig.shootSound);
         SpawnMuzzleFlash();
         HandleAmmo();
         //   playerLook.ApplyRecoil(recoilConfig.verticleRecoil, recoilConfig.horizontalRecoil);
@@ -72,24 +75,29 @@ public class WeaponRuntimeInstance
         {
             Transform t = hitResult.hitObject.transform;
 
-            while (t != null)
-            {
-                Debug.Log(t.name);
+            // while (t != null)
+            // {
+            //    // Debug.Log(t.name);
 
-                if (t.GetComponent<EnemyHealth>() != null)
-                {
-                    Debug.Log("FOUND ENEMY HEALTH!");
-                }
+            //     if (t.GetComponent<EnemyHealth>() != null)
+            //     {
+            //         Debug.Log("FOUND ENEMY HEALTH!");
+            //     }
 
-                t = t.parent;
-            }
+            //     t = t.parent;
+            // }
 
             LimbHitBox limbHitBox = hitResult.hitObject.GetComponent<LimbHitBox>();
             if (limbHitBox != null)
             {
-                if (limbHitBox.GetComponent<Dismembered>() == null)
+                if (GameplaySettings.dismembermentEnabled && limbHitBox.GetComponent<Dismembered>() == null)
                 {
-                    limbHitBox.dismemberment.DismemberBone(limbHitBox.bone.name);
+                    string boneName = limbHitBox.bone.name.ToLower();
+                    if (!boneName.Contains("mixamorig:hips") || !boneName.Contains("mixamorig:leftshoulder") || !boneName.Contains("mixamorig:rightshoulder"))
+                    {
+                        limbHitBox.dismemberment.DismemberBone(limbHitBox.bone.name);
+                    }
+
                 }
             }
 
@@ -203,6 +211,10 @@ public class WeaponRuntimeInstance
         weaponAnimator.SetBool("isReloading", isReloading);
         weaponAnimator.SetTrigger("Reload");
         yield return null;
+        if (!weaponAudioSource.isPlaying)
+        {
+            weaponAudioSource.PlayOneShot(WeaponFireConfig.weaponVisualConfig.weaponSoundConfig.reloadSound);
+        }
 
         yield return new WaitUntil(() => weaponAnimator.GetCurrentAnimatorStateInfo(0).IsName("Reload"));
         yield return new WaitUntil(() => weaponAnimator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1);

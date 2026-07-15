@@ -6,11 +6,16 @@ public class RaycastHitDetectionType : HitDetector
     public override bool DetectHit(Transform fireOrigin, Vector3 direction, WeaponFireConfig weaponConfig, out HitResult hitResult)
     {
         hitResult = default;
-        RaycastHit hitInfo;
         Vector3 spreadDirection = direction;
+        RaycastHit[] hits = Physics.RaycastAll(fireOrigin.position, spreadDirection, weaponConfig.range, weaponConfig.hitMask, QueryTriggerInteraction.Collide);
+        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
 
-        if (Physics.Raycast(fireOrigin.position, spreadDirection, out hitInfo, weaponConfig.range, weaponConfig.hitMask))
+        foreach (var hitInfo in hits)
         {
+            if (hitInfo.collider.GetComponent<ProximitySensor>() != null)
+            {
+                continue;
+            }
             Debug.Log(hitInfo.collider.name);
             Debug.Log(hitInfo.collider.transform.root.name);
             hitResult.success = true;

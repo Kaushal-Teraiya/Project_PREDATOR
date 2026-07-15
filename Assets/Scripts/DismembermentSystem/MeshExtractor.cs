@@ -317,7 +317,9 @@ public class MeshExtractor : MonoBehaviour
 
         LimbHitBoxGenerator hitboxGenerator = dismemberedLimb.AddComponent<LimbHitBoxGenerator>();
         hitboxGenerator.GenerateHitBoxes();
-        SetLayerRecursively(clonedRoot, gameObject.layer);
+        int enemyLayer = LayerMask.NameToLayer("Enemy");
+        dismemberedLimb.layer = enemyLayer;
+        SetLayerRecursively(clonedRoot, enemyLayer);
 
         void SetLayerRecursively(Transform t, int layer)
         {

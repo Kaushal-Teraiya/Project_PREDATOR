@@ -23,7 +23,7 @@ public class DismembermentUI : MonoBehaviour
         foreach (var button in buttons)
         {
             tempPosition = initialPosition - offset;
-            button.transform.localPosition = new Vector3(0, tempPosition, 0);
+            button.transform.localPosition = new Vector3(-700, tempPosition-50, 0);
             string name = button.name;
             button.onClick.AddListener(() => meshExtractor.DismemberBone("mixamorig:" + name));
             var buttonText = button.GetComponentInChildren<TMP_Text>();

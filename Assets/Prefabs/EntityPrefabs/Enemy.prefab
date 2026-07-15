@@ -271,8 +271,8 @@ RectTransform:
   m_GameObject: {fileID: 7396628185523005442}
   m_LocalRotation: {x: 0, y: -0.72379255, z: 0, w: 0.69001764}
   m_LocalPosition: {x: 0, y: 0, z: -13.04}
-  m_LocalScale: {x: 1.4256779, y: 1.4256778, z: 1.4256779}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 1.33, y: 1.33, z: 1.33}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 4570527094295870295}
   - {fileID: 2923873249319052582}
@@ -351,6 +351,11 @@ MonoBehaviour:
   - {fileID: 7400000, guid: f7f84fd119431cf4480a820cea02dbe7, type: 2}
   - {fileID: 7400000, guid: c7fc567b80c167d4d9e3299766db5cfa, type: 2}
   - {fileID: 7400000, guid: 34aa3becc915d144e83962c3338b5817, type: 2}
+  hitReactionVariants:
+  - {fileID: 7400000, guid: b2e4fa40f357e2748a0b59d16227c903, type: 2}
+  - {fileID: 7400000, guid: 78583237ebb91e94482b4a49981a41f6, type: 2}
+  - {fileID: 7400000, guid: 2bbfcbac121755d4f9b7351752cc1ad5, type: 2}
+  - {fileID: 7400000, guid: b300426e1e021744a87a878d02718063, type: 2}
   animatorOverrideController: {fileID: 22100000, guid: 09caca1e7c6927546a3e3c4000cddc68, type: 2}
   proximityRadius: 7
   proximityObstacleMask:
@@ -362,13 +367,13 @@ MonoBehaviour:
     m_Bits: 2624
   midBandCompression: 1
   farBandCompression: 1
-  repositionArrivalRadius: 2
+  repositionArrivalRadius: 3
   sliceHalfAngle: 45
   repositionTimeout: 5
   Debug_movementAngle: 0
   Debug_FrontSemiCircle: 0
   Debug_BackSemiCircle: 0
-  drawBandGizmos: 0
+  drawBandGizmos: 1
   circleSegments: 48
   Debug_RepositionTarget: {x: 0, y: 0, z: 0}
   enemyArchetype: {fileID: 11400000, guid: 6f54888bdbae1ff4ea0cb3aff651b3b1, type: 2}
@@ -623,7 +628,7 @@ CapsuleCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 1
   m_ProvidesContacts: 0
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 2
   m_Radius: 1.89
   m_Height: 0
@@ -1836,7 +1841,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7fae7527af8ad1141906b2823bd02e85, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MeshHider
-  originalSkinnedMeshRenderer: {fileID: 0}
+  originalSkinnedMeshRenderer: {fileID: 6745639066558894627}
   severBoneName: 
 --- !u!1 &4026921535084954294 stripped
 GameObject:

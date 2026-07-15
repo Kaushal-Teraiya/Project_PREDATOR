@@ -29,7 +29,7 @@ public class EnemyMovement : MonoBehaviour
     private ProximitySensor proximitySensor;
     private AvoidanceSteering avoidance;
     private Animator animator;
-
+    public Animator _Animator => animator;
     #endregion
 
     #region State Enums
@@ -41,7 +41,8 @@ public class EnemyMovement : MonoBehaviour
         Chase,
         Search,
         Wander,
-        Reposition
+        Reposition,
+        Reaction
     }
 
     public enum MovementSurface
@@ -165,6 +166,7 @@ public class EnemyMovement : MonoBehaviour
     private bool isTransitionLocked;
     public event Action OnTransitionComplete;
     public event Action OnEdgeDetected;
+    public event Action OnLeapEnded;
     [SerializeField] private bool isTransitionAllowed;
 
     private Vector3 currentSphereNormal;
@@ -599,6 +601,9 @@ public class EnemyMovement : MonoBehaviour
                 break;
             case MovementMode.Reposition:
                 enemySpeed = 10f;
+                break;
+            case MovementMode.Reaction:
+                enemySpeed = 0f;
                 break;
 
             default:
@@ -1281,13 +1286,18 @@ public class EnemyMovement : MonoBehaviour
                 break;
             case AnimationType.Reposition:
                 if (!animator.GetCurrentAnimatorStateInfo(0).IsName("ArmsBackRun"))
-                    animator.SetTrigger("EnterReposition");
+                    Animator_SetTrigger("EnterReposition");
                 break;
             case AnimationType.SurfaceCrawl:
                 Animator_SetTrigger("WallCrawl");
                 break;
             case AnimationType.CrawlJump:
                 Animator_SetTrigger("CrawlJump");
+                break;
+            case AnimationType.HitReaction:
+                if (!animator.GetCurrentAnimatorStateInfo(0).IsName("HitReaction_"))
+                    Animator_SetTrigger("Hit");
+                ResetAnimationIntent();
                 break;
             default:
                 Animator_SetFloat("Speed", 0f);
@@ -1374,6 +1384,7 @@ public class EnemyMovement : MonoBehaviour
             delayTimer = 0f;
             SetCurrentMovementSurface(MovementSurface.Ground);
             SetAgentEnabled(true);
+            OnLeapEnded?.Invoke();
             // EnableProximity();
         }
     }

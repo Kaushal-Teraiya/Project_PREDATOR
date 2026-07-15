@@ -8,7 +8,8 @@ public enum AnimationType
     CrawlJump,
     Reposition,
     Attack,
-    Death
+    Death,
+    HitReaction
 }
 
 [System.Serializable]

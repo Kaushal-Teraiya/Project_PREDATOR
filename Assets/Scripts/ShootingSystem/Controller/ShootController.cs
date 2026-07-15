@@ -95,6 +95,7 @@ public class ShootController : MonoBehaviour
         if (weaponConfig.weaponVisualConfig != null && weaponConfig.weaponVisualConfig.weaponModel != null)
         {
             currentWeaponModel = Instantiate(weaponConfig.weaponVisualConfig.weaponModel, weaponSocket, false);
+            AudioSource currentWeaponAudioSource = currentWeaponModel.GetComponent<AudioSource>();
             currentWeaponModel.transform.localPosition = Vector3.zero;
             currentWeaponModel.transform.localRotation = Quaternion.identity;
             muzzleTransform = currentWeaponModel.GetComponentInChildren<MuzzleMarker>()?.transform;
@@ -105,7 +106,7 @@ public class ShootController : MonoBehaviour
                 Debug.LogError("[ShootController] MuzzleMarker missing on weapon prefab.");
             }
 
-            weaponRuntimeInstance = new WeaponRuntimeInstance(weaponConfig, muzzleTransform, trailMarker, coroutineRunner, playerLook, weaponAnimator);
+            weaponRuntimeInstance = new WeaponRuntimeInstance(weaponConfig, muzzleTransform, trailMarker, coroutineRunner, playerLook, weaponAnimator,currentWeaponAudioSource);
 
             if (ammoUI != null)
             {

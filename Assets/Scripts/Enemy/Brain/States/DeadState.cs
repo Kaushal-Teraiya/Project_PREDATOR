@@ -20,7 +20,15 @@ public class DeadState : IEnemyState
         brain.DisablePerception();
         brain.GetComponentInChildren<CapsuleCollider>().enabled = false;
         // 
-        EnableRagdoll();
+        if (Random.value <= 1f)
+        {
+            EnableRagdoll();
+        }
+        else
+        {
+            brain.EnemyMovement.Animator_ResetTrigger("Hit");
+            brain.EnemyMovement.Animator_SetTrigger("IsDead");
+        }
         //Enable Ragdoll here
     }
 
@@ -39,8 +47,8 @@ public class DeadState : IEnemyState
             brain.EnemyMovement.Animator_SetTrigger("IsDead");
             return;
         }
-          Vector3 testDirection =
-            (brain.transform.position - brain.player.transform.position).normalized;
+        Vector3 testDirection =
+          (brain.transform.position - brain.player.transform.position).normalized;
         brain.ragdollController.EnableFullRagdoll(testDirection, brain.LastHitForce);
     }
 }

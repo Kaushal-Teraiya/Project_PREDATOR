@@ -12,8 +12,8 @@ public class PlayerLook : MonoBehaviour
 
     void Start()
     {
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        // Cursor.lockState = CursorLockMode.Locked;
+        // Cursor.visible = false;
     }
 
     void Update()
@@ -21,6 +21,18 @@ public class PlayerLook : MonoBehaviour
         if (!canLook)
         {
             return;
+        }
+
+        if (Keyboard.current.escapeKey.isPressed)
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            return;
+        }
+        else
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
         }
 
         // recoilPitchOffset = Mathf.MoveTowards(recoilPitchOffset, 0f, recoilRecoverySpeed * Time.deltaTime);
@@ -45,30 +57,38 @@ public class PlayerLook : MonoBehaviour
         canLook = false;
     }
 
-   public void ApplyRecoil(float vertical, float horizontal)
-{
-    float verticalKick = Random.Range(vertical * 0.9f, vertical * 1.1f);
-    float horizontalKick = Random.Range(-horizontal, horizontal);
+    public void ApplyRecoil(float vertical, float horizontal)
+    {
+        float verticalKick = Random.Range(vertical * 0.9f, vertical * 1.1f);
+        float horizontalKick = Random.Range(-horizontal, horizontal);
 
-    float maxPitch = 80f;
-   // float minPitch = -80f;
+        float maxPitch = 80f;
+        // float minPitch = -80f;
 
-    float currentFinalPitch = xRotation - recoilPitchOffset;
+        float currentFinalPitch = xRotation - recoilPitchOffset;
 
-    float allowedKick = currentFinalPitch + verticalKick > maxPitch
-        ? maxPitch - currentFinalPitch
-        : verticalKick;
+        float allowedKick = currentFinalPitch + verticalKick > maxPitch
+            ? maxPitch - currentFinalPitch
+            : verticalKick;
 
-    recoilPitchOffset += allowedKick;
+        recoilPitchOffset += allowedKick;
 
-    recoilYawOffset = Mathf.Clamp(
-        recoilYawOffset + horizontalKick,
-        -2f,
-        2f
-    );
-}
+        recoilYawOffset = Mathf.Clamp(
+            recoilYawOffset + horizontalKick,
+            -2f,
+            2f
+        );
+    }
     public void SetRecoverySpeed(float recoilRecoverySpeed)
     {
         this.recoilRecoverySpeed = recoilRecoverySpeed;
+    }
+
+    public void SetCanLook(bool value)
+    {
+        canLook = value;
+
+        Cursor.lockState = value ? CursorLockMode.Locked : CursorLockMode.None;
+        Cursor.visible = !value;
     }
 }

@@ -136,6 +136,7 @@ public class EnemyBrain : MonoBehaviour
     [SerializeField] private List<AnimationClip> walkVariants = new List<AnimationClip>();
     [SerializeField] private List<AnimationClip> runVariants = new List<AnimationClip>();
     [SerializeField] private List<AnimationClip> deathVariants = new List<AnimationClip>();
+    [SerializeField] private List<AnimationClip> hitReactionVariants = new List<AnimationClip>();
     public AnimatorOverrideController animatorOverrideController;
     private RuntimeAnimatorController baseController;
 
@@ -248,12 +249,14 @@ public class EnemyBrain : MonoBehaviour
         AnimationClip runVariant = runVariants[UnityEngine.Random.Range(0, runVariants.Count)];
         //   AnimationClip attackVariant = attackVariants[UnityEngine.Random.Range(0, attackVariants.Count)];
         AnimationClip deathVariant = deathVariants[UnityEngine.Random.Range(0, deathVariants.Count)];
+        AnimationClip hitReactionVariant = hitReactionVariants[UnityEngine.Random.Range(0, hitReactionVariants.Count)];
 
         animatorOverrideController["Walk_"] = walkVariant;
         animatorOverrideController["Idle_"] = idleVariant;
         animatorOverrideController["Run_"] = runVariant;
         // animatorOverrideController["Attack_"] = attackVariant;
         animatorOverrideController["Death_"] = deathVariant;
+        animatorOverrideController["HitReaction_"] = hitReactionVariant;
         animator.runtimeAnimatorController = animatorOverrideController;
 
         InitializePursuitBehaviour();
@@ -278,6 +281,7 @@ public class EnemyBrain : MonoBehaviour
         playerHealth.playerDead += HandleEnemyStateOnPlayerDeath;
         soundSensor.OnSoundHeard += HandleSoundStimulus;
         visionSensor.OnPeripheralGlimpse += HandlePeripheralStimulus;
+        enemyMovement.OnLeapEnded += HandleLeapEnd;
         // preferredMovementSurface = EnemyMovement.MovementSurface.Ceiling;
         //SetPreferredMovementSurface(EnemyMovement.MovementSurface.Ground);
     }
@@ -285,7 +289,7 @@ public class EnemyBrain : MonoBehaviour
     void Update()
     {
         // Animator_SetFloat("Speed", enemyMovement.MovementSpeed);
-        enemyMovement.ResetAnimationIntent();
+        // enemyMovement.ResetAnimationIntent();
         CheckPerception();
         CheckStateChange();
         //EvaluateWall();
@@ -1352,6 +1356,14 @@ public class EnemyBrain : MonoBehaviour
         {
             overrideGoal = Goal.None;
         }
+    }
+
+    private void HandleLeapEnd()
+    {
+        // if (GetAbility<SurfaceCrawlAbility>() != null)
+        // {
+        //     overrideGoal = Goal.Middle;
+        // }
     }
 
     private void HandleEdgeDetected()

@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WeaponSoundConfig
   weaponName: AK47
   weaponType: Automatic
-  shootSound: {fileID: 0}
-  reloadSound: {fileID: 0}
+  shootSound: {fileID: 8300000, guid: d4872e332fbfaa24cb36d6bfaa8978b2, type: 3}
+  reloadSound: {fileID: 8300000, guid: 9b0237972d69281489d4fdb189839c88, type: 3}
   recoilSound: {fileID: 0}
