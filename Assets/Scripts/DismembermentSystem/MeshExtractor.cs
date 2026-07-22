@@ -8,15 +8,76 @@ public class MeshExtractor : MonoBehaviour
     private Transform latestDismemberedBone;
     [SerializeField] private string DismemberBoneNamee;
     private Transform[] DismemberedBones;
+    private BoneHierarchyCloner cloner;
+    private MeshHider meshHider;
+
+    private Vector3[] cachedVertices;
+    private Vector2[] cachedUVs;
+    private Vector3[] cachedNormals;
+    private BoneWeight[] cachedBoneWeights;
+    private int[] cachedTriangles;
+    private Matrix4x4[] cachedBindPoses;
+
+    private Matrix4x4[] bindPoseBuffer;
+
+    private readonly HashSet<int> dismemberedBoneIndices = new();
+    private readonly Dictionary<int, int> boneRemap = new();
+
+    private readonly HashSet<int> dismemberedVertices = new();
+
+    private readonly Dictionary<int, int> vertexRemap = new();
+
+    private readonly List<Vector3> newVertices = new();
+    private readonly List<Vector2> newUVs = new();
+    private readonly List<Vector3> newNormals = new();
+    private readonly List<int> newTriangleVertices = new();
+    private readonly List<BoneWeight> newBoneWeights = new();
+
+    private readonly HashSet<int> usedBones = new();
 
 
+    private void Awake()
+    {
+        cloner = GetComponent<BoneHierarchyCloner>();
+        meshHider = GetComponent<MeshHider>();
+    }
+    private void CacheMeshData()
+    {
+        Mesh mesh = originalSkinnedMeshRenderer.sharedMesh;
+
+        cachedVertices = mesh.vertices;
+        cachedUVs = mesh.uv;
+        cachedNormals = mesh.normals;
+        cachedBoneWeights = mesh.boneWeights;
+        cachedTriangles = mesh.triangles;
+        cachedBindPoses = mesh.bindposes;
+    }
     [ContextMenu("Extract Limb")]
     public void ExtractLimb()
     {
         Debug.Log("EXTRACT CALLED");
 
         Mesh sourceMesh = originalSkinnedMeshRenderer.sharedMesh;
+        CacheMeshData();
 
+        dismemberedBoneIndices.Clear();
+        boneRemap.Clear();
+        dismemberedVertices.Clear();
+        vertexRemap.Clear();
+
+        newVertices.Clear();
+        newTriangleVertices.Clear();
+        newUVs.Clear();
+        newNormals.Clear();
+        newBoneWeights.Clear();
+
+        usedBones.Clear();
+
+        newVertices.Capacity = cachedVertices.Length;
+        newUVs.Capacity = cachedVertices.Length;
+        newNormals.Capacity = cachedVertices.Length;
+        newBoneWeights.Capacity = cachedVertices.Length;
+        newTriangleVertices.Capacity = cachedTriangles.Length;
         Transform currentBoneToDismember = null;
 
         foreach (Transform bone in originalSkinnedMeshRenderer.bones)
@@ -35,7 +96,7 @@ public class MeshExtractor : MonoBehaviour
         }
 
         latestDismemberedBone = currentBoneToDismember;
-        BoneHierarchyCloner cloner = GetComponent<BoneHierarchyCloner>();
+        //BoneHierarchyCloner cloner = GetComponent<BoneHierarchyCloner>();
 
         clonedRoot = cloner.CloneDismemberedBoneHeirarchy(currentBoneToDismember, out DismemberedBones);
 
@@ -57,9 +118,9 @@ public class MeshExtractor : MonoBehaviour
         Debug.Log($"BindPoses: {sourceMesh.bindposes.Length}");
         Debug.Log($"Bones: {originalSkinnedMeshRenderer.bones.Length}");
         Debug.Log($"BoneWeights: {sourceMesh.boneWeights.Length}");
-
-        HashSet<int> dismemberedBoneIndices = new(GetDismemberedLimbBoneIndices());//collect each bone index from dismembered limb 
-        Dictionary<int, int> boneRemap = new(); // to remap the dismembered limb bones starting from 0 , 1 ,2 ....
+        dismemberedBoneIndices.UnionWith(GetDismemberedLimbBoneIndices());
+        //HashSet<int> dismemberedBoneIndices = new(GetDismemberedLimbBoneIndices());//collect each bone index from dismembered limb 
+        //Dictionary<int, int> boneRemap = new(); // to remap the dismembered limb bones starting from 0 , 1 ,2 ....
 
         int remapIndex = 0;
 
@@ -83,9 +144,9 @@ public class MeshExtractor : MonoBehaviour
             Debug.Log($"{index} : {originalSkinnedMeshRenderer.bones[index].name}");
         }
 
-        BoneWeight[] boneWeights = sourceMesh.boneWeights;
+        BoneWeight[] boneWeights = cachedBoneWeights;
 
-        HashSet<int> dismemberedVertices = new();
+        //HashSet<int> dismemberedVertices = new();
 
         for (int i = 0; i < boneWeights.Length; i++) // iterating through all the vertices of the whole character model.
         {
@@ -111,17 +172,17 @@ public class MeshExtractor : MonoBehaviour
             }
         }
 
-        Dictionary<int, int> vertexRemap = new();
-        List<Vector3> newVertices = new();
-        List<int> newTriangleVertices = new();
-        List<Vector2> newUVs = new();
-        List<Vector3> newNormals = new();
-        List<BoneWeight> newBoneWeights = new();
+        // Dictionary<int, int> vertexRemap = new();
+        // List<Vector3> newVertices = new();
+        // List<int> newTriangleVertices = new();
+        // List<Vector2> newUVs = new();
+        // List<Vector3> newNormals = new();
+        // List<BoneWeight> newBoneWeights = new();
 
-        Vector3[] sourceMeshVertices = sourceMesh.vertices;
-        Vector2[] sourceMeshUVs = sourceMesh.uv;
-        Vector3[] sourceMeshNormals = sourceMesh.normals;
-        int[] sourceMeshTriangleVertices = sourceMesh.triangles; // ! Note bro... this contains vertex of the triangles not triangles itself 
+        Vector3[] sourceMeshVertices = cachedVertices;
+        Vector2[] sourceMeshUVs = cachedUVs;
+        Vector3[] sourceMeshNormals = cachedNormals;
+        int[] sourceMeshTriangleVertices = cachedTriangles; // ! Note bro... this contains vertex of the triangles not triangles itself 
 
         for (int i = 0; i < sourceMeshTriangleVertices.Length; i += 3)
         {
@@ -144,7 +205,7 @@ public class MeshExtractor : MonoBehaviour
             newTriangleVertices.Add(newC); // reIndexing of a given set of triangles of severed mesh.
         }
 
-        HashSet<int> usedBones = new();
+        //HashSet<int> usedBones = new();
 
         foreach (BoneWeight boneWeight in newBoneWeights)
         {
@@ -162,25 +223,30 @@ public class MeshExtractor : MonoBehaviour
 
         Mesh extractedMesh = new Mesh();
 
-        extractedMesh.vertices = newVertices.ToArray();
-        extractedMesh.triangles = newTriangleVertices.ToArray();
+        extractedMesh.SetVertices(newVertices);
+        extractedMesh.SetTriangles(newTriangleVertices, 0);
 
-        if (newUVs.Count == newVertices.Count) extractedMesh.uv = newUVs.ToArray();
+        if (newUVs.Count == newVertices.Count)
+            extractedMesh.SetUVs(0, newUVs);
 
-        if (newNormals.Count == newVertices.Count) extractedMesh.normals = newNormals.ToArray();
+        if (newNormals.Count == newVertices.Count)
+            extractedMesh.SetNormals(newNormals);
 
         extractedMesh.boneWeights = newBoneWeights.ToArray();
-        Matrix4x4[] bindposes = new Matrix4x4[DismemberedBones.Length];
+        if (bindPoseBuffer == null || bindPoseBuffer.Length != DismemberedBones.Length)
+        {
+            bindPoseBuffer = new Matrix4x4[DismemberedBones.Length];
+        }
 
         foreach (var pair in boneRemap)
         {
             int originalBoneIndex = pair.Key;
             int newBoneIndex = pair.Value;
 
-            bindposes[newBoneIndex] = sourceMesh.bindposes[originalBoneIndex];
+            bindPoseBuffer[newBoneIndex] = cachedBindPoses[originalBoneIndex];
         }
 
-        extractedMesh.bindposes = bindposes;
+        extractedMesh.bindposes = bindPoseBuffer;
         extractedMesh.RecalculateBounds();
 
         for (int i = 0; i < DismemberedBones.Length; i++)
@@ -191,13 +257,12 @@ public class MeshExtractor : MonoBehaviour
         SpawnExtractedMesh(extractedMesh);
         currentBoneToDismember.gameObject.AddComponent<Dismembered>();
         RemovePhysicsHierarchy(currentBoneToDismember);
-        MeshHider hider = GetComponent<MeshHider>();
 
-        if (hider != null)
+
+        if (meshHider != null)
         {
-            hider.HideLimb(currentBoneToDismember);
+            meshHider.HideLimb(currentBoneToDismember);
         }
-
         Debug.Log($"Extracted Vertices: {newVertices.Count}");
         Debug.Log($"Extracted Triangles: {newTriangleVertices.Count / 3}");
 
@@ -215,7 +280,7 @@ public class MeshExtractor : MonoBehaviour
 
             newVertices.Add(sourceMeshVertices[originalIndex]);
 
-            BoneWeight boneWeight = sourceMesh.boneWeights[originalIndex];
+            BoneWeight boneWeight = cachedBoneWeights[originalIndex];
 
             boneWeight.boneIndex0 = RemapBone(boneWeight.boneIndex0);
             boneWeight.boneIndex1 = RemapBone(boneWeight.boneIndex1);
@@ -287,13 +352,15 @@ public class MeshExtractor : MonoBehaviour
 
 
         SkinnedMeshRenderer newSkinnedMeshRenderer = dismemberedLimb.AddComponent<SkinnedMeshRenderer>();
-        MeshExtractor meshExtractor = dismemberedLimb.AddComponent<MeshExtractor>();
-        newSkinnedMeshRenderer.sharedMesh = extractedMesh;
         dismemberedLimb.AddComponent<BoneHierarchyCloner>();
-        meshExtractor.InitializeMeshExtractor(newSkinnedMeshRenderer);
-        MeshHider meshHider = dismemberedLimb.AddComponent<MeshHider>();
-        meshHider.InitializeMeshHider(newSkinnedMeshRenderer);
+       // MeshExtractor meshExtractor = dismemberedLimb.AddComponent<MeshExtractor>();
+        newSkinnedMeshRenderer.sharedMesh = extractedMesh;
 
+        MeshHider newMeshHider = dismemberedLimb.AddComponent<MeshHider>();
+        newMeshHider.InitializeMeshHider(newSkinnedMeshRenderer);
+
+        MeshExtractor meshExtractor = dismemberedLimb.AddComponent<MeshExtractor>();
+        meshExtractor.InitializeMeshExtractor(newSkinnedMeshRenderer);
         newSkinnedMeshRenderer.bones = DismemberedBones;
 
         for (int i = 0; i < DismemberedBones.Length; i++)
@@ -362,6 +429,11 @@ public class MeshExtractor : MonoBehaviour
     public void InitializeMeshExtractor(SkinnedMeshRenderer renderer)
     {
         originalSkinnedMeshRenderer = renderer;
+
+        cloner = GetComponent<BoneHierarchyCloner>();
+        meshHider = GetComponent<MeshHider>();
+
+        CacheMeshData();
     }
 
     private void CollectBoneIndices(Transform currentBoneToProcess, List<int> result)
