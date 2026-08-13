@@ -17,6 +17,7 @@ public class ChaseState : IEnemyState
         brain.EnemyMovement.SetPlayerAvoidance(false);
         //        Debug.Log("Entered Chase");
         brain.SetCurrentlyChasing(true);
+      
         //  lockedChasePoint = brain.chaseTargetPosition;
         brain.EnemyMovement.SetMovementMode(EnemyMovement.MovementMode.Chase);
         if (brain.shouldPauseOnChase)

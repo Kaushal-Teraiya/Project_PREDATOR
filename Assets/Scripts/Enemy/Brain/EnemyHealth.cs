@@ -47,11 +47,11 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             if (hitReactionCoroutine != null)
                 StopCoroutine(hitReactionCoroutine);
 
-            hitReactionCoroutine = StartCoroutine(EnableSpeed());
+            hitReactionCoroutine = StartCoroutine(PlayHitReaction());
         }
     }
 
-    private IEnumerator EnableSpeed()
+    private IEnumerator PlayHitReaction()
     {
         // Wait until the animator actually enters the hit reaction state
         while (!brain.EnemyMovement._Animator.GetCurrentAnimatorStateInfo(0).IsName("HitReaction_"))

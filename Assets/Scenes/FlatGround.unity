@@ -21305,6 +21305,63 @@ Transform:
   - {fileID: 5214698882553930083}
   m_Father: {fileID: 3654121547125036410}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &3356873094013538309
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 196056226160762419, guid: a1196bde79c1d6941bd6b0ca5a20a28a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -7.46957
+      objectReference: {fileID: 0}
+    - target: {fileID: 196056226160762419, guid: a1196bde79c1d6941bd6b0ca5a20a28a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.725
+      objectReference: {fileID: 0}
+    - target: {fileID: 196056226160762419, guid: a1196bde79c1d6941bd6b0ca5a20a28a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 4.73429
+      objectReference: {fileID: 0}
+    - target: {fileID: 196056226160762419, guid: a1196bde79c1d6941bd6b0ca5a20a28a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 196056226160762419, guid: a1196bde79c1d6941bd6b0ca5a20a28a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 196056226160762419, guid: a1196bde79c1d6941bd6b0ca5a20a28a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 196056226160762419, guid: a1196bde79c1d6941bd6b0ca5a20a28a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 196056226160762419, guid: a1196bde79c1d6941bd6b0ca5a20a28a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 196056226160762419, guid: a1196bde79c1d6941bd6b0ca5a20a28a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 196056226160762419, guid: a1196bde79c1d6941bd6b0ca5a20a28a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 801530153768469900, guid: a1196bde79c1d6941bd6b0ca5a20a28a, type: 3}
+      propertyPath: m_Name
+      value: GoreCap
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: a1196bde79c1d6941bd6b0ca5a20a28a, type: 3}
 --- !u!4 &3357653462674128156
 Transform:
   m_ObjectHideFlags: 0
@@ -26432,3 +26489,4 @@ SceneRoots:
   - {fileID: 518421193}
   - {fileID: 2055852860}
   - {fileID: 1842202590}
+  - {fileID: 3356873094013538309}

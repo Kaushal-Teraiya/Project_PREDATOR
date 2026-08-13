@@ -74,26 +74,13 @@ public class WeaponRuntimeInstance
         if (weaponFireConfig.hitDetector.DetectHit(fireOrigin, spreadDirection, weaponFireConfig, out hitResult))
         {
             Transform t = hitResult.hitObject.transform;
-
-            // while (t != null)
-            // {
-            //    // Debug.Log(t.name);
-
-            //     if (t.GetComponent<EnemyHealth>() != null)
-            //     {
-            //         Debug.Log("FOUND ENEMY HEALTH!");
-            //     }
-
-            //     t = t.parent;
-            // }
-
             LimbHitBox limbHitBox = hitResult.hitObject.GetComponent<LimbHitBox>();
             if (limbHitBox != null)
             {
                 if (GameplaySettings.dismembermentEnabled && limbHitBox.GetComponent<Dismembered>() == null)
                 {
                     string boneName = limbHitBox.bone.name.ToLower();
-                    if (!boneName.Contains("mixamorig:hips") || !boneName.Contains("mixamorig:leftshoulder") || !boneName.Contains("mixamorig:rightshoulder"))
+                    if (!boneName.Contains("mixamorig:hips") && !boneName.Contains("mixamorig:leftshoulder") && !boneName.Contains("mixamorig:rightshoulder"))
                     {
                         limbHitBox.dismemberment.DismemberBone(limbHitBox.bone.name);
                     }

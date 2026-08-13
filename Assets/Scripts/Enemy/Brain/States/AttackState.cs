@@ -5,60 +5,33 @@ public class AttackState : IEnemyState
 {
     private EnemyBrain brain;
     private AnimationClip currentAnimationClip;
-    private double tolerance;
+
     public AttackState(EnemyBrain brain)
     {
         this.brain = brain;
     }
     public void OnEnter()
     {
+        Debug.Log("ATTACK ENTER");
         var Enemy = brain.EnemyMovement;
         brain.SetAttackRegisterDistance(brain.CurrentAttackProfile);
+        //brain.CurrentCombatStyle.Enter();
+
+
+        if (!brain.IsInState(brain.AttackState))
+        {
+            return;
+        }
+
         Enemy.Stop();
         Enemy.RotationIntent(EnemyMovement.RotationPriority.State, brain.player.transform.position);
         //Enemy.SetMovementMode(EnemyMovement.MovementMode.Idle);
         Enemy.DisableProximity();
-        float distance = Vector3.Distance(brain.player.transform.position, brain.transform.position);
-
         if (brain.CurrentAttackProfile == null)
         {
             Debug.Log("[AttackState] CURRENT ATTACK PROFILE IS NULL");
         }
 
-        var normalizedDirection = (brain.player.transform.position - brain.transform.position).normalized;
-        var maxDistance = Vector3.Distance(brain.transform.position, brain.player.transform.position);
-        var rayOrigin = brain.transform.position + Vector3.up * 1.5f;
-
-        if (Enemy.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Ground))
-        {
-            RaycastHit[] hits = Physics.RaycastAll(rayOrigin, normalizedDirection, maxDistance, brain.ObstacleMaskForReposition);
-            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-            foreach (var hit in hits)
-            {
-                if (hit.collider.transform.root == brain.transform)
-                {
-                    continue;
-                }
-
-                if (hit.collider.transform.root == brain.player.transform)
-                {
-                    break;
-                }
-
-                Debug.Log("[AttackState] Hit Collider Name on attack start Raycast: " + hit.collider.name);
-                brain.SwitchState(brain.RepositionState);
-                return;
-            }
-
-            var band = brain.GetEffectiveBandRange(brain.CurrentAttackProfile);
-            tolerance = (float)(band.x - band.y) * 0.25;
-
-            if ((distance < brain.CurrentAttackProfile.minRange - tolerance || distance > brain.CurrentAttackProfile.maxRange + tolerance) && !brain.IsCommitedToReposition)
-            {
-                brain.SwitchState(brain.RepositionState);
-                return;
-            }
-        }
         SetupAnimation();
         // Surface attack
         if (!Enemy.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Ground))
@@ -117,49 +90,14 @@ public class AttackState : IEnemyState
     public void HandleAttackEnd()
     {
         brain.NotifyAttackEnded();
-        brain.SetIsCommitedToReposition(false);
+
         // BandPositionCoordinator.Instance.ReleaseBand(brain.GetCurrentCombatBand());
         // brain.SwitchState(brain.BufferState);
-        float distance = Vector3.Distance(brain.transform.position, brain.player.transform.position);
-        var value = Random.value;
-        if (value < 0.5f)
-        {
-            if (distance <= brain.AttackRegisterDistance)
-            {
-                StartNewAttack();
-            }
-            else
-            {
-                //MAKE SURE TO CHECK VISIBILITY RESULT BEFORE TRANSITIONING TO ANY STATE BECAUSE WE HAVE TO TAKE DARKNESS IN ACCOUNT AS WELL.
-                brain.SwitchState(brain.ChaseState);
-            }
-        }
-        else
-        {
-            if (distance > brain.FarAttackAsset.maxRange * 1.5f)
-            {
-                //MAKE SURE TO CHECK VISIBILITY RESULT BEFORE TRANSITIONING TO ANY STATE BECAUSE WE HAVE TO TAKE DARKNESS IN ACCOUNT AS WELL.
-                brain.SwitchState(brain.ChaseState);
-            }
-            else
-            {
-                brain.SwitchState(brain.RepositionState);
-            }
-
-        }
+        //4TH AUGUST 2206 BACK AT IT , TRYNA REFACTOR ATTACK STATE INTO COMBAT STYLES LIKE "AttackReposition" , "berserkStyle" , "Hunter Style"
+        brain.CurrentCombatStyle.HandleAttackEnd();
 
     }
 
-    private void StartNewAttack()
-    {
-        brain.EnemyMovement.Animator_ResetTrigger("Attack");
-        SetupAnimation();
-        if (brain.GetCurrentCombatBand() == EnemyBrain.CombatBand.Far)
-        {
-            brain.SwitchState(brain.RepositionState);
-        }
-        brain.EnemyMovement.RequestAnimation(new AnimationIntent(AnimationType.Attack, 30));
-    }
 
     private void SetupAnimation()
     {

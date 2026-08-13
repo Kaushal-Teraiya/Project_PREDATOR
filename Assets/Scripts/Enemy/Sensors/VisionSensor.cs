@@ -142,7 +142,7 @@ public class VisionSensor : MonoBehaviour
             glimpseCooldownTimer += Time.deltaTime;
             if (glimpseCooldownTimer >= 1f)
             {
-                Debug.Log($"[VisionSensor] Peripheral glimpse at angleFactor: {angleFactor}");
+                //Debug.Log($"[VisionSensor] Peripheral glimpse at angleFactor: {angleFactor}");
                 OnPeripheralGlimpse?.Invoke(player.transform.position);
                 glimpseCooldownTimer = 0f;
             }

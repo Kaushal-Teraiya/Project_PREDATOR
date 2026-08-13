@@ -10,6 +10,7 @@ public class BufferState : IEnemyState
     }
     public void OnEnter()
     {
+        //brain._AttackRepositionStyle.DecideNextAction();
         var distance = Vector3.Distance(brain.transform.position, brain.player.transform.position);
 
         if (distance <= brain.AttackDistance)

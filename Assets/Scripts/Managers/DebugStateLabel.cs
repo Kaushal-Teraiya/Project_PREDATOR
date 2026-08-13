@@ -45,6 +45,8 @@ public class DebugStateLabel : MonoBehaviour
                 return Color.azure;
             case "RepositionState":
                 return Color.rebeccaPurple;
+            case "CombatState":
+                return Color.aliceBlue;
             default:
                 return Color.white;
         }

@@ -78,6 +78,7 @@ public class RepositionState : IEnemyState
         {
             hasAlmostReached = true;
             //brain.enemyMovement.SetMovementMode(EnemyMovement.MovementMode.Idle);
+            brain.EnemyMovement.MoveTo(desiredPosition);
             brain.EnemyMovement.RotationIntent(EnemyMovement.RotationPriority.State, brain.player.transform.position);
             brain.SwitchState(brain.AttackState);
         }

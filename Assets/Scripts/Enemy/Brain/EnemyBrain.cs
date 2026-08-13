@@ -31,12 +31,14 @@ public class EnemyBrain : MonoBehaviour
     private WanderState wanderState;
     private BufferState bufferState;
     private RepositionState repositionState;
+    private CombatState combatState;
     public IEnemyState RepositionState => repositionState;
     public IEnemyState WanderState => wanderState;
     public IEnemyState AttackState => attackState;
     public IEnemyState ChaseState => chaseState;
     public IEnemyState IdleState => idleState;
     public IEnemyState BufferState => bufferState;
+    public IEnemyState CombatState => combatState;
 
     [Header("Object & Script References")]
     private EnemyMovement enemyMovement;
@@ -121,6 +123,16 @@ public class EnemyBrain : MonoBehaviour
 
     [SerializeField] private float attackCooldown = 1.5f;
     [SerializeField] private float lungeAttackPredictionDistance = 1.5f;
+    private ICombatStyle currentCombatStyle;
+    public ICombatStyle CurrentCombatStyle => currentCombatStyle;
+    public enum CombatStyleType
+    {
+        AttackReposition,
+        Berserk,
+        Circling
+    }
+
+    [SerializeField] private CombatStyleType combatStyleType;
 
     [Header("Navmesh Data")]
     [SerializeField] private float distanceForSampling = 5f;
@@ -274,6 +286,9 @@ public class EnemyBrain : MonoBehaviour
         wanderState = new WanderState(this);
         bufferState = new BufferState(this);
         repositionState = new RepositionState(this);
+        combatState = new CombatState(this);
+
+        currentCombatStyle = CombatStyleFactory.Create(combatStyleType, this);
         SwitchState(idleState);
         player = GameObject.FindGameObjectWithTag("Player");
         playerMovement = player.transform.GetComponent<PlayerMovement>();
@@ -497,7 +512,7 @@ public class EnemyBrain : MonoBehaviour
             return;
         }
 
-        if (playerHealth.playerisDead && IsInState(attackState))
+        if (playerHealth.playerisDead && IsInCombat())
         {
             enemyMovement.SetMovementMode(EnemyMovement.MovementMode.Idle);
             //enemyMovement.Stop();
@@ -514,6 +529,11 @@ public class EnemyBrain : MonoBehaviour
             SwitchState(chaseState);
         }
         if (IsInState(repositionState))
+        {
+            return;
+        }
+
+        if (IsInState(combatState))
         {
             return;
         }
@@ -536,6 +556,7 @@ public class EnemyBrain : MonoBehaviour
             if (CheckVisibilityResult(VisionSensor.visibilityResult.Chase))
             {
                 SelectNextBand();
+                //currentCombatStyle.Enter();
                 //                Debug.Log("[EnemyBrain] current combat band is " + GetCurrentCombatBand());
                 SwitchState(chaseState);
                 return;
@@ -551,6 +572,11 @@ public class EnemyBrain : MonoBehaviour
                 SwitchState(investigateState);
                 return;
             }
+        }
+
+        if (!IsInCombat() && IsInState(chaseState) && HasVision() && IsInCombatBand() && !IsInCooldown() && dot > attackDotThreshold)
+        {
+            SwitchState(combatState);
         }
 
 
@@ -760,6 +786,20 @@ public class EnemyBrain : MonoBehaviour
         {
             currentCombatBand = CombatBand.Far;
             currentAttackProfile = farAttacksAsset;
+        }
+    }
+
+    public void SelectCloseOrMidBand()
+    {
+        if (UnityEngine.Random.value < 0.5f)
+        {
+            currentCombatBand = CombatBand.Close;
+            currentAttackProfile = closeAttacksAsset;
+        }
+        else
+        {
+            currentCombatBand = CombatBand.Mid;
+            currentAttackProfile = midAttacksAsset;
         }
     }
 
@@ -1358,6 +1398,11 @@ public class EnemyBrain : MonoBehaviour
         }
     }
 
+    public bool IsInCombat()
+    {
+        return IsInState(attackState) || IsInState(combatState);
+    }
+
     private void HandleLeapEnd()
     {
         // if (GetAbility<SurfaceCrawlAbility>() != null)
@@ -1557,8 +1602,6 @@ public class EnemyBrain : MonoBehaviour
 
     #endregion
 
-    #region DebugGizmos
-
     #region Boolean Functions
     private bool IsAtTop()
     {
@@ -1675,6 +1718,9 @@ public class EnemyBrain : MonoBehaviour
     }
 
     #endregion
+
+
+    #region  Gizmos
     void OnDrawGizmos()
     {
         // DrawCircle(transform.position, proximityRadius, 40);
@@ -1956,6 +2002,5 @@ public class EnemyBrain : MonoBehaviour
             prevPoint = nextPoint;
         }
     }
-    #endregion DebugGizmos
+    #endregion GizmosDebug
 }
-
