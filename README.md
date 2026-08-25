@@ -8,7 +8,7 @@ Instead of building a single enemy controller filled with hardcoded logic, Preda
 
 The project started as an experiment with Game AI and gradually evolved into a modular creature framework where different enemy archetypes can be assembled from reusable systems.
 
-![Project Predator](Predator.png)
+![Project Predator](Projectpredator.png)
 
 ---
 
