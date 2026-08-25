@@ -20,6 +20,13 @@ https://www.youtube.com/watch?v=PJ8d_m_bnw0
 
 ---
 
+## 🎮 Download & Play
+
+Download the playable **Project Predator V1** build from Google Drive:
+
+https://drive.google.com/drive/u/1/folders/1BS_NBWpGS2G97H8uzPcTpNy1vhEFUFgT
+
+
 ## 🌐 Portfolio
 
 Full project breakdown, technical details, screenshots, and development information:
@@ -536,3 +543,9 @@ https://kaushal-portfolio-liart.vercel.app/Projects/ProjectPredator
 ### 🎥 Project Predator V1
 
 https://www.youtube.com/watch?v=PJ8d_m_bnw0
+
+## 🎮 Download & Play
+
+Download the playable **Project Predator V1** build from Google Drive:
+
+https://drive.google.com/drive/u/1/folders/1BS_NBWpGS2G97H8uzPcTpNy1vhEFUFgT
