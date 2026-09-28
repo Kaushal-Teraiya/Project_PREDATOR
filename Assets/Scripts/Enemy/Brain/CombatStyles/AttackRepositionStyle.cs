@@ -28,7 +28,7 @@ public class AttackRepositionStyle : ICombatStyle
     {
         var enemy = brain.EnemyMovement;
 
-        if (!enemy.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Ground))
+        if (!enemy.IsCurrentMovementSurface(EnemyMovement.MovementSurface.Ground))
         {
             return false;
         }

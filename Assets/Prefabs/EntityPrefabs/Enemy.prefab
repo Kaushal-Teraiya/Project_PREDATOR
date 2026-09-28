@@ -156,7 +156,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -255,6 +255,7 @@ GameObject:
   - component: {fileID: 2543830044629575685}
   - component: {fileID: 1035355286651946980}
   - component: {fileID: 2805555499335276811}
+  - component: {fileID: 7265697493242308672}
   m_Layer: 9
   m_Name: Enemy
   m_TagString: Enemy
@@ -271,7 +272,7 @@ RectTransform:
   m_GameObject: {fileID: 7396628185523005442}
   m_LocalRotation: {x: 0, y: -0.72379255, z: 0, w: 0.69001764}
   m_LocalPosition: {x: 0, y: 0, z: -13.04}
-  m_LocalScale: {x: 1.33, y: 1.33, z: 1.33}
+  m_LocalScale: {x: 1.2, y: 1.2, z: 1.2}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 4570527094295870295}
@@ -333,6 +334,7 @@ MonoBehaviour:
   bandDistanceTolerance: 0.5
   attackCooldown: 0.001
   lungeAttackPredictionDistance: 5
+  combatStyleType: 0
   distanceForSampling: 100
   wayPointCollectionRadius: 50
   idleVariants:
@@ -377,9 +379,6 @@ MonoBehaviour:
   circleSegments: 48
   Debug_RepositionTarget: {x: 0, y: 0, z: 0}
   enemyArchetype: {fileID: 11400000, guid: 6f54888bdbae1ff4ea0cb3aff651b3b1, type: 2}
-  goal: 2
-  activeGoal: 0
-  overrideGoal: 0
   playerVicinityThreshold: 10
   clearanceMask:
     serializedVersion: 2
@@ -404,12 +403,13 @@ MonoBehaviour:
   rotationSpeed: 280
   rotationThreshold: 2
   crawlIntent: 0
+  isTransitionAllowed: 0
   currentAnimationIntent:
     animationType: 0
     priority: 0
   repathInterval: 0.4
   acceleration: 10
-  isTransitionAllowed: 0
+  IsTransitionAllowed: 0
   TraversableSurfaceMask:
     serializedVersion: 2
     m_Bits: 0
@@ -566,6 +566,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RagdollController
   hips: {fileID: 5717766239641490296}
+--- !u!114 &7265697493242308672
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7396628185523005442}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67d0e8254807fbd4a8e495df47a963c8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyDebugGizmos
 --- !u!1 &8112395798780233638
 GameObject:
   m_ObjectHideFlags: 0

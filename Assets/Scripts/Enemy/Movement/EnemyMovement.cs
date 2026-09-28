@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
@@ -284,18 +285,18 @@ public class EnemyMovement : MonoBehaviour
         /* 24th May 2026 THIS is place where this FUCKASS BUG ate my whole week !!  Bug: on transition to ceiling the zombie would flip onto the outer surface of the ceiling 
         FIX: the flip was happening due to the fallback because when we set Current Movement surface to ceiling there was no ceiling related gate so it fellback on Ground rotation!!!!!
         FUCK YOU!!!!!!!!I solved it !! HUHUHUHUAHAHHAHAHA 😤🤣😈*/
-        if (IsCurrentMovememntSurface(MovementSurface.Wall) || IsCurrentMovememntSurface(MovementSurface.Ceiling))
+        if (IsCurrentMovementSurface(MovementSurface.Wall) || IsCurrentMovementSurface(MovementSurface.Ceiling))
         {
             surfaceTraversalMovement.Rotate();
             return;
         }
 
-        if (IsCurrentMovememntSurface(MovementSurface.GenericSurface))
+        if (IsCurrentMovementSurface(MovementSurface.GenericSurface))
         {
             return;
         }
 
-        if (IsCurrentMovememntSurface(MovementSurface.Ground))
+        if (IsCurrentMovementSurface(MovementSurface.Ground))
         {
             groundMovement.Rotate();
         }
@@ -510,6 +511,7 @@ public class EnemyMovement : MonoBehaviour
     #region Leap
     public void StartLeap(Vector3 targetPosition, float delayDuration, float arcDuration, float arcHeight, Quaternion? targetRotation = null)
     {
+       
         hasCapturedArcStart = false;
         DisableProximity();
         isLeaping = true;
@@ -620,7 +622,7 @@ public class EnemyMovement : MonoBehaviour
         surfaceTraversalMovement.SetCrawlIntent(intent);
     }
 
-    public bool IsCurrentMovememntSurface(MovementSurface movementSurface)
+    public bool IsCurrentMovementSurface(MovementSurface movementSurface)
     {
         return currentMovementSurface == movementSurface;
     }

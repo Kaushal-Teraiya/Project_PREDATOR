@@ -34,7 +34,7 @@ public class AttackState : IEnemyState
 
         SetupAnimation();
         // Surface attack
-        if (!Enemy.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Ground))
+        if (!Enemy.IsCurrentMovementSurface(EnemyMovement.MovementSurface.Ground))
         {
             SurfaceLeapAttack();
         }
@@ -141,7 +141,7 @@ public class AttackState : IEnemyState
         var targetPosition = predictedPosition - direction * (brain.CloseAttackAsset.minRange - 1.2f);
         NavMeshHit navHit;
 
-        if (NavMesh.SamplePosition(targetPosition, out navHit, 2f, NavMesh.AllAreas))
+        if (NavMesh.SamplePosition(targetPosition, out navHit, 20f, NavMesh.AllAreas))
         {
             targetPosition = navHit.position;
         }

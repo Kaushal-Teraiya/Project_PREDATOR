@@ -59,8 +59,7 @@ public class SurfaceTraversalMovement : IMovementLogic
     // initialCrawlIntent / initialTransitionAllowed seed from EnemyMovement's [SerializeField]
     // inspector values (crawlIntent / isTransitionAllowed) — those stay declared on EnemyMovement
     // since they're author-configured, but the *runtime* copies live here from this point on.
-    public SurfaceTraversalMovement(EnemyMovement owner, Transform transform,
-        EnemyMovement.CrawlIntent initialCrawlIntent, bool initialTransitionAllowed)
+    public SurfaceTraversalMovement(EnemyMovement owner, Transform transform, EnemyMovement.CrawlIntent initialCrawlIntent, bool initialTransitionAllowed)
     {
         this.owner = owner;
         this.transform = transform;
@@ -528,7 +527,7 @@ public class SurfaceTraversalMovement : IMovementLogic
             SetCrawlIntent(EnemyMovement.CrawlIntent.Random);
             PickNewCrawlTarget(owner.NumberOfAttempts, SurfaceCrawlAbility.roamDistance);
 
-            if (owner.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Ground))
+            if (owner.IsCurrentMovementSurface(EnemyMovement.MovementSurface.Ground))
             {
                 owner.SetAgentEnabled(true);
             }
@@ -645,7 +644,7 @@ public class SurfaceTraversalMovement : IMovementLogic
 
     public bool CanTransitionTo(EnemyMovement.MovementSurface targetSurface)
     {
-        if (owner.IsCurrentMovememntSurface(EnemyMovement.MovementSurface.Wall) && targetSurface == EnemyMovement.MovementSurface.Wall)
+        if (owner.IsCurrentMovementSurface(EnemyMovement.MovementSurface.Wall) && targetSurface == EnemyMovement.MovementSurface.Wall)
         {
             return true;
         }
