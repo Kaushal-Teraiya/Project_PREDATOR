@@ -256,6 +256,7 @@ GameObject:
   - component: {fileID: 1035355286651946980}
   - component: {fileID: 2805555499335276811}
   - component: {fileID: 7265697493242308672}
+  - component: {fileID: 4200278269461795427}
   m_Layer: 9
   m_Name: Enemy
   m_TagString: Enemy
@@ -318,11 +319,11 @@ MonoBehaviour:
   searchPointLayer:
     serializedVersion: 2
     m_Bits: 8
-  SearchPointFactorPercent: 1
+  searchPointFactorPercent: 0.5
   InvestigateAreaRadius: 18
   stimulusMemoryDuration: 5
   chaseTargetArrivalRadius: 0.3
-  hasSeenFirstTime: 1
+  hasSeenPlayerFirstTime: 1
   attackDistance: 0
   attackOffset: 0.5
   attackDamage: 20
@@ -578,6 +579,40 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67d0e8254807fbd4a8e495df47a963c8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyDebugGizmos
+--- !u!114 &4200278269461795427
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7396628185523005442}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b00bf5973d87a04da9189f7deba6480, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyAnimationController
+  idleVariants:
+  - {fileID: 7400000, guid: 1a5e2cdbd0b081c4091eeaa2e3b9bf77, type: 2}
+  - {fileID: 7400000, guid: 6594f5eeddaf1504aa8efd9c8766466e, type: 2}
+  - {fileID: 7400000, guid: eb959fb099ede1f469796e77a21887b9, type: 2}
+  walkVariants:
+  - {fileID: 7400000, guid: 5555ca24f0dcd7b478c6333e94e6fb4f, type: 2}
+  - {fileID: 7400000, guid: 5601d9da135660d4082057f7b59635e4, type: 2}
+  runVariants:
+  - {fileID: 7400000, guid: a79264f87cac7054ab14f2f4123ae8a8, type: 2}
+  - {fileID: 7400000, guid: e64ca7a2499fb0b4aa495711b75cbdd9, type: 2}
+  - {fileID: 7400000, guid: a2efbb15d389b2744912a35e4517c2a5, type: 2}
+  - {fileID: 7400000, guid: 45bea733fb961c44986429e3d229131c, type: 2}
+  deathVariants:
+  - {fileID: 7400000, guid: f7f84fd119431cf4480a820cea02dbe7, type: 2}
+  - {fileID: 7400000, guid: c7fc567b80c167d4d9e3299766db5cfa, type: 2}
+  - {fileID: 7400000, guid: 34aa3becc915d144e83962c3338b5817, type: 2}
+  hitReactionVariants:
+  - {fileID: 7400000, guid: b2e4fa40f357e2748a0b59d16227c903, type: 2}
+  - {fileID: 7400000, guid: 78583237ebb91e94482b4a49981a41f6, type: 2}
+  - {fileID: 7400000, guid: b300426e1e021744a87a878d02718063, type: 2}
+  - {fileID: 7400000, guid: 2bbfcbac121755d4f9b7351752cc1ad5, type: 2}
+  animatorOverrideController: {fileID: 22100000, guid: 09caca1e7c6927546a3e3c4000cddc68, type: 2}
 --- !u!1 &8112395798780233638
 GameObject:
   m_ObjectHideFlags: 0

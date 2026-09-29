@@ -51,7 +51,6 @@ public class EnemyBrain : MonoBehaviour
     public EnemyHealth _enemyHealth => enemyHealth;
     [SerializeField] private WayPointManager wayPointManager;
     public WayPointManager _WayPointManager => wayPointManager;
-    private Animator animator;
     private PlayerMovement playerMovement;
 
 
@@ -135,16 +134,6 @@ public class EnemyBrain : MonoBehaviour
     [SerializeField] private float wayPointCollectionRadius = 10f;
     public float _WayPointCollectionRadius => wayPointCollectionRadius;
 
-    [Header("Animation Data")]
-    //[SerializeField] private List<AnimationClip> attackVariants = new List<AnimationClip>();
-    [SerializeField] private List<AnimationClip> idleVariants = new List<AnimationClip>();
-    [SerializeField] private List<AnimationClip> walkVariants = new List<AnimationClip>();
-    [SerializeField] private List<AnimationClip> runVariants = new List<AnimationClip>();
-    [SerializeField] private List<AnimationClip> deathVariants = new List<AnimationClip>();
-    [SerializeField] private List<AnimationClip> hitReactionVariants = new List<AnimationClip>();
-    public AnimatorOverrideController animatorOverrideController;
-    private RuntimeAnimatorController baseController;
-
     // [Header("Suspicion Data")]
     // private float suspicion;
     // [SerializeField] private float suspicionDecayRate = 20f;
@@ -222,6 +211,7 @@ public class EnemyBrain : MonoBehaviour
     private CombatController combatController;
     private SearchController searchController;
     private PerceptionController perceptionController;
+    private EnemyAnimationController animationController;
     public CombatController _CombatController => combatController;
     public SearchController SearchController => searchController;
     public PerceptionController PerceptionController => perceptionController;
@@ -248,29 +238,8 @@ public class EnemyBrain : MonoBehaviour
         enemyMovement = GetComponent<EnemyMovement>();
         enemyHealth = GetComponent<EnemyHealth>();
         surfaceTraversalController = new SurfaceTraversalController(this, enemyMovement);
-        animator = GetComponent<Animator>();
         ragdollController = GetComponent<RagdollController>();
-        baseController = animator.runtimeAnimatorController;
-
-        animatorOverrideController = new AnimatorOverrideController
-        {
-            runtimeAnimatorController = baseController
-        };
-
-        AnimationClip walkVariant = walkVariants[UnityEngine.Random.Range(0, walkVariants.Count)];
-        AnimationClip idleVariant = idleVariants[UnityEngine.Random.Range(0, idleVariants.Count)];
-        AnimationClip runVariant = runVariants[UnityEngine.Random.Range(0, runVariants.Count)];
-        //   AnimationClip attackVariant = attackVariants[UnityEngine.Random.Range(0, attackVariants.Count)];
-        AnimationClip deathVariant = deathVariants[UnityEngine.Random.Range(0, deathVariants.Count)];
-        AnimationClip hitReactionVariant = hitReactionVariants[UnityEngine.Random.Range(0, hitReactionVariants.Count)];
-
-        animatorOverrideController["Walk_"] = walkVariant;
-        animatorOverrideController["Idle_"] = idleVariant;
-        animatorOverrideController["Run_"] = runVariant;
-        // animatorOverrideController["Attack_"] = attackVariant;
-        animatorOverrideController["Death_"] = deathVariant;
-        animatorOverrideController["HitReaction_"] = hitReactionVariant;
-        animator.runtimeAnimatorController = animatorOverrideController;
+        animationController = GetComponent<EnemyAnimationController>();
 
         InitializePursuitBehaviour();
     }
@@ -605,9 +574,7 @@ public class EnemyBrain : MonoBehaviour
 
     public void OverrideAttackAnimation(AnimationClip clip)
     {
-        animatorOverrideController["Attack_"] = clip;
-        animator.runtimeAnimatorController = animatorOverrideController;
-        animator.Play("Attack", 0, 0f);
+        animationController.OverrideAttackAnimation(clip);
     }
 
     public Vector2 GetEffectiveBandRange(AttackTypes attackProfile)

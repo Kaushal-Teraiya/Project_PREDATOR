@@ -546,7 +546,7 @@ MonoBehaviour:
   InvestigateAreaRadius: 18
   stimulusMemoryDuration: 5
   chaseTargetArrivalRadius: 0
-  hasSeenFirstTime: 1
+  hasSeenPlayerFirstTime: 1
   attackDistance: 4
   attackOffset: 0
   attackDamage: 20
@@ -561,22 +561,6 @@ MonoBehaviour:
   combatStyleType: 0
   distanceForSampling: 5
   wayPointCollectionRadius: 10
-  idleVariants:
-  - {fileID: 7400000, guid: 1a5e2cdbd0b081c4091eeaa2e3b9bf77, type: 2}
-  - {fileID: -203655887218126122, guid: 1a7396de12587c94ba2ff6e54ee4ad72, type: 3}
-  - {fileID: -203655887218126122, guid: 44d4225ecc83341489e468ce3942d9a0, type: 3}
-  walkVariants:
-  - {fileID: -203655887218126122, guid: 4345a5d02a053e244bd52a0501aa5de1, type: 3}
-  - {fileID: 7400000, guid: 5555ca24f0dcd7b478c6333e94e6fb4f, type: 2}
-  runVariants:
-  - {fileID: 7400000, guid: a79264f87cac7054ab14f2f4123ae8a8, type: 2}
-  - {fileID: 7400000, guid: e64ca7a2499fb0b4aa495711b75cbdd9, type: 2}
-  - {fileID: 7400000, guid: 45bea733fb961c44986429e3d229131c, type: 2}
-  deathVariants:
-  - {fileID: 7400000, guid: f7f84fd119431cf4480a820cea02dbe7, type: 2}
-  - {fileID: -203655887218126122, guid: e0da70acd3de2a448a279e585b803b13, type: 3}
-  hitReactionVariants: []
-  animatorOverrideController: {fileID: 0}
   proximityRadius: 10
   proximityObstacleMask:
     serializedVersion: 2
@@ -2279,7 +2263,7 @@ MonoBehaviour:
   InvestigateAreaRadius: 18
   stimulusMemoryDuration: 5
   chaseTargetArrivalRadius: 0
-  hasSeenFirstTime: 1
+  hasSeenPlayerFirstTime: 1
   attackDistance: 3.5
   attackOffset: 0.5
   attackDamage: 20
@@ -2294,22 +2278,6 @@ MonoBehaviour:
   combatStyleType: 0
   distanceForSampling: 5
   wayPointCollectionRadius: 50
-  idleVariants:
-  - {fileID: 7400000, guid: 1a5e2cdbd0b081c4091eeaa2e3b9bf77, type: 2}
-  - {fileID: 7400000, guid: 6594f5eeddaf1504aa8efd9c8766466e, type: 2}
-  - {fileID: 7400000, guid: eb959fb099ede1f469796e77a21887b9, type: 2}
-  walkVariants:
-  - {fileID: 7400000, guid: 5601d9da135660d4082057f7b59635e4, type: 2}
-  - {fileID: 7400000, guid: 5555ca24f0dcd7b478c6333e94e6fb4f, type: 2}
-  runVariants:
-  - {fileID: 7400000, guid: a79264f87cac7054ab14f2f4123ae8a8, type: 2}
-  - {fileID: 7400000, guid: e64ca7a2499fb0b4aa495711b75cbdd9, type: 2}
-  - {fileID: 7400000, guid: 45bea733fb961c44986429e3d229131c, type: 2}
-  deathVariants:
-  - {fileID: 7400000, guid: f7f84fd119431cf4480a820cea02dbe7, type: 2}
-  - {fileID: 7400000, guid: c7fc567b80c167d4d9e3299766db5cfa, type: 2}
-  hitReactionVariants: []
-  animatorOverrideController: {fileID: 0}
   proximityRadius: 10
   proximityObstacleMask:
     serializedVersion: 2
@@ -3416,7 +3384,7 @@ MonoBehaviour:
   InvestigateAreaRadius: 18
   stimulusMemoryDuration: 5
   chaseTargetArrivalRadius: 0
-  hasSeenFirstTime: 1
+  hasSeenPlayerFirstTime: 1
   attackDistance: 3.5
   attackOffset: 0.5
   attackDamage: 20
@@ -3431,22 +3399,6 @@ MonoBehaviour:
   combatStyleType: 0
   distanceForSampling: 5
   wayPointCollectionRadius: 50
-  idleVariants:
-  - {fileID: 7400000, guid: 1a5e2cdbd0b081c4091eeaa2e3b9bf77, type: 2}
-  - {fileID: 7400000, guid: 6594f5eeddaf1504aa8efd9c8766466e, type: 2}
-  - {fileID: 7400000, guid: eb959fb099ede1f469796e77a21887b9, type: 2}
-  walkVariants:
-  - {fileID: 7400000, guid: 5601d9da135660d4082057f7b59635e4, type: 2}
-  - {fileID: 7400000, guid: 5555ca24f0dcd7b478c6333e94e6fb4f, type: 2}
-  runVariants:
-  - {fileID: 7400000, guid: a79264f87cac7054ab14f2f4123ae8a8, type: 2}
-  - {fileID: 7400000, guid: e64ca7a2499fb0b4aa495711b75cbdd9, type: 2}
-  - {fileID: 7400000, guid: 45bea733fb961c44986429e3d229131c, type: 2}
-  deathVariants:
-  - {fileID: 7400000, guid: f7f84fd119431cf4480a820cea02dbe7, type: 2}
-  - {fileID: 7400000, guid: c7fc567b80c167d4d9e3299766db5cfa, type: 2}
-  hitReactionVariants: []
-  animatorOverrideController: {fileID: 0}
   proximityRadius: 10
   proximityObstacleMask:
     serializedVersion: 2
@@ -4969,7 +4921,7 @@ MonoBehaviour:
   InvestigateAreaRadius: 18
   stimulusMemoryDuration: 5
   chaseTargetArrivalRadius: 0
-  hasSeenFirstTime: 1
+  hasSeenPlayerFirstTime: 1
   attackDistance: 3.5
   attackOffset: 0.5
   attackDamage: 20
@@ -4984,22 +4936,6 @@ MonoBehaviour:
   combatStyleType: 0
   distanceForSampling: 5
   wayPointCollectionRadius: 50
-  idleVariants:
-  - {fileID: 7400000, guid: 1a5e2cdbd0b081c4091eeaa2e3b9bf77, type: 2}
-  - {fileID: 7400000, guid: 6594f5eeddaf1504aa8efd9c8766466e, type: 2}
-  - {fileID: 7400000, guid: eb959fb099ede1f469796e77a21887b9, type: 2}
-  walkVariants:
-  - {fileID: 7400000, guid: 5601d9da135660d4082057f7b59635e4, type: 2}
-  - {fileID: 7400000, guid: 5555ca24f0dcd7b478c6333e94e6fb4f, type: 2}
-  runVariants:
-  - {fileID: 7400000, guid: a79264f87cac7054ab14f2f4123ae8a8, type: 2}
-  - {fileID: 7400000, guid: e64ca7a2499fb0b4aa495711b75cbdd9, type: 2}
-  - {fileID: 7400000, guid: 45bea733fb961c44986429e3d229131c, type: 2}
-  deathVariants:
-  - {fileID: 7400000, guid: f7f84fd119431cf4480a820cea02dbe7, type: 2}
-  - {fileID: 7400000, guid: c7fc567b80c167d4d9e3299766db5cfa, type: 2}
-  hitReactionVariants: []
-  animatorOverrideController: {fileID: 0}
   proximityRadius: 10
   proximityObstacleMask:
     serializedVersion: 2
@@ -5735,7 +5671,7 @@ MonoBehaviour:
   InvestigateAreaRadius: 18
   stimulusMemoryDuration: 5
   chaseTargetArrivalRadius: 0
-  hasSeenFirstTime: 1
+  hasSeenPlayerFirstTime: 1
   attackDistance: 3.5
   attackOffset: 0.5
   attackDamage: 20
@@ -5750,22 +5686,6 @@ MonoBehaviour:
   combatStyleType: 0
   distanceForSampling: 5
   wayPointCollectionRadius: 50
-  idleVariants:
-  - {fileID: 7400000, guid: 1a5e2cdbd0b081c4091eeaa2e3b9bf77, type: 2}
-  - {fileID: 7400000, guid: 6594f5eeddaf1504aa8efd9c8766466e, type: 2}
-  - {fileID: 7400000, guid: eb959fb099ede1f469796e77a21887b9, type: 2}
-  walkVariants:
-  - {fileID: 7400000, guid: 5601d9da135660d4082057f7b59635e4, type: 2}
-  - {fileID: 7400000, guid: 5555ca24f0dcd7b478c6333e94e6fb4f, type: 2}
-  runVariants:
-  - {fileID: 7400000, guid: a79264f87cac7054ab14f2f4123ae8a8, type: 2}
-  - {fileID: 7400000, guid: e64ca7a2499fb0b4aa495711b75cbdd9, type: 2}
-  - {fileID: 7400000, guid: 45bea733fb961c44986429e3d229131c, type: 2}
-  deathVariants:
-  - {fileID: 7400000, guid: f7f84fd119431cf4480a820cea02dbe7, type: 2}
-  - {fileID: 7400000, guid: c7fc567b80c167d4d9e3299766db5cfa, type: 2}
-  hitReactionVariants: []
-  animatorOverrideController: {fileID: 0}
   proximityRadius: 10
   proximityObstacleMask:
     serializedVersion: 2
@@ -7828,7 +7748,7 @@ MonoBehaviour:
   InvestigateAreaRadius: 18
   stimulusMemoryDuration: 5
   chaseTargetArrivalRadius: 0
-  hasSeenFirstTime: 1
+  hasSeenPlayerFirstTime: 1
   attackDistance: 3.5
   attackOffset: 0.5
   attackDamage: 20
@@ -7843,22 +7763,6 @@ MonoBehaviour:
   combatStyleType: 0
   distanceForSampling: 5
   wayPointCollectionRadius: 50
-  idleVariants:
-  - {fileID: 7400000, guid: 1a5e2cdbd0b081c4091eeaa2e3b9bf77, type: 2}
-  - {fileID: 7400000, guid: 6594f5eeddaf1504aa8efd9c8766466e, type: 2}
-  - {fileID: 7400000, guid: eb959fb099ede1f469796e77a21887b9, type: 2}
-  walkVariants:
-  - {fileID: 7400000, guid: 5601d9da135660d4082057f7b59635e4, type: 2}
-  - {fileID: 7400000, guid: 5555ca24f0dcd7b478c6333e94e6fb4f, type: 2}
-  runVariants:
-  - {fileID: 7400000, guid: a79264f87cac7054ab14f2f4123ae8a8, type: 2}
-  - {fileID: 7400000, guid: e64ca7a2499fb0b4aa495711b75cbdd9, type: 2}
-  - {fileID: 7400000, guid: 45bea733fb961c44986429e3d229131c, type: 2}
-  deathVariants:
-  - {fileID: 7400000, guid: f7f84fd119431cf4480a820cea02dbe7, type: 2}
-  - {fileID: 7400000, guid: c7fc567b80c167d4d9e3299766db5cfa, type: 2}
-  hitReactionVariants: []
-  animatorOverrideController: {fileID: 0}
   proximityRadius: 10
   proximityObstacleMask:
     serializedVersion: 2
