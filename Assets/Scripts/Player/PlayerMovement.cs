@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Assertions.Must;
 using UnityEngine.InputSystem;
 
-public class PlayerMovement : MonoBehaviour
+public class PlayerMovement : MonoBehaviour, IPlayerMovement
 {
     public CharacterController player;
     private SoundEmitter emitter;
@@ -35,6 +35,8 @@ public class PlayerMovement : MonoBehaviour
 
     private Vector3 lastPlayerPosition;
     private Vector3 accumulatedMovement;
+    public bool IsPerformingAction => isPerformingAction;
+    public Vector3 LastMovementDirection => lastPlayerMovementDirection;
     //private Vector3 lastPlayerMovementDirection;
 
     void Start()

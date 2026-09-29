@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Experimental.GlobalIllumination;
 
-public class PlayerVisiblity : MonoBehaviour
+public class PlayerVisiblity : MonoBehaviour , IVisibilityProvider
 {
     private List<LightZone> activeLights = new List<LightZone>();
     private float visibility;
@@ -12,7 +12,7 @@ public class PlayerVisiblity : MonoBehaviour
     [SerializeField] private float intensityTuner = 5f;
     [SerializeField] private bool useLightZone = true;
     public bool UseLightZone => useLightZone;
-
+  
     private void OnTriggerEnter(Collider other)
     {
         var light = other.GetComponentInChildren<LightZone>();
@@ -46,7 +46,7 @@ public class PlayerVisiblity : MonoBehaviour
         activeLights.Remove(light);
     }
 
-    public float GetVisiblity()
+    public float GetVisibility()
     {
         if (useLightZone)
         {

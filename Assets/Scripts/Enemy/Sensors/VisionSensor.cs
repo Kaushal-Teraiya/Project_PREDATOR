@@ -9,7 +9,7 @@ public class VisionSensor : MonoBehaviour
 {
     [SerializeField] private float maxViewDistance; // Make sure to increase this for realistic effect.. can be tweakable per enemy type
     [SerializeField] private Transform player;
-    [SerializeField] private float dotProductThreshold = 0.3f;
+    [SerializeField] private float visionAngle = 120f;
     [SerializeField] private LayerMask obstacleMask;
     private bool hasLineOfSight;
     private Vector3 lastSeenPosition;
@@ -25,12 +25,13 @@ public class VisionSensor : MonoBehaviour
     [SerializeField] private float chaseThreshold;
     [SerializeField] private float chaseDistanceThresholdInDarkness;
     [SerializeField] private float investigateThreshold;
+    [SerializeField] private float verticalDotProductThreshold = 0.3f;
     public float effectiveViewDistance { get; private set; }
 
     private float environmentVisibility = 1f;
     private float visionClarity = 1f;
-    private PlayerVisiblity playerVisiblity;
-    private PlayerMovement playerMovement;
+    private IVisibilityProvider visibilityProvider;
+    private IPlayerMovement playerMovement;
     public enum visibilityResult
     {
         None,
@@ -44,8 +45,8 @@ public class VisionSensor : MonoBehaviour
     {
         player = GameObject.FindGameObjectWithTag("Player").transform;
         previousPlayerPosition = player.position;
-        playerVisiblity = player.GetComponent<PlayerVisiblity>();
-        playerMovement = player.GetComponent<PlayerMovement>();
+        visibilityProvider = player.GetComponent<IVisibilityProvider>();
+        playerMovement = player.GetComponent<IPlayerMovement>();
         environmentVisibility = Mathf.Clamp01(1f - RenderSettings.fogDensity);
     }
 
@@ -72,15 +73,15 @@ public class VisionSensor : MonoBehaviour
         float movementFactor = speed / 10;
         movementFactor = Mathf.Max(0.2f, movementFactor);
 
+        Vector3 directionToTarget = (player.transform.position - transform.position).normalized;
 
-        Vector3 directionToTarget = player.transform.position - transform.position;
-        directionToTarget.y = 0f;
-        directionToTarget.Normalize();
-        float dotProduct = Vector3.Dot(transform.forward, directionToTarget);
+        float angle = Vector3.Angle(transform.forward, directionToTarget);
 
-        if (dotProduct < dotProductThreshold)
+        if (angle > visionAngle * 0.5f)
         {
             SetHasLOS(false);
+            AngleFactor = 0f;
+            previousPlayerPosition = player.position;
             return;
         }
 
@@ -96,9 +97,9 @@ public class VisionSensor : MonoBehaviour
             {
                 SetHasLOS(true);
 
-                visionClarity = playerVisiblity.GetVisiblity();
+                visionClarity = visibilityProvider.GetVisibility();
 
-                if (!playerVisiblity.UseLightZone)
+                if (!visibilityProvider.UseLightZone)
                 {
                     lastSeenPosition = player.transform.position;
                     lastSeenTime = Time.time;
@@ -122,12 +123,12 @@ public class VisionSensor : MonoBehaviour
             SetHasLOS(false);
         }
 
-        float angleFactor = (dotProduct - dotProductThreshold) / (1 - dotProductThreshold);
+        float angleFactor = 1f - angle / (visionAngle * 0.5f);
         angleFactor = Mathf.Clamp01(angleFactor);
         bool peripheralVision;
         AngleFactor = angleFactor;
 
-        if (playerVisiblity.UseLightZone)
+        if (visibilityProvider.UseLightZone)
         {
             peripheralVision = angleFactor > 0f && angleFactor < 0.5f && VisibilityResult != visibilityResult.None && distanceBtwEnemyNPlayer <= chaseDistanceThresholdInDarkness;
         }
@@ -159,9 +160,9 @@ public class VisionSensor : MonoBehaviour
 
         if (hasLineOfSight)
         {
-            visionClarity = playerVisiblity.GetVisiblity();
+            visionClarity = visibilityProvider.GetVisibility();
             //Debug.Log("[VisionSensor] Vision clarity " + visionClarity);
-            if (playerVisiblity.UseLightZone)
+            if (visibilityProvider.UseLightZone)
             {
                 if (distanceBtwEnemyNPlayer <= chaseDistanceThresholdInDarkness && hasLineOfSight)
                 {
@@ -178,7 +179,7 @@ public class VisionSensor : MonoBehaviour
                     //investigate directly
                     VisibilityResult = visibilityResult.Investigate;
                 }
-                else if (playerMovement.isPerformingAction && visionClarity > playerVisiblity.BaseVisibility)
+                else if (playerMovement.IsPerformingAction && visionClarity > visibilityProvider.BaseVisibility)
                 {
                     //some reaction like agressive scream or animation that shows that zombie is ready to investigate
                     //suspicion accumulation can be done here so that player have time to save themselves from alerting zombies
@@ -212,60 +213,49 @@ public class VisionSensor : MonoBehaviour
     private void DrawVisionGizmos()
     {
         Vector3 origin = transform.position;
+        Vector3 forward = transform.forward.normalized;
+
+        float halfFov = visionAngle * 0.5f;
+        float coneRadius = Mathf.Tan(halfFov * Mathf.Deg2Rad) * maxViewDistance;
+
+        Vector3 right = transform.right.normalized;
+        Vector3 up = transform.up.normalized;
+        Vector3 baseCenter = origin + forward * maxViewDistance;
 
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(origin, maxViewDistance);
 
-        float halfFov = Mathf.Acos(dotProductThreshold) * Mathf.Rad2Deg;
-
-        Vector3 forward = transform.forward;
-        forward.y = 0f;
-        forward.Normalize();
-
-        Vector3 leftBoundary = Quaternion.Euler(0f, -halfFov, 0f) * forward;
-        Vector3 rightBoundary = Quaternion.Euler(0f, halfFov, 0f) * forward;
-
         Gizmos.color = Color.darkBlue;
-        Gizmos.DrawRay(origin, leftBoundary * maxViewDistance);
-        Gizmos.DrawRay(origin, rightBoundary * maxViewDistance);
 
-        Gizmos.color = Color.green;
-        if (!hasLineOfSight)
+        int segments = 10;
+        Vector3 previousPoint = baseCenter + right * coneRadius;
+
+        for (int i = 1; i <= segments; i++)
         {
-            Gizmos.color = Color.red;
+            float angle = i * Mathf.PI * 2f / segments;
+            Vector3 nextPoint = baseCenter + (right * Mathf.Cos(angle) + up * Mathf.Sin(angle)) * coneRadius;
+
+            Gizmos.DrawLine(previousPoint, nextPoint);
+            Gizmos.DrawLine(origin, nextPoint);
+
+            previousPoint = nextPoint;
         }
+
+        Gizmos.color = hasLineOfSight ? Color.green : Color.red;
         Gizmos.DrawRay(origin, forward * maxViewDistance);
 
         Gizmos.color = Color.magenta;
 
-        Vector3 forwardDir = transform.forward;
-        forwardDir.y = 0f;
-        forwardDir.Normalize();
-
-        Vector3 endPoint = origin + forwardDir * chaseDistanceThresholdInDarkness;
-
+        Vector3 endPoint = origin + forward * chaseDistanceThresholdInDarkness;
         Gizmos.DrawLine(origin, endPoint);
-#if UNITY_EDITOR
-        Handles.color = Color.blue;
-        Handles.DrawAAPolyLine(5f, origin, origin + leftBoundary * maxViewDistance);
-
-        Handles.color = Color.blue;
-        Handles.DrawAAPolyLine(5f, origin, origin + rightBoundary * maxViewDistance);
-#endif
 
 #if UNITY_EDITOR
         Handles.color = hasLineOfSight ? Color.green : Color.red;
         Handles.DrawAAPolyLine(10f, origin, origin + forward * maxViewDistance);
-#endif
 
-#if UNITY_EDITOR
         Handles.color = Color.magenta;
-        Handles.DrawAAPolyLine(10f, origin, endPoint); // 6 pixels thick
-#else
-    Gizmos.DrawLine(origin, endPoint);
+        Handles.DrawAAPolyLine(10f, origin, endPoint);
 #endif
-
     }
-
 
 }

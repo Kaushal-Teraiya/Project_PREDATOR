@@ -60,7 +60,7 @@ public class EnemyBrain : MonoBehaviour
 
     [Header("InvestigateState Data")]
     [SerializeField] private float InvestigateAreaRadius;
-    public Vector3 lastStimulusPosition{get; private set;}
+    public Vector3 lastStimulusPosition { get; private set; }
     [SerializeField] private float stimulusMemoryDuration = 5f;
     private float lastStimulusTime;
 
@@ -241,7 +241,7 @@ public class EnemyBrain : MonoBehaviour
         ragdollController = GetComponent<RagdollController>();
         animationController = GetComponent<EnemyAnimationController>();
 
-        InitializePursuitBehaviour();
+        AssignPursuitBehavior();
     }
     void Start()
     {
@@ -256,21 +256,22 @@ public class EnemyBrain : MonoBehaviour
         repositionState = new RepositionState(this);
         combatState = new CombatState(this);
 
-        currentCombatStyle = CombatStyleFactory.Create(combatStyleType, this);
-        searchController = new SearchController(this);
-        SwitchState(idleState);
         player = GameObject.FindGameObjectWithTag("Player");
         playerMovement = player.transform.GetComponent<PlayerMovement>();
         playerHealth = player.GetComponent<PlayerHealth>();
+
+        currentCombatStyle = CombatStyleFactory.Create(combatStyleType, this);
+        searchController = new SearchController(this);
         combatController = new CombatController(this, playerMovement);
         perceptionController = new PerceptionController(this, soundSensor, visionSensor);
         perceptionController.Initialize();
+
         playerHealth.playerDead += HandleEnemyStateOnPlayerDeath;
         enemyMovement.OnLeapEnded += HandleLeapEnd;
-
         enemyMovement.OnTransitionComplete += surfaceTraversalController.HandleTransitionComplete;
-
         enemyMovement.OnEdgeDetected += surfaceTraversalController.HandleEdgeDetected;
+
+        SwitchState(idleState);
         // preferredMovementSurface = EnemyMovement.MovementSurface.Ceiling;
         //SetPreferredMovementSurface(EnemyMovement.MovementSurface.Ground);
     }
@@ -311,7 +312,7 @@ public class EnemyBrain : MonoBehaviour
         surfaceTraversalController.InitializeChase();
     }
 
-    private void InitializePursuitBehaviour()
+    private void AssignPursuitBehavior()
     {
         if (GetAbility<SurfaceCrawlAbility>() != null)
         {
@@ -487,19 +488,13 @@ public class EnemyBrain : MonoBehaviour
         }
     }
 
-
     private void CheckPerception()
     {
         perceptionController.Tick();
 
-        previousResult = perceptionController.PreviousResult;
-        currentResult = perceptionController.CurrentResult;
-        lastStimulusPosition = perceptionController.LastStimulusPosition;
-        lastStimulusTime = perceptionController.LastStimulusTime;
-
         if (!isEndingChase && currentlyChasing)
         {
-            Debug.Log("[EnemyBrain] Trying to set chase end ==  true");
+            Debug.Log("[EnemyBrain] Trying to set chase end == true");
             SetChaseEnd(true);
         }
 
@@ -520,14 +515,7 @@ public class EnemyBrain : MonoBehaviour
                 PauseBeforeChase();
             }
         }
-
-        if (currentResult == VisionSensor.visibilityResult.Investigate &&
-            previousResult == VisionSensor.visibilityResult.None)
-        {
-            snapShotPosition = perceptionController.SnapshotPosition;
-        }
     }
-
     #endregion
 
     #region State Control Functions
@@ -592,8 +580,6 @@ public class EnemyBrain : MonoBehaviour
         return _CombatController.ChooseBandSlice();
     }
 
-    #endregion
-
     public SearchPoint GetCurrentSearchPoint()
     {
         return searchController.GetCurrentSearchPoint();
@@ -603,6 +589,8 @@ public class EnemyBrain : MonoBehaviour
     {
         searchController.IncrementSearchIndex();
     }
+
+    #endregion
 
     #region State Queries & Control
 
