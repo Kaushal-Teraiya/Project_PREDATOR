@@ -2,6 +2,7 @@ using UnityEngine;
 public class AttackRepositionStyle : ICombatStyle
 {
     private EnemyBrain brain;
+    private bool needsFreshReposition;
 
     public AttackRepositionStyle(EnemyBrain brain)
     {
@@ -11,6 +12,8 @@ public class AttackRepositionStyle : ICombatStyle
     public void Enter()
     {
         Debug.Log("[AttackReposition Style ENTER]");
+        //brain.SelectNextBand();
+        needsFreshReposition = brain.GetCurrentCombatBand() == EnemyBrain.CombatBand.Far;
     }
 
     public void ExecuteOneShotDecesion()
@@ -32,6 +35,9 @@ public class AttackRepositionStyle : ICombatStyle
         {
             return false;
         }
+
+        if (needsFreshReposition)
+            return true;
 
         float distance = Vector3.Distance(
             brain.transform.position,
@@ -67,21 +73,24 @@ public class AttackRepositionStyle : ICombatStyle
         var band = brain.GetEffectiveBandRange(brain.CurrentAttackProfile);
         float tolerance = (band.y - band.x) * 0.25f;
 
-        if ((distance < brain.CurrentAttackProfile.minRange - tolerance ||
-             distance > brain.CurrentAttackProfile.maxRange + tolerance) &&
-            !brain.IsCommitedToReposition)
-        {
-            return true;
-        }
+        bool outsideBand = distance < band.x - tolerance || distance > band.y + tolerance;
 
-        return false;
+        return outsideBand && !brain.IsCommitedToReposition;
     }
 
     public void HandleAttackEnd()
     {
         Debug.Log("Attack Reposition Style");
         brain.SetIsCommitedToReposition(false);
-        //brain.SelectNextBand();
+        brain.SelectNextBand();
+
+        if (brain.GetCurrentCombatBand() == EnemyBrain.CombatBand.Far)
+        {
+            needsFreshReposition = true;
+            brain.SwitchState(brain.RepositionState);
+            return;
+        }
+        
         float distance = Vector3.Distance(brain.transform.position, brain.player.transform.position);
         var value = Random.value;
         if (value < 0.5f)
@@ -122,4 +131,12 @@ public class AttackRepositionStyle : ICombatStyle
         Debug.Log("[AttackReposition Style TICK]");
     }
 
+    public void OnRepositionComplete()
+    {
+        needsFreshReposition = false;
+    }
+    public void PrepareInitialDecision()
+    {
+        brain.SelectNextBand();
+    }
 }

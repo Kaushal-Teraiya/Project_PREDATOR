@@ -36,6 +36,16 @@ public class GroundMovement : IMovementLogic
         if (!agent.enabled)
             return;
 
+        if (!agent.isOnNavMesh)
+        {
+            bool recovered = TryRecoverToNavMesh();
+
+            Debug.Log($"OFF NAVMESH | Position: {transform.position} | Recovery: {recovered} | OnNavMesh: {agent.isOnNavMesh}");
+
+            if (!recovered)
+                return;
+        }
+
         repathTimer -= Time.deltaTime;
 
         if (NavMesh.SamplePosition(destination, out NavMeshHit sampleHit, 2f, NavMesh.AllAreas))
@@ -99,6 +109,7 @@ public class GroundMovement : IMovementLogic
         movementDir = movementDir.normalized;
 
         transform.position += movementDir * owner.CurrentSpeed * Time.deltaTime;
+        agent.Warp(transform.position);
 
         if (NavMesh.SamplePosition(transform.position, out NavMeshHit groundHit, 1f, NavMesh.AllAreas))
         {
@@ -183,5 +194,51 @@ public class GroundMovement : IMovementLogic
         float signedAngle = Vector3.SignedAngle(previousRotation * Vector3.forward, transform.forward, Vector3.up);
         float normalizedTurn = Mathf.Clamp(signedAngle / 45f, -1f, 1f);
         owner.Animator_SetFloat("TurnAmount", normalizedTurn);
+    }
+
+    private bool TryRecoverToNavMesh()
+    {
+        NavMeshQueryFilter filter = new NavMeshQueryFilter
+        {
+            agentTypeID = agent.agentTypeID,
+            areaMask = agent.areaMask
+        };
+
+        if (!NavMesh.SamplePosition(
+            transform.position,
+            out NavMeshHit hit,
+            10f,
+            filter))
+        {
+            return false;
+        }
+
+        agent.Warp(hit.position);
+
+        if (!agent.isOnNavMesh)
+        {
+            agent.enabled = false;
+            transform.position = hit.position;
+            agent.enabled = true;
+        }
+
+        return agent.isOnNavMesh;
+    }
+
+    private bool TryGetReachableGroundTarget(Vector3 target, out Vector3 reachableTarget)
+    {
+        reachableTarget = transform.position;
+        Vector3 searchPosition = new Vector3(target.x, transform.position.y, target.z);
+
+        if (!NavMesh.SamplePosition(searchPosition, out NavMeshHit hit, 10f, NavMesh.AllAreas))
+            return false;
+
+        NavMeshPath path = new NavMeshPath();
+
+        if (!agent.CalculatePath(hit.position, path) || path.status != NavMeshPathStatus.PathComplete)
+            return false;
+
+        reachableTarget = hit.position;
+        return true;
     }
 }

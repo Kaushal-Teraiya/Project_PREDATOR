@@ -5,6 +5,7 @@ using NUnit.Framework;
 using Unity.VisualScripting;
 
 using UnityEngine;
+using UnityEngine.AI;
 
 
 public class EnemyBrain : MonoBehaviour
@@ -106,11 +107,12 @@ public class EnemyBrain : MonoBehaviour
     public float FarBandCompression => farBandCompression;
     public enum CombatBand
     {
+        None,
         Far,
         Mid,
         Close
     }
-    [SerializeField] private CombatBand currentCombatBand;
+    [SerializeField] private CombatBand currentCombatBand = CombatBand.None;
     [SerializeField] private float bandDistanceTolerance = 0.5f;
 
     [SerializeField] private float attackCooldown = 1.5f;
@@ -402,13 +404,13 @@ public class EnemyBrain : MonoBehaviour
         var directionToPlayer = player.transform.position - transform.position;
         var dot = Vector3.Dot(transform.forward.normalized, directionToPlayer.normalized);
 
-        if (!IsInState(AttackState) && IsInState(chaseState) && HasVision() && _CombatController.IsInCombatBand() && !_CombatController.IsInCooldown() && dot > AttackDotThreshold)
+        if (IsInState(chaseState) && HasVision() && _CombatController.IsInCombatBand() && !_CombatController.IsInCooldown() && dot > AttackDotThreshold)
         {
             Debug.Log("[Chase] Entering Attack.");
             // Debug.Log("[EnemeyBrain] Dot for Attack is: " + dot);
             enemyMovement.RotationIntent(EnemyMovement.RotationPriority.State, player.transform.position);
             //Enemy.RequestAnimation(new AnimationIntent(AnimationType.Attack, 50));
-            SwitchState(AttackState);
+            SwitchState(combatState);
         }
 
         //INVESTIGATION TRIGGERED BY VISION
@@ -416,7 +418,8 @@ public class EnemyBrain : MonoBehaviour
         {
             if (CheckVisibilityResult(VisionSensor.visibilityResult.Chase))
             {
-                _CombatController.SelectNextBand();
+                currentCombatStyle.PrepareInitialDecision();
+              
                 //currentCombatStyle.Enter();
                 //                Debug.Log("[EnemyBrain] current combat band is " + GetCurrentCombatBand());
                 SwitchState(chaseState);
@@ -434,12 +437,6 @@ public class EnemyBrain : MonoBehaviour
                 return;
             }
         }
-
-        if (!IsInCombat() && IsInState(chaseState) && HasVision() && IsInCombatBand() && !IsInCooldown() && dot > attackDotThreshold)
-        {
-            SwitchState(combatState);
-        }
-
 
         if (Time.time - lastStimulusTime > stimulusMemoryDuration && lastStimulusPosition != Vector3.zero)
         {
@@ -758,6 +755,7 @@ public class EnemyBrain : MonoBehaviour
     {
         currentCombatBand = band;
         currentAttackProfile = profile;
+        SetAttackRegisterDistanceInternal(profile.attackRegisterDistance);
     }
 
     internal AttackTypes GetCurrentAttackProfile()

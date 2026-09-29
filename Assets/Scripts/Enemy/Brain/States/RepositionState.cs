@@ -21,7 +21,7 @@ public class RepositionState : IEnemyState
     public void OnEnter()
     {
         brain.EnemyMovement.Animator_SetBool("canExitReposition", false);
-        brain.SelectNextBand();
+       // brain.SelectNextBand();
         // if (!BandPositionCoordinator.Instance.TryReserveBand(brain.GetCurrentCombatBand()))
         // {
         //     brain.SwitchState(brain.RepositionState);
@@ -77,6 +77,10 @@ public class RepositionState : IEnemyState
         if (brain.HasReachedThePosition(desiredPosition, brain.RepositionArrivalRadius))
         {
             hasAlmostReached = true;
+            if(brain.CurrentCombatStyle is AttackRepositionStyle style)
+            {
+                style.OnRepositionComplete();
+            }
             //brain.enemyMovement.SetMovementMode(EnemyMovement.MovementMode.Idle);
             brain.EnemyMovement.MoveTo(desiredPosition);
             brain.EnemyMovement.RotationIntent(EnemyMovement.RotationPriority.State, brain.player.transform.position);

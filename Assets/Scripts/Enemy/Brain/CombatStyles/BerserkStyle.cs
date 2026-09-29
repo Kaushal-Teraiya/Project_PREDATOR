@@ -11,7 +11,7 @@ public class BerserkStyle : ICombatStyle
     public void Enter()
     {
         Debug.Log("[Berserk Style ENTER]");
-        // brain.SelectCloseOrMidBand();
+
         // brain.SetAttackRegisterDistance(brain.CloseAttackAsset);
     }
 
@@ -34,7 +34,7 @@ public class BerserkStyle : ICombatStyle
     public void HandleAttackEnd()
     {
         Debug.Log("Berserk style");
-        //brain.SelectCloseOrMidBand();
+        brain.SelectCloseOrMidBand();
         float distance = Vector3.Distance(brain.transform.position, brain.player.transform.position);
         if (distance <= brain.AttackRegisterDistance)
         {
@@ -54,6 +54,11 @@ public class BerserkStyle : ICombatStyle
     public void Tick()
     {
         Debug.Log("[Berserk Style TICK]");
+    }
+
+    public void PrepareInitialDecision()
+    {
+        brain.SelectCloseOrMidBand();
     }
 
 }

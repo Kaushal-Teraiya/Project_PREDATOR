@@ -62,4 +62,8 @@ public class CirclingStyle : ICombatStyle
         brain.EnemyMovement.MoveTo(targetPosition);
     }
 
+    public void PrepareInitialDecision()
+    {
+        brain.SelectNextBand();
+    }
 }
