@@ -8,7 +8,6 @@ using UnityEngine;
 
 
 public class EnemyBrain : MonoBehaviour
-#region Sensors & Archetype
 {
     [Header("Sensors")]
     private SoundSensor soundSensor;
@@ -20,10 +19,8 @@ public class EnemyBrain : MonoBehaviour
     [SerializeField] private EnemyMovement.MovementSurface preferredMovementSurface;
     // private bool canClimbWalls;
     // private bool canLunge;
-    #region States
 
     [Header("States")]
-
     private IEnemyState currentState;
     private IdleState idleState;
     private InvestigateState investigateState;
@@ -43,11 +40,7 @@ public class EnemyBrain : MonoBehaviour
     public IEnemyState BufferState => bufferState;
     public IEnemyState CombatState => combatState;
 
-    #endregion
-    #region Object & Script References
-
     [Header("Object & Script References")]
-    #endregion
     private EnemyMovement enemyMovement;
     public EnemyMovement EnemyMovement => enemyMovement;
     private Vector3 currentInvestigationCenter;
@@ -61,26 +54,21 @@ public class EnemyBrain : MonoBehaviour
     private Animator animator;
     private PlayerMovement playerMovement;
 
-    #region SearchPoint Data
 
     [Header("SearchPoint Data")]
-    #endregion
     [SerializeField] private LayerMask searchPointLayer;
     [SerializeField] private float searchPointFactorPercent = 0.5f;
-    #region InvestigateState Data
 
     [Header("InvestigateState Data")]
-    #endregion
     [SerializeField] private float InvestigateAreaRadius;
-    public Vector3 lastStimulusPosition { get; private set; }
+    public Vector3 lastStimulusPosition{get; private set;}
     [SerializeField] private float stimulusMemoryDuration = 5f;
     private float lastStimulusTime;
-    #region ChaseState Data
 
     [Header("ChaseState Data")]
-    #endregion
     public Vector3 lastConfirmedPosition { get; private set; }
     public float lastConfirmedSeenTime { get; private set; }
+
     private bool currentlyChasing;
     public Vector3 chaseTargetPosition { get; private set; }
     [SerializeField] private float chaseTargetArrivalRadius;
@@ -89,13 +77,11 @@ public class EnemyBrain : MonoBehaviour
     private float lastChaseTime;
     private Vector3 investigationForward;
     private bool postChase;
-    public bool shouldPauseOnChase { get; private set; }
-    public bool hasSeenFirstTime = true;
+    public bool shouldPauseOnChaseStart { get; private set; }
+    public bool hasSeenPlayerFirstTime = true;
     public IPursuitBehaviour pursuitBehaviour { get; private set; }
-    #region Attack & Combat Data
 
     [Header("AttackState Data")]
-    #endregion
     [SerializeField] private float attackDistance; //creats a spacioing between Enemy and Player.
     private float attackRegisterDistance; //Defines at which distance the performed attack is registered.
     //[SerializeField] private float midRangeAttackRegisterDistance, closeRangeAttackRegisterDistance, farRangeAttackRegisterDistance;
@@ -140,22 +126,16 @@ public class EnemyBrain : MonoBehaviour
     }
 
     [SerializeField] private CombatStyleType combatStyleType;
-    #region Navmesh Data
 
     [Header("Navmesh Data")]
-    #endregion
     [SerializeField] private float distanceForSampling = 5f;
     public float DistanceForSampling => distanceForSampling;
-    #region WanderState Data
 
     [Header("WanderState Data")]
-    #endregion
     [SerializeField] private float wayPointCollectionRadius = 10f;
     public float _WayPointCollectionRadius => wayPointCollectionRadius;
-    #region Animation Data
 
     [Header("Animation Data")]
-    #endregion
     //[SerializeField] private List<AnimationClip> attackVariants = new List<AnimationClip>();
     [SerializeField] private List<AnimationClip> idleVariants = new List<AnimationClip>();
     [SerializeField] private List<AnimationClip> walkVariants = new List<AnimationClip>();
@@ -171,24 +151,18 @@ public class EnemyBrain : MonoBehaviour
     // [SerializeField] private float chaseThreshold = 100f;
     // [SerializeField] private float investigationThreshold = 30f;
     // public float Suspicion => suspicion;
-    #region Proximity Data
 
     [Header("Proximity Data")]
-    #endregion
     [SerializeField] private float proximityRadius = 10f;
     [SerializeField] private LayerMask proximityObstacleMask;
-    #region Vision Data
 
     [Header("Vision")]
-    #endregion
     [SerializeField] private float visionGraceDuration = 3f;
     public VisionSensor.visibilityResult previousResult { get; private set; }
     public VisionSensor.visibilityResult currentResult { get; private set; }
-    private Vector3 snapShotPosition;
-    #region Reposition & Surface Traversal Data
+    public Vector3 snapShotPosition { get; private set; }
 
     [Header("RepositionState Data")]
-    #endregion
     [SerializeField] private LayerMask obstacleMaskForReposition;
     [SerializeField] private float midBandCompression = 0.5f;
     [SerializeField] private float farBandCompression = 0.75f;
@@ -203,6 +177,9 @@ public class EnemyBrain : MonoBehaviour
     public float RepositionArrivalRadius => repositionArrivalRadius;
     public LayerMask ObstacleMaskForReposition => obstacleMaskForReposition;
     public PlayerMovement PlayerMovement => playerMovement;
+    public float ProximityRadius => proximityRadius;
+    public LayerMask ProximityObstacleMask => proximityObstacleMask;
+    public float VisionGraceDuration => visionGraceDuration;
     public SurfaceCrawlAbility SurfaceCrawlAbility => GetAbility<SurfaceCrawlAbility>();
     public float PlayerVicinityThreshold => playerVicinityThreshold;
     public LayerMask ClearanceMask => clearanceMask;
@@ -222,10 +199,8 @@ public class EnemyBrain : MonoBehaviour
     public AttackTypes MidAttackAsset => midAttacksAsset;
     public float SliceHalfAngle => sliceHalfAngle;
     public float SearchPointFactorPercent => searchPointFactorPercent;
-    #region Debug Gizmos
 
     [Header("Combat Band Gizmos")]
-    #endregion
     [SerializeField] private bool drawBandGizmos = true;
 
     [UnityEngine.Range(8, 128)]
@@ -234,31 +209,25 @@ public class EnemyBrain : MonoBehaviour
     public int _CircleSegments => circleSegments;
 
     public Vector3 Debug_RepositionTarget;
-    #region Ragdoll Data
 
     [Header("Ragdoll")]
-    #endregion
     public RagdollController ragdollController { get; private set; }
     public Vector3 LastHitDirection { get; private set; }
     public float LastHitForce { get; private set; }
-    #region Archetype Data
 
     [Header("Archetypes")]
-    #endregion
     [SerializeField] private EnemyArchetype enemyArchetype;
-    #region Controller References
 
     private SurfaceTraversalController surfaceTraversalController;
-    #endregion
     private CombatController combatController;
     private SearchController searchController;
+    private PerceptionController perceptionController;
     public CombatController _CombatController => combatController;
     public SearchController SearchController => searchController;
+    public PerceptionController PerceptionController => perceptionController;
 
-    #region Surface Traversal Tuning
     [Header("Surface Traversal Tuning")]
     [SerializeField] private float playerVicinityThreshold;
-    #endregion
     [SerializeField] private LayerMask clearanceMask;
     [SerializeField] private float progressCheckInterval = 1f;
     [SerializeField] private float minimumProgressDistance = 0.25f;
@@ -267,7 +236,6 @@ public class EnemyBrain : MonoBehaviour
 
 
     // [Header("MovementData")]
-#endregion
     // [SerializeField] private EnemyMovement.MovementSurface preferredMovementSurface;
 
     //============================================Functions============================================//
@@ -326,9 +294,9 @@ public class EnemyBrain : MonoBehaviour
         playerMovement = player.transform.GetComponent<PlayerMovement>();
         playerHealth = player.GetComponent<PlayerHealth>();
         combatController = new CombatController(this, playerMovement);
+        perceptionController = new PerceptionController(this, soundSensor, visionSensor);
+        perceptionController.Initialize();
         playerHealth.playerDead += HandleEnemyStateOnPlayerDeath;
-        soundSensor.OnSoundHeard += HandleSoundStimulus;
-        visionSensor.OnPeripheralGlimpse += HandlePeripheralStimulus;
         enemyMovement.OnLeapEnded += HandleLeapEnd;
 
         enemyMovement.OnTransitionComplete += surfaceTraversalController.HandleTransitionComplete;
@@ -505,7 +473,7 @@ public class EnemyBrain : MonoBehaviour
 
         if (Time.time - lastStimulusTime > stimulusMemoryDuration)
         {
-            lastStimulusPosition = Vector3.zero;
+            perceptionController.ClearStimulus();
             // suspicion = 0f;
         }
 
@@ -553,62 +521,41 @@ public class EnemyBrain : MonoBehaviour
 
     private void CheckPerception()
     {
-        if (visionSensor != null)
+        perceptionController.Tick();
+
+        previousResult = perceptionController.PreviousResult;
+        currentResult = perceptionController.CurrentResult;
+        lastStimulusPosition = perceptionController.LastStimulusPosition;
+        lastStimulusTime = perceptionController.LastStimulusTime;
+
+        if (!isEndingChase && currentlyChasing)
         {
-            var oldResult = previousResult;
-            currentResult = visionSensor.VisibilityResult;
-            // Debug.Log("[EnemyBrain] current Result: " + currentResult + "Previous result: " + previousResult);
-
-            if (!isEndingChase && ((oldResult != currentResult) || (oldResult == currentResult)) && currentlyChasing)
-            {
-                Debug.Log("[EnemyBrain] Trying to set chase end ==  true");
-                SetChaseEnd(true);
-            }
-
-            if (HasVision() && IsCenterVision())
-            {
-                lastConfirmedPosition = visionSensor.LastSeenPosition;
-                lastConfirmedSeenTime = visionSensor.LastSeenTime;
-
-                if (currentlyChasing)
-                {
-                    chaseTargetPosition = lastConfirmedPosition;
-                    lastChaseTime = Time.time;
-                }
-
-                if (hasSeenFirstTime)
-                {
-                    hasSeenFirstTime = false;
-                    SurpriseModafaka();
-                }
-            }
-
-            //Only take 1 snapshot of playerposition for investigation on transition from none type of visibility into investigate  visibility
-            if (currentResult == VisionSensor.visibilityResult.Investigate && previousResult == VisionSensor.visibilityResult.None)
-            {
-                snapShotPosition = visionSensor.LastSeenPosition;
-            }
-
-            previousResult = currentResult;
-            //            Debug.Log("[EnemyBrain] previous Result: " + previousResult);
+            Debug.Log("[EnemyBrain] Trying to set chase end ==  true");
+            SetChaseEnd(true);
         }
 
-
-
-        Vector3 origin = visionSensor.transform.position;
-        Vector3 direction = player.transform.position - visionSensor.transform.position;
-        float distance = direction.magnitude;
-        //  bool recentlyChasing = currentlyChasing || Time.time - lastChaseTime <= visionGraceDuration;
-        RaycastHit hit;
-
-        if (distance < proximityRadius && !HasVision() && !IsInState(attackState)) //this means even if we are not in enemy's vision it can still sense us if we are near them
+        if (perceptionController.HasVision() && perceptionController.IsCenterVision())
         {
-            if (!Physics.Raycast(origin, direction.normalized, out hit, distance, proximityObstacleMask))
+            lastConfirmedPosition = perceptionController.LastConfirmedPosition;
+            lastConfirmedSeenTime = perceptionController.LastConfirmedSeenTime;
+
+            if (currentlyChasing)
             {
-                enemyMovement.RotationIntent(EnemyMovement.RotationPriority.Proximity, origin + direction.normalized);
+                chaseTargetPosition = lastConfirmedPosition;
+                lastChaseTime = Time.time;
             }
-            //later we can add closest player for multiplayer here
-            // Debug.Log(hit.collider.gameObject.layer);
+
+            if (hasSeenPlayerFirstTime)
+            {
+                hasSeenPlayerFirstTime = false;
+                PauseBeforeChase();
+            }
+        }
+
+        if (currentResult == VisionSensor.visibilityResult.Investigate &&
+            previousResult == VisionSensor.visibilityResult.None)
+        {
+            snapShotPosition = perceptionController.SnapshotPosition;
         }
     }
 
@@ -630,18 +577,6 @@ public class EnemyBrain : MonoBehaviour
         postChase = true;
         SetChasePause(true);
         SwitchState(investigateState);
-    }
-
-    private void HandleSoundStimulus(Vector3 position)
-    {
-        lastStimulusPosition = position;
-        lastStimulusTime = Time.time;
-    }
-    private void HandlePeripheralStimulus(Vector3 position)
-    {
-        lastStimulusPosition = position;
-        lastStimulusTime = Time.time;
-        enemyMovement.RotationIntent(EnemyMovement.RotationPriority.State, position);
     }
 
     private void HandleEnemyStateOnPlayerDeath(bool state)
@@ -692,7 +627,6 @@ public class EnemyBrain : MonoBehaviour
 
     #endregion
 
-    #region Search Delegation
     public SearchPoint GetCurrentSearchPoint()
     {
         return searchController.GetCurrentSearchPoint();
@@ -703,7 +637,6 @@ public class EnemyBrain : MonoBehaviour
         searchController.IncrementSearchIndex();
     }
 
-    #endregion
     #region State Queries & Control
 
     public bool IsInCombat()
@@ -757,12 +690,12 @@ public class EnemyBrain : MonoBehaviour
 
     public bool HasVision()
     {
-        return visionSensor.HasLineOfSight;
+        return perceptionController.HasVision();
     }
 
     public bool IsCenterVision()
     {
-        return visionSensor.AngleFactor > 0.5f;
+        return perceptionController.IsCenterVision();
     }
 
     private void SetInvestigationForward(Vector3 forward)
@@ -797,8 +730,7 @@ public class EnemyBrain : MonoBehaviour
 
     public void DisablePerception()
     {
-        visionSensor.enabled = false;
-        soundSensor.enabled = false;
+        perceptionController.DisablePerception();
     }
 
     public string GetCurrentState()
@@ -837,14 +769,14 @@ public class EnemyBrain : MonoBehaviour
         return " ";
     }
 
-    private void SurpriseModafaka()
+    private void PauseBeforeChase()
     {
         SetChasePause(true);
     }
 
     public void SetChasePause(bool permission)
     {
-        shouldPauseOnChase = permission;
+        shouldPauseOnChaseStart = permission;
     }
 
     public void SetChaseEnd(bool _isEndingChase)
@@ -854,7 +786,7 @@ public class EnemyBrain : MonoBehaviour
 
     public bool CheckVisibilityResult(VisionSensor.visibilityResult expectedResult)
     {
-        return visionSensor != null && visionSensor.VisibilityResult == expectedResult;
+        return perceptionController.CheckVisibilityResult(expectedResult);
     }
 
     public void SetIsCommitedToReposition(bool _isCommited)

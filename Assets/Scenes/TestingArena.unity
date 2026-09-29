@@ -9788,7 +9788,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 833453706187871840, guid: 63cc82c7a272c0a40b37c57e42a0072e, type: 3}
       propertyPath: useLightZone
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3240690407180083767, guid: 63cc82c7a272c0a40b37c57e42a0072e, type: 3}
       propertyPath: m_LocalPosition.x

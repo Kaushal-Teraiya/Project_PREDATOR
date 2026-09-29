@@ -20,7 +20,7 @@ public class ChaseState : IEnemyState
       
         //  lockedChasePoint = brain.chaseTargetPosition;
         brain.EnemyMovement.SetMovementMode(EnemyMovement.MovementMode.Chase);
-        if (brain.shouldPauseOnChase)
+        if (brain.shouldPauseOnChaseStart)
         {
             chasePauseTime = 2f;
             brain.SetChasePause(false);
