@@ -8,6 +8,7 @@ using UnityEngine;
 
 
 public class EnemyBrain : MonoBehaviour
+#region Sensors & Archetype
 {
     [Header("Sensors")]
     private SoundSensor soundSensor;
@@ -19,8 +20,10 @@ public class EnemyBrain : MonoBehaviour
     [SerializeField] private EnemyMovement.MovementSurface preferredMovementSurface;
     // private bool canClimbWalls;
     // private bool canLunge;
+    #region States
 
     [Header("States")]
+
     private IEnemyState currentState;
     private IdleState idleState;
     private InvestigateState investigateState;
@@ -40,7 +43,11 @@ public class EnemyBrain : MonoBehaviour
     public IEnemyState BufferState => bufferState;
     public IEnemyState CombatState => combatState;
 
+    #endregion
+    #region Object & Script References
+
     [Header("Object & Script References")]
+    #endregion
     private EnemyMovement enemyMovement;
     public EnemyMovement EnemyMovement => enemyMovement;
     private Vector3 currentInvestigationCenter;
@@ -54,30 +61,24 @@ public class EnemyBrain : MonoBehaviour
     private Animator animator;
     private PlayerMovement playerMovement;
 
+    #region SearchPoint Data
 
     [Header("SearchPoint Data")]
-    private List<SearchPoint> availableSearchPoints = new List<SearchPoint>();
-    private List<SearchPoint> selectedSearchPoints = new List<SearchPoint>();
-    public int currentSearchIndex { get; private set; }
-    private SearchPoint lastReleasedPoint;
-    private float lastReleaseTime;
-    public bool IsSearchComplete
-    {
-        get
-        {
-            return currentSearchIndex >= selectedSearchPoints.Count;
-        }
-    }
+    #endregion
     [SerializeField] private LayerMask searchPointLayer;
-    [SerializeField] private float SearchPointFactorPercent = 0.5f;
+    [SerializeField] private float searchPointFactorPercent = 0.5f;
+    #region InvestigateState Data
 
     [Header("InvestigateState Data")]
+    #endregion
     [SerializeField] private float InvestigateAreaRadius;
     public Vector3 lastStimulusPosition { get; private set; }
     [SerializeField] private float stimulusMemoryDuration = 5f;
     private float lastStimulusTime;
+    #region ChaseState Data
 
     [Header("ChaseState Data")]
+    #endregion
     public Vector3 lastConfirmedPosition { get; private set; }
     public float lastConfirmedSeenTime { get; private set; }
     private bool currentlyChasing;
@@ -91,8 +92,10 @@ public class EnemyBrain : MonoBehaviour
     public bool shouldPauseOnChase { get; private set; }
     public bool hasSeenFirstTime = true;
     public IPursuitBehaviour pursuitBehaviour { get; private set; }
+    #region Attack & Combat Data
 
     [Header("AttackState Data")]
+    #endregion
     [SerializeField] private float attackDistance; //creats a spacioing between Enemy and Player.
     private float attackRegisterDistance; //Defines at which distance the performed attack is registered.
     //[SerializeField] private float midRangeAttackRegisterDistance, closeRangeAttackRegisterDistance, farRangeAttackRegisterDistance;
@@ -137,16 +140,22 @@ public class EnemyBrain : MonoBehaviour
     }
 
     [SerializeField] private CombatStyleType combatStyleType;
+    #region Navmesh Data
 
     [Header("Navmesh Data")]
+    #endregion
     [SerializeField] private float distanceForSampling = 5f;
     public float DistanceForSampling => distanceForSampling;
+    #region WanderState Data
 
     [Header("WanderState Data")]
+    #endregion
     [SerializeField] private float wayPointCollectionRadius = 10f;
     public float _WayPointCollectionRadius => wayPointCollectionRadius;
+    #region Animation Data
 
     [Header("Animation Data")]
+    #endregion
     //[SerializeField] private List<AnimationClip> attackVariants = new List<AnimationClip>();
     [SerializeField] private List<AnimationClip> idleVariants = new List<AnimationClip>();
     [SerializeField] private List<AnimationClip> walkVariants = new List<AnimationClip>();
@@ -162,18 +171,24 @@ public class EnemyBrain : MonoBehaviour
     // [SerializeField] private float chaseThreshold = 100f;
     // [SerializeField] private float investigationThreshold = 30f;
     // public float Suspicion => suspicion;
+    #region Proximity Data
 
     [Header("Proximity Data")]
+    #endregion
     [SerializeField] private float proximityRadius = 10f;
     [SerializeField] private LayerMask proximityObstacleMask;
+    #region Vision Data
 
     [Header("Vision")]
+    #endregion
     [SerializeField] private float visionGraceDuration = 3f;
     public VisionSensor.visibilityResult previousResult { get; private set; }
     public VisionSensor.visibilityResult currentResult { get; private set; }
     private Vector3 snapShotPosition;
+    #region Reposition & Surface Traversal Data
 
     [Header("RepositionState Data")]
+    #endregion
     [SerializeField] private LayerMask obstacleMaskForReposition;
     [SerializeField] private float midBandCompression = 0.5f;
     [SerializeField] private float farBandCompression = 0.75f;
@@ -197,12 +212,20 @@ public class EnemyBrain : MonoBehaviour
     public float CollapseThreshold => collapseThreshold;
     public Vector3 CurrentInvestigationCenter => currentInvestigationCenter;
     public float CurrentInvestigationRadius => currentInvestigationRadius;
+    public Vector3 InvestigationForward => investigationForward;
+    public float SearchPointFactor => searchPointFactorPercent;
+    public LayerMask SearchPointLayer => searchPointLayer;
+    public bool PostChase => postChase;
+    public bool IsSearchComplete => searchController.IsSearchComplete;
     public bool DrawBandGizmos => drawBandGizmos;
     public int CircleSegments => circleSegments;
     public AttackTypes MidAttackAsset => midAttacksAsset;
     public float SliceHalfAngle => sliceHalfAngle;
+    public float SearchPointFactorPercent => searchPointFactorPercent;
+    #region Debug Gizmos
 
     [Header("Combat Band Gizmos")]
+    #endregion
     [SerializeField] private bool drawBandGizmos = true;
 
     [UnityEngine.Range(8, 128)]
@@ -211,21 +234,31 @@ public class EnemyBrain : MonoBehaviour
     public int _CircleSegments => circleSegments;
 
     public Vector3 Debug_RepositionTarget;
+    #region Ragdoll Data
 
     [Header("Ragdoll")]
+    #endregion
     public RagdollController ragdollController { get; private set; }
     public Vector3 LastHitDirection { get; private set; }
     public float LastHitForce { get; private set; }
+    #region Archetype Data
 
     [Header("Archetypes")]
+    #endregion
     [SerializeField] private EnemyArchetype enemyArchetype;
+    #region Controller References
 
     private SurfaceTraversalController surfaceTraversalController;
+    #endregion
     private CombatController combatController;
+    private SearchController searchController;
     public CombatController _CombatController => combatController;
+    public SearchController SearchController => searchController;
 
+    #region Surface Traversal Tuning
     [Header("Surface Traversal Tuning")]
     [SerializeField] private float playerVicinityThreshold;
+    #endregion
     [SerializeField] private LayerMask clearanceMask;
     [SerializeField] private float progressCheckInterval = 1f;
     [SerializeField] private float minimumProgressDistance = 0.25f;
@@ -234,6 +267,7 @@ public class EnemyBrain : MonoBehaviour
 
 
     // [Header("MovementData")]
+#endregion
     // [SerializeField] private EnemyMovement.MovementSurface preferredMovementSurface;
 
     //============================================Functions============================================//
@@ -286,6 +320,7 @@ public class EnemyBrain : MonoBehaviour
         combatState = new CombatState(this);
 
         currentCombatStyle = CombatStyleFactory.Create(combatStyleType, this);
+        searchController = new SearchController(this);
         SwitchState(idleState);
         player = GameObject.FindGameObjectWithTag("Player");
         playerMovement = player.transform.GetComponent<PlayerMovement>();
@@ -329,41 +364,8 @@ public class EnemyBrain : MonoBehaviour
 
     public void InitializeSearch()
     {
-        CollectNearbySearchPoints();
-        ShuffleSearchPoints();
-
-        var pickNsearchPoints = availableSearchPoints.Count * SearchPointFactorPercent;
-        int roundUp = (int)Mathf.Ceil((float)pickNsearchPoints);
-        int finalNsearchPoints = Mathf.Clamp(roundUp, 2, 8);
-        finalNsearchPoints = (int)MathF.Min(finalNsearchPoints, availableSearchPoints.Count);
-
-        for (int i = 0; i < finalNsearchPoints; i++)
-        {
-            selectedSearchPoints.Add(availableSearchPoints[i]);
-        }
-
-        foreach (var searchPoint in selectedSearchPoints)
-        {
-            searchPoint.GenerateSlots();
-        }
-
-        if (postChase)
-        {
-            for (int i = selectedSearchPoints.Count - 1; i >= 0; i--)
-            {
-                Vector3 toPoint = selectedSearchPoints[i].transform.position - currentInvestigationCenter;
-                toPoint.y = 0f;
-                if (Vector3.Dot(investigationForward.normalized, toPoint.normalized) <= 0f)
-                {
-                    selectedSearchPoints.RemoveAt(i);
-                }
-
-            }
-        }
-
-        currentSearchIndex = 0;
+        searchController.InitializeSearch();
         surfaceTraversalController.InitializeSearch();
-        //        Debug.Log($"Selected Search Points Count: {selectedSearchPoints.Count}");
     }
 
     public void InitializeChase()
@@ -392,56 +394,6 @@ public class EnemyBrain : MonoBehaviour
     #endregion
 
     #region Getter , Collector & Helper Functions
-    private void CollectNearbySearchPoints()
-    {
-        selectedSearchPoints.Clear();
-        availableSearchPoints.Clear();
-        Collider[] points = Physics.OverlapSphere(currentInvestigationCenter, currentInvestigationRadius, searchPointLayer);
-        foreach (var point in points)
-        {
-            if (point != null)
-            {
-                var searchPoint = point.gameObject.GetComponent<SearchPoint>();
-                if (searchPoint == null)
-                {
-                    Debug.Log("null search point");
-                    continue;
-
-                }
-                availableSearchPoints.Add(searchPoint);
-            }
-        }
-
-    }
-
-    public SearchPoint GetCurrentSearchPoint()
-    {
-        if (currentSearchIndex >= 0 && currentSearchIndex < selectedSearchPoints.Count)
-        {
-            return selectedSearchPoints[currentSearchIndex];
-        }
-        else
-        {
-            return null;
-        }
-    }
-
-    public void IncrementSearchIndex()
-    {
-        currentSearchIndex++;
-    }
-
-    private void ShuffleSearchPoints()
-    {
-        for (int currentIndex = availableSearchPoints.Count - 1; currentIndex > 0; currentIndex--)
-        {
-            int randomIndex = UnityEngine.Random.Range(0, currentIndex + 1);
-            var temp = availableSearchPoints[currentIndex];
-            availableSearchPoints[currentIndex] = availableSearchPoints[randomIndex];
-            availableSearchPoints[randomIndex] = temp;
-        }
-    }
-
     public T GetAbility<T>() where T : EnemyAbility
     {
         foreach (var ability in enemyArchetype.enemyAbilities)
@@ -666,8 +618,7 @@ public class EnemyBrain : MonoBehaviour
 
     public void NotifySearchPointReleased(SearchPoint point)
     {
-        lastReleasedPoint = point;
-        lastReleaseTime = Time.time;
+        searchController.NotifySearchPointReleased(point);
     }
 
     public void EndChase(Vector3 lastChasePosition)
@@ -741,6 +692,18 @@ public class EnemyBrain : MonoBehaviour
 
     #endregion
 
+    #region Search Delegation
+    public SearchPoint GetCurrentSearchPoint()
+    {
+        return searchController.GetCurrentSearchPoint();
+    }
+
+    public void IncrementSearchIndex()
+    {
+        searchController.IncrementSearchIndex();
+    }
+
+    #endregion
     #region State Queries & Control
 
     public bool IsInCombat()
@@ -763,12 +726,7 @@ public class EnemyBrain : MonoBehaviour
 
     public bool CanClaim(SearchPoint point)
     {
-        if (point == lastReleasedPoint && Time.time - lastReleaseTime < 0.3f)
-        {
-            return false;
-        }
-
-        return true;
+        return searchController.CanClaim(point);
     }
 
     public bool HasReachedThePosition(Vector3 lastConfirmedPosition, float _arrivalRadius)

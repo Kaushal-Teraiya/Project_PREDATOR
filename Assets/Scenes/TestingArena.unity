@@ -542,7 +542,7 @@ MonoBehaviour:
   searchPointLayer:
     serializedVersion: 2
     m_Bits: 8
-  SearchPointFactorPercent: 0.5
+  searchPointFactorPercent: 0.5
   InvestigateAreaRadius: 18
   stimulusMemoryDuration: 5
   chaseTargetArrivalRadius: 0
@@ -2275,7 +2275,7 @@ MonoBehaviour:
   searchPointLayer:
     serializedVersion: 2
     m_Bits: 8
-  SearchPointFactorPercent: 0.5
+  searchPointFactorPercent: 0.5
   InvestigateAreaRadius: 18
   stimulusMemoryDuration: 5
   chaseTargetArrivalRadius: 0
@@ -3412,7 +3412,7 @@ MonoBehaviour:
   searchPointLayer:
     serializedVersion: 2
     m_Bits: 8
-  SearchPointFactorPercent: 0.5
+  searchPointFactorPercent: 0.5
   InvestigateAreaRadius: 18
   stimulusMemoryDuration: 5
   chaseTargetArrivalRadius: 0
@@ -4965,7 +4965,7 @@ MonoBehaviour:
   searchPointLayer:
     serializedVersion: 2
     m_Bits: 8
-  SearchPointFactorPercent: 0.5
+  searchPointFactorPercent: 0.5
   InvestigateAreaRadius: 18
   stimulusMemoryDuration: 5
   chaseTargetArrivalRadius: 0
@@ -5731,7 +5731,7 @@ MonoBehaviour:
   searchPointLayer:
     serializedVersion: 2
     m_Bits: 8
-  SearchPointFactorPercent: 0.5
+  searchPointFactorPercent: 0.5
   InvestigateAreaRadius: 18
   stimulusMemoryDuration: 5
   chaseTargetArrivalRadius: 0
@@ -7824,7 +7824,7 @@ MonoBehaviour:
   searchPointLayer:
     serializedVersion: 2
     m_Bits: 8
-  SearchPointFactorPercent: 0.5
+  searchPointFactorPercent: 0.5
   InvestigateAreaRadius: 18
   stimulusMemoryDuration: 5
   chaseTargetArrivalRadius: 0
@@ -9786,6 +9786,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 833453706187871840, guid: 63cc82c7a272c0a40b37c57e42a0072e, type: 3}
+      propertyPath: useLightZone
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3240690407180083767, guid: 63cc82c7a272c0a40b37c57e42a0072e, type: 3}
       propertyPath: m_LocalPosition.x
       value: 3.12
