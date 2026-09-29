@@ -24,14 +24,7 @@ public class SoundEmitter : MonoBehaviour
           0.1f
       );
 
-        // TEMP TEST: find all listeners
-        SoundSensor[] listeners = FindObjectsByType<SoundSensor>();
-
-        foreach (SoundSensor listener in listeners)
-        {
-            listener.ProcessSound(soundEvent);
-        }
-
+        SoundSystem.Emit(soundEvent);
     }
 
     void OnDrawGizmos()

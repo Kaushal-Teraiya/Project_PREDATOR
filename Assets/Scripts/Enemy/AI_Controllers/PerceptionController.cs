@@ -88,6 +88,7 @@ public class PerceptionController
     public void ClearStimulus()
     {
         LastStimulusPosition = Vector3.zero;
+        soundSensor.ClearSound();
     }
 
     public void DisablePerception()

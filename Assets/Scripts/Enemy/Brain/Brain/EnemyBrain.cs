@@ -441,7 +441,7 @@ public class EnemyBrain : MonoBehaviour
         }
 
 
-        if (Time.time - lastStimulusTime > stimulusMemoryDuration)
+        if (Time.time - lastStimulusTime > stimulusMemoryDuration && lastStimulusPosition != Vector3.zero)
         {
             perceptionController.ClearStimulus();
             // suspicion = 0f;
@@ -491,6 +491,9 @@ public class EnemyBrain : MonoBehaviour
     private void CheckPerception()
     {
         perceptionController.Tick();
+
+        lastStimulusPosition = perceptionController.LastStimulusPosition;
+        lastStimulusTime = perceptionController.LastStimulusTime;
 
         if (!isEndingChase && currentlyChasing)
         {
@@ -596,6 +599,8 @@ public class EnemyBrain : MonoBehaviour
 
     public bool IsInCombat()
     {
+        if (currentAttackProfile == null)
+            return false;
         return IsInState(attackState) || IsInState(combatState);
     }
 

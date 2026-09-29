@@ -99,7 +99,7 @@ public class VisionSensor : MonoBehaviour
 
                 visionClarity = visibilityProvider.GetVisibility();
 
-                if (!visibilityProvider.UseLightZone)
+                if (!visibilityProvider.IsInDarkEnvironment)
                 {
                     lastSeenPosition = player.transform.position;
                     lastSeenTime = Time.time;
@@ -128,7 +128,7 @@ public class VisionSensor : MonoBehaviour
         bool peripheralVision;
         AngleFactor = angleFactor;
 
-        if (visibilityProvider.UseLightZone)
+        if (visibilityProvider.IsInDarkEnvironment)
         {
             peripheralVision = angleFactor > 0f && angleFactor < 0.5f && VisibilityResult != visibilityResult.None && distanceBtwEnemyNPlayer <= chaseDistanceThresholdInDarkness;
         }
@@ -162,7 +162,7 @@ public class VisionSensor : MonoBehaviour
         {
             visionClarity = visibilityProvider.GetVisibility();
             //Debug.Log("[VisionSensor] Vision clarity " + visionClarity);
-            if (visibilityProvider.UseLightZone)
+            if (visibilityProvider.IsInDarkEnvironment)
             {
                 if (distanceBtwEnemyNPlayer <= chaseDistanceThresholdInDarkness && hasLineOfSight)
                 {

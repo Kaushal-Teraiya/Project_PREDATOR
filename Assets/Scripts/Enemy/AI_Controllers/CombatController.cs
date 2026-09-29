@@ -66,6 +66,7 @@ public class CombatController
 
     public bool IsInCombatBand()
     {
+        
         float distanceToPlayer = Vector3.Distance(brain.transform.position, brain.player.transform.position);
         float desiredBandDistance = GetDesiredBandDistance(brain.GetCurrentCombatBand(), brain.CurrentAttackProfile) / 2f;
         float positioning = Mathf.Abs(distanceToPlayer - desiredBandDistance);

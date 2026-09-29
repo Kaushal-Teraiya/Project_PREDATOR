@@ -10,8 +10,8 @@ public class PlayerVisiblity : MonoBehaviour , IVisibilityProvider
     public float BaseVisibility => baseVisibility_UseLightZone;
     [SerializeField] private float baseVisibility_NoLightzone = 1f;
     [SerializeField] private float intensityTuner = 5f;
-    [SerializeField] private bool useLightZone = true;
-    public bool UseLightZone => useLightZone;
+    [SerializeField] private bool isInDarkEnvironment = true;
+    public bool IsInDarkEnvironment => isInDarkEnvironment;
   
     private void OnTriggerEnter(Collider other)
     {
@@ -48,7 +48,7 @@ public class PlayerVisiblity : MonoBehaviour , IVisibilityProvider
 
     public float GetVisibility()
     {
-        if (useLightZone)
+        if (isInDarkEnvironment)
         {
             visibility = baseVisibility_UseLightZone;
         }

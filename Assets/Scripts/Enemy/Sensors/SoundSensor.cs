@@ -1,12 +1,12 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class SoundSensor : MonoBehaviour
 {
     [Header("Hearing")]
     public float hearingMultiplier = 1f;
-    public float memoryDuration = 5f;
-
+    
     [Header("Sound Memory (Read Only)")]
     public Vector3 LastHeardPosition { get; private set; }
     public float LastHeardRadius { get; private set; }
@@ -15,7 +15,6 @@ public class SoundSensor : MonoBehaviour
     public int lastHeardValue { get; private set; }
     private int recentlyHeardValue = -1;
     [SerializeField] private float minSoundInterval = 0.2f;
-
     public event Action<Vector3> OnSoundHeard;
 
     public void ProcessSound(SoundEvent soundEvent)
@@ -51,16 +50,7 @@ public class SoundSensor : MonoBehaviour
 
     public bool HasValidSound()
     {
-        if (!HasHeardSound)
-            return false;
-
-        if (Time.time - LastHeardTime > memoryDuration)
-        {
-            ClearSound();
-            return false;
-        }
-
-        return true;
+        return HasHeardSound;
     }
 
     public void ClearSound()
@@ -68,5 +58,20 @@ public class SoundSensor : MonoBehaviour
         HasHeardSound = false;
         recentlyHeardValue = -1;
         lastHeardValue = -1;
+        LastHeardPosition = Vector3.zero;
+        LastHeardRadius = 0f;
+        LastHeardTime = 0f;
+
+        Debug.Log("Sound cleared");
+    }
+
+    private void OnEnable()
+    {
+        SoundSystem.Register(this);
+    }
+
+    private void OnDisable()
+    {
+        SoundSystem.Unregister(this);
     }
 }

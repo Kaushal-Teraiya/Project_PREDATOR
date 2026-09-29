@@ -602,7 +602,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SoundListener
   hearingMultiplier: 5
-  memoryDuration: 5
   minSoundInterval: 0.2
 --- !u!224 &63388003
 RectTransform:
@@ -2319,7 +2318,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SoundListener
   hearingMultiplier: 5
-  memoryDuration: 5
   minSoundInterval: 0.2
 --- !u!195 &516933293
 NavMeshAgent:
@@ -2495,13 +2493,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VisionSensor
   maxViewDistance: 50
   player: {fileID: 1584050596}
-  dotProductThreshold: 0.5
+  visionAngle: 120
   obstacleMask:
     serializedVersion: 2
     m_Bits: 64
   chaseThreshold: 0
   chaseDistanceThresholdInDarkness: 0
   investigateThreshold: 0
+  verticalDotProductThreshold: 0.3
   VisibilityResult: 0
 --- !u!1 &604458054
 GameObject:
@@ -2549,13 +2548,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VisionSensor
   maxViewDistance: 50
   player: {fileID: 1584050596}
-  dotProductThreshold: 0.5
+  visionAngle: 120
   obstacleMask:
     serializedVersion: 2
     m_Bits: 64
   chaseThreshold: 0
   chaseDistanceThresholdInDarkness: 0
   investigateThreshold: 0
+  verticalDotProductThreshold: 0.3
   VisibilityResult: 0
 --- !u!114 &617215832
 MonoBehaviour:
@@ -3440,7 +3440,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SoundListener
   hearingMultiplier: 5
-  memoryDuration: 5
   minSoundInterval: 0.2
 --- !u!195 &765992257
 NavMeshAgent:
@@ -3877,13 +3876,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VisionSensor
   maxViewDistance: 50
   player: {fileID: 1584050596}
-  dotProductThreshold: 0.5
+  visionAngle: 120
   obstacleMask:
     serializedVersion: 2
     m_Bits: 64
   chaseThreshold: 0
   chaseDistanceThresholdInDarkness: 0
   investigateThreshold: 0
+  verticalDotProductThreshold: 0.3
   VisibilityResult: 0
 --- !u!1 &910951309
 GameObject:
@@ -4977,7 +4977,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SoundListener
   hearingMultiplier: 5
-  memoryDuration: 5
   minSoundInterval: 0.2
 --- !u!195 &1331646826
 NavMeshAgent:
@@ -5384,13 +5383,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VisionSensor
   maxViewDistance: 50
   player: {fileID: 1584050596}
-  dotProductThreshold: 0.5
+  visionAngle: 120
   obstacleMask:
     serializedVersion: 2
     m_Bits: 64
   chaseThreshold: 0
   chaseDistanceThresholdInDarkness: 0
   investigateThreshold: 0
+  verticalDotProductThreshold: 0.3
   VisibilityResult: 0
 --- !u!114 &1386584516
 MonoBehaviour:
@@ -5727,7 +5727,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SoundListener
   hearingMultiplier: 5
-  memoryDuration: 5
   minSoundInterval: 0.2
 --- !u!195 &1415654186
 NavMeshAgent:
@@ -6283,13 +6282,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VisionSensor
   maxViewDistance: 50
   player: {fileID: 1584050596}
-  dotProductThreshold: 0.5
+  visionAngle: 120
   obstacleMask:
     serializedVersion: 2
     m_Bits: 64
   chaseThreshold: 0
   chaseDistanceThresholdInDarkness: 0
   investigateThreshold: 0
+  verticalDotProductThreshold: 0.3
   VisibilityResult: 0
 --- !u!114 &1590085706
 MonoBehaviour:
@@ -6800,13 +6800,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VisionSensor
   maxViewDistance: 50
   player: {fileID: 1584050596}
-  dotProductThreshold: 0.5
+  visionAngle: 120
   obstacleMask:
     serializedVersion: 2
     m_Bits: 64
   chaseThreshold: 0
   chaseDistanceThresholdInDarkness: 0
   investigateThreshold: 0
+  verticalDotProductThreshold: 0.3
   VisibilityResult: 0
 --- !u!1 &1747926851 stripped
 GameObject:
@@ -7804,7 +7805,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SoundListener
   hearingMultiplier: 5
-  memoryDuration: 5
   minSoundInterval: 0.2
 --- !u!195 &1871191731
 NavMeshAgent:
@@ -9692,7 +9692,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 833453706187871840, guid: 63cc82c7a272c0a40b37c57e42a0072e, type: 3}
       propertyPath: useLightZone
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3240690407180083767, guid: 63cc82c7a272c0a40b37c57e42a0072e, type: 3}
       propertyPath: m_LocalPosition.x
@@ -9930,8 +9930,8 @@ Light:
   serializedVersion: 13
   m_Type: 2
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Intensity: 211.4
-  m_Range: 17
+  m_Intensity: 94.3
+  m_Range: 8.1
   m_SpotAngle: 82.231964
   m_InnerSpotAngle: 72.26447
   m_CookieSize2D: {x: 0.5, y: 0.5}
