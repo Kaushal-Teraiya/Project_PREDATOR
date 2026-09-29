@@ -48,10 +48,8 @@ public class GroundMovement : IMovementLogic
 
         repathTimer -= Time.deltaTime;
 
-        if (NavMesh.SamplePosition(destination, out NavMeshHit sampleHit, 2f, NavMesh.AllAreas))
-        {
-            destination = sampleHit.position;
-        }
+        if (!TryGetReachableGroundTarget(destination, out destination))
+            return;
 
         if (repathTimer <= 0f)
         {
@@ -81,6 +79,7 @@ public class GroundMovement : IMovementLogic
         }
 
         Vector3 direction = destination - transform.position;
+        direction.y = 0f;
         Vector3 normalizedDirection = direction.normalized;
 
         if (avoidance != null)
@@ -109,7 +108,7 @@ public class GroundMovement : IMovementLogic
         movementDir = movementDir.normalized;
 
         transform.position += movementDir * owner.CurrentSpeed * Time.deltaTime;
-        agent.Warp(transform.position);
+        // agent.Warp(transform.position);
 
         if (NavMesh.SamplePosition(transform.position, out NavMeshHit groundHit, 1f, NavMesh.AllAreas))
         {
@@ -228,9 +227,11 @@ public class GroundMovement : IMovementLogic
     private bool TryGetReachableGroundTarget(Vector3 target, out Vector3 reachableTarget)
     {
         reachableTarget = transform.position;
-        Vector3 searchPosition = new Vector3(target.x, transform.position.y, target.z);
 
-        if (!NavMesh.SamplePosition(searchPosition, out NavMeshHit hit, 10f, NavMesh.AllAreas))
+        Vector3 searchPosition = target;
+        searchPosition.y = transform.position.y;
+
+        if (!NavMesh.SamplePosition(searchPosition, out NavMeshHit hit, 20f, agent.areaMask))
             return false;
 
         NavMeshPath path = new NavMeshPath();
