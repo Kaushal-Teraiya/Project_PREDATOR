@@ -242,4 +242,11 @@ public class GroundMovement : IMovementLogic
         reachableTarget = hit.position;
         return true;
     }
+
+    public void InvalidatePath()
+    {
+        currentPath.ClearCorners();
+        currentCornerIndex = 0;
+        repathTimer = 0f;
+    }
 }

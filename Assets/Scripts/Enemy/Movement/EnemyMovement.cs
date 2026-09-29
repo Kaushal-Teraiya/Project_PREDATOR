@@ -511,7 +511,7 @@ public class EnemyMovement : MonoBehaviour
     #region Leap
     public void StartLeap(Vector3 targetPosition, float delayDuration, float arcDuration, float arcHeight, Quaternion? targetRotation = null)
     {
-       
+
         hasCapturedArcStart = false;
         DisableProximity();
         isLeaping = true;
@@ -558,6 +558,7 @@ public class EnemyMovement : MonoBehaviour
         var height = arcHeight * 4 * t * (1 - t);
         horizontal.y += height;
         transform.position = horizontal;
+        
         if (arcTimer >= arcDuration)
         {
             RotationIntent(RotationPriority.State, transform.position + leapDirection);
@@ -566,6 +567,14 @@ public class EnemyMovement : MonoBehaviour
             delayTimer = 0f;
             SetCurrentMovementSurface(MovementSurface.Ground);
             SetAgentEnabled(true);
+
+            //This is crucial it fixes the stale reposition target when leap happens between different ground heights.
+            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 2f, agent.areaMask))
+            {
+                transform.position = hit.position;
+                agent.Warp(hit.position);
+            }
+
             OnLeapEnded?.Invoke();
         }
     }
@@ -591,7 +600,7 @@ public class EnemyMovement : MonoBehaviour
     {
         return surfaceTraversalMovement.IsCurrentContext(traversalContext);
     }
-    
+
     public void SetCurrentMovementSurface(MovementSurface surface)
     {
         currentMovementSurface = surface;

@@ -20,8 +20,9 @@ public class RepositionState : IEnemyState
     }
     public void OnEnter()
     {
+        brain.EnemyMovement.OnLeapEnded += HandleLeapEnded;
         brain.EnemyMovement.Animator_SetBool("canExitReposition", false);
-       // brain.SelectNextBand();
+        // brain.SelectNextBand();
         // if (!BandPositionCoordinator.Instance.TryReserveBand(brain.GetCurrentCombatBand()))
         // {
         //     brain.SwitchState(brain.RepositionState);
@@ -77,7 +78,7 @@ public class RepositionState : IEnemyState
         if (brain.HasReachedThePosition(desiredPosition, brain.RepositionArrivalRadius))
         {
             hasAlmostReached = true;
-            if(brain.CurrentCombatStyle is AttackRepositionStyle style)
+            if (brain.CurrentCombatStyle is AttackRepositionStyle style)
             {
                 style.OnRepositionComplete();
             }
@@ -106,7 +107,26 @@ public class RepositionState : IEnemyState
             desiredPosition = lastTargetPosition;
             brain.EnemyMovement.MoveTo(desiredPosition);
         }
+
+        brain.EnemyMovement.OnLeapEnded -= HandleLeapEnded;
         //isCommitedToReposition bool is set inside the attackState HandleAttackEnd() function.
+    }
+
+    private void HandleLeapEnded()
+    {
+        var band = brain.GetEffectiveBandRange(brain.CurrentAttackProfile);
+
+        float angleInDegrees = brain.ChooseBandSlice();
+        float angle = angleInDegrees * Mathf.Deg2Rad;
+
+        offsetRadius = UnityEngine.Random.Range(band.x, band.y);
+        offsetDirection = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+
+        target = brain.player.transform.position + offsetDirection * offsetRadius;
+        desiredPosition = brain.transform.position;
+        lastTargetPosition = desiredPosition;
+
+        Debug.Log("[RepositionState] Leap ended - selecting new reposition target.");
     }
 
     private void SetFoundValidPosition(bool _found)
