@@ -136,8 +136,9 @@ public class EnemyMovement : MonoBehaviour
 
     [Header("NavMesh Data")]
     [SerializeField] private float repathInterval = 0.5f;
-    public float RepathInterval => repathInterval;
     [SerializeField] private float acceleration = 10f;
+    
+    public float RepathInterval => repathInterval;
 
     #endregion
 
